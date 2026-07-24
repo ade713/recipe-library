@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: recipe-library-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: recipe_library
+      POSTGRES_USER: recipe_library
+      POSTGRES_PASSWORD: recipe_library_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - recipe_library_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U recipe_library -d recipe_library"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  recipe_library_pgdata:
