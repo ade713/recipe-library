@@ -1,10 +1,10 @@
-# Recipe Library Starter
+# Recipe Library
 
-A starter repo for a mobile-first recipe-saving app.
+A repo for a mobile-first recipe-saving app.
 
 The app lets a user manually create recipes, paste recipe URLs, import useful recipe data when supported, review/edit imported drafts, save recipes to a personal library, and use notes, search/filtering, and portion scaling.
 
-This repo is intentionally set up as a **learning project**. The backend is Python/FastAPI-first, and Codex should be used as a tutor, test-writer, reviewer, and debugging assistant rather than as the primary coder.
+The backend is Python/FastAPI-first, and Codex should be used as a tutor, test-writer, reviewer, and debugging assistant rather than as the primary coder.
 
 ## Current MVP definition
 
