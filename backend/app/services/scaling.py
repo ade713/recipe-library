@@ -41,10 +41,11 @@ def scale_ingredient_line(line: str, multiplier: float) -> str:
 
         return f"{quantity_str} {' '.join(parts[2:])}"
     elif parts[0].isdigit():
-        number = int(parts[0])
-        quantity = number * multiplier
+        number = Fraction(parts[0])
+        quantity = number * Fraction(multiplier)
+        quantity_str = format_quantity(quantity)
 
-        return f"{quantity} {' '.join(parts[1:])}"
+        return f"{quantity_str} {' '.join(parts[1:])}"
 
     return line
 
