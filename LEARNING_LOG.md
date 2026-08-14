@@ -109,3 +109,29 @@ Next:
 
 - Connect the schemas to a small FastAPI endpoint.
 ```
+
+## FastAPI Ingredient Scale Preview
+
+```md
+## 2026-08-13
+
+Built:
+
+- Added request and response schemas for ingredient scaling.
+- Added and registered `POST /api/v1/ingredients/scale-preview`.
+- Connected the FastAPI route to the ingredient-scaling service.
+- Added successful-request and invalid-request tests.
+
+Learned:
+
+- FastAPI validates Pydantic request models before executing route logic.
+- Invalid request data automatically produces a `422` response.
+- `response_model` validates, serializes, and documents outgoing responses.
+- Router prefixes and route paths combine to form the complete endpoint URL.
+- FastAPI generates OpenAPI documentation from request and response schemas.
+- Integration with mypy exposed an older inconsistent variable-type assignment.
+
+Next:
+
+- Inspect and exercise the endpoint in FastAPI `/docs`.
+```
