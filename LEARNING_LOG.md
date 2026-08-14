@@ -84,3 +84,28 @@ Next:
 
 - Pydantic recipe draft schemas.
 ```
+
+## Pydantic Recipe Draft Schemas
+
+```md
+## 2026-08-13
+
+Built:
+
+- Added and tested ingredient, instruction, source-tip, recipe-draft, and import-preview schemas.
+- Added validation for required text, one-based positions, source attribution, and supported import statuses.
+- Separated editable `RecipeDraft` data from save-ready `RecipeCreate` data.
+
+Learned:
+
+- Type annotations validate data types, while `Field` adds value constraints.
+- `str | None` permits `None`; adding `= None` also makes the field optional to omit.
+- Pydantic converts nested dictionaries into nested models.
+- `Literal` restricts fields to specific allowed values.
+- Imported recipes remain editable drafts until reviewed and approved for saving.
+- FastAPI will use these schemas for request validation, response serialization, OpenAPI documentation, and `422` validation errors.
+
+Next:
+
+- Connect the schemas to a small FastAPI endpoint.
+```
