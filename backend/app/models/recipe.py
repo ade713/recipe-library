@@ -1,11 +1,19 @@
 import uuid
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, ForeignKey, Integer, Numeric, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 from app.models.tag import recipe_tags
+
+if TYPE_CHECKING:
+    from app.models.ingredient import RecipeIngredient
+    from app.models.note import RecipeNote
+    from app.models.step import RecipeStep, RecipeTip
+    from app.models.tag import Tag
+    from app.models.user import User
 
 
 class Recipe(UUIDPrimaryKeyMixin, TimestampMixin, Base):
@@ -16,6 +24,8 @@ class Recipe(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     description: Mapped[str | None] = mapped_column(Text)
     source_url: Mapped[str | None] = mapped_column(Text)
     source_domain: Mapped[str | None] = mapped_column(String(255), index=True)
+    source_site_name: Mapped[str | None] = mapped_column(String(255))
+    source_author: Mapped[str | None] = mapped_column(String(255))
     image_url: Mapped[str | None] = mapped_column(Text)
     prep_time_minutes: Mapped[int | None] = mapped_column(Integer)
     cook_time_minutes: Mapped[int | None] = mapped_column(Integer)

@@ -1,7 +1,14 @@
+from typing import TYPE_CHECKING
+
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
+
+if TYPE_CHECKING:
+    from app.models.note import RecipeNote
+    from app.models.recipe import Recipe
+    from app.models.tag import Tag
 
 
 class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):

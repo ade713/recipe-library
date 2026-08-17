@@ -1,11 +1,14 @@
 import uuid
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, ForeignKey, Integer, Numeric, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, UUIDPrimaryKeyMixin
 
+if TYPE_CHECKING:
+    from app.models.recipe import Recipe
 
 class RecipeIngredient(UUIDPrimaryKeyMixin, Base):
     __tablename__ = "recipe_ingredients"

@@ -1,9 +1,14 @@
 import uuid
+from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, String, Table, UniqueConstraint, Uuid, Column
+from sqlalchemy import Column, ForeignKey, String, Table, UniqueConstraint, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
+
+if TYPE_CHECKING:
+    from app.models.recipe import Recipe
+    from app.models.user import User
 
 recipe_tags = Table(
     "recipe_tags",
