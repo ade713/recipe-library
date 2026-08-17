@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     app_name: str = "Recipe Library API"
     environment: str = "development"
-    database_url: str = "postgresql+psycopg://recipe_library:recipe_library_dev_password@localhost:5432/recipe_library"
+    database_url: str = "postgresql+psycopg://recipe_library:recipe_library_dev_password@localhost:5433/recipe_library"
     secret_key: str = "change-me-in-real-development"
     access_token_expire_minutes: int = 60
     cors_origins: list[str] = Field(
