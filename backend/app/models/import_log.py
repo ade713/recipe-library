@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import ForeignKey, JSON, String, Text, Uuid
+from sqlalchemy import JSON, ForeignKey, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
