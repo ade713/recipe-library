@@ -1,10 +1,17 @@
 from decimal import Decimal
+from typing import Protocol
 from uuid import UUID
 
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
+
+
+class NamedTag(Protocol):
+    name: str
 
 
 class IngredientDraft(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     position: int = Field(ge=1)
     original_text: str = Field(min_length=1)
     quantity: Decimal | None = None
@@ -18,12 +25,16 @@ class IngredientDraft(BaseModel):
 
 
 class RecipeStepDraft(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     position: int = Field(ge=1)
     instruction: str = Field(min_length=1)
     section_title: str | None = None
 
 
 class RecipeTipDraft(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     position: int = Field(ge=1)
     tip: str = Field(min_length=1)
 
@@ -53,6 +64,17 @@ class RecipeDraft(RecipeBase):
 
 class RecipeCreate(RecipeDraft):
     pass
+
+
+class RecipeRead(RecipeDraft):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+
+    @field_validator("tags", mode="before")
+    @classmethod
+    def extract_tag_names(cls, tags: list[str | NamedTag]) -> list[str]:
+        return [tag if isinstance(tag, str) else tag.name for tag in tags]
 
 
 class RecipeUpdate(BaseModel):

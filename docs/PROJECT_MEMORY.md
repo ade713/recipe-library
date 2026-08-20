@@ -45,7 +45,7 @@ Core screens:
 
 Decision status:
 
-- Final UI direction not chosen yet.
+- Option C is the preferred UI direction, but it has not been formally finalized.
 - Mobile-first remains the priority.
 - Recipe Detail / Cooking View is the most important screen.
 - Import Preview must make scraped recipes feel editable and trustworthy.

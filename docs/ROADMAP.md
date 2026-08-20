@@ -29,18 +29,22 @@
 
 ## Phase 4: Database
 
-- SQLAlchemy models
-- Alembic migrations
-- Core recipe tables
+Status: Complete
+
+- [x] SQLAlchemy models
+- [x] Alembic migrations
+- [x] Core recipe tables
 
 ## Phase 5: Manual recipe CRUD
 
-- Create recipe manually
-- List recipes
-- View recipe detail
-- Update recipe
-- Delete recipe
-- Manual entry as fallback path for failed imports
+Status: In progress
+
+- [x] Create recipe manually
+- [ ] List recipes
+- [ ] View recipe detail
+- [ ] Update recipe
+- [ ] Delete recipe
+- [x] Manual entry as fallback path for failed imports
 
 ## Phase 6: Notes/tags/search basics
 
