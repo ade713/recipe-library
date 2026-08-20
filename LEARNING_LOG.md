@@ -164,3 +164,33 @@ Next:
 
 - Build manual recipe CRUD with thin FastAPI routes and user-scoped repository queries.
 ```
+
+## Manual Recipe Creation
+
+```md
+## 2026-08-20
+
+Built:
+
+- Added an ORM-aware recipe response schema for recipes, ingredients, steps, tips, and tag names.
+- Added repository creation for recipes and their nested records.
+- Reused existing tags only when they belong to the same user and created missing user-owned tags.
+- Added a temporary development user until authentication is implemented.
+- Added `POST /api/v1/recipes` with commit and rollback handling.
+- Tested successful creation, invalid request validation, and repository-failure rollback behavior.
+
+Learned:
+
+- `from_attributes=True` lets Pydantic response models read SQLAlchemy object attributes.
+- Nested ORM objects need attribute support on their own nested Pydantic model types.
+- A `Protocol` can describe the required shape of an object without coupling schemas to ORM models.
+- Repositories can flush database work while the route controls the complete transaction boundary.
+- FastAPI dependencies provide a request-scoped SQLAlchemy session.
+- `response_model` validates, serializes, filters, and documents the public API response.
+- Integration tests exercise real components together, while monkeypatching creates controlled failures for focused unit tests.
+- Tests must patch the name where the code under test looks it up.
+
+Next:
+
+- Add user-scoped recipe list and detail queries.
+```

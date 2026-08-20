@@ -81,7 +81,7 @@ From the repo root:
 docker compose up -d postgres
 ```
 
-The default local database URL is shown in `.env.example` and `backend/.env.example`.
+The default local database URL is shown in `backend/.env.example`.
 
 ## First recommended Codex prompt
 
@@ -95,4 +95,4 @@ Explain the Python concepts involved, then help me unskip the tests and implemen
 
 ## Current status
 
-This is an initial scaffold, not a complete app. The health route is wired. Most feature routes intentionally return `501 Not Implemented` until you build them.
+The backend database foundations and initial Alembic migration are complete. Manual recipe creation is available through `POST /api/v1/recipes` using a temporary development user until authentication is implemented. Recipe list, detail, update, and delete routes still return placeholder responses or `501 Not Implemented`.
