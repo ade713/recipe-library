@@ -44,8 +44,10 @@ jobs:
             app/api/router.py \
             app/api/routes/health.py \
             app/api/routes/ingredients.py \
+            app/api/routes/recipes.py \
             app/core/config.py \
             app/models \
+            app/repositories \
             app/schemas \
             app/services/scaling.py \
             app/services/url_validator.py \
@@ -55,8 +57,10 @@ jobs:
         run: |
           python -m mypy \
             app/api/routes/ingredients.py \
+            app/api/routes/recipes.py \
             app/core/config.py \
             app/models \
+            app/repositories \
             app/schemas \
             app/services/scaling.py \
             app/services/url_validator.py
