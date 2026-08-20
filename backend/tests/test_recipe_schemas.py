@@ -1,4 +1,6 @@
 from decimal import Decimal
+from types import SimpleNamespace
+from uuid import uuid4
 
 import pytest
 from pydantic import ValidationError
@@ -6,6 +8,7 @@ from pydantic import ValidationError
 from app.schemas.recipe import (
     IngredientDraft,
     RecipeDraft,
+    RecipeRead,
     RecipeStepDraft,
     RecipeTipDraft,
 )
@@ -129,3 +132,28 @@ def test_recipe_tip_draft_rejects_invalid_required_fields(
 ) -> None:
     with pytest.raises(ValidationError):
         RecipeTipDraft(position=position, tip=tip)
+
+
+def test_recipe_read_builds_from_orm_attributes() -> None:
+    recipe_id = uuid4()
+    recipe_record = SimpleNamespace(
+        id=recipe_id,
+        title="Tomato Soup",
+        ingredients=[
+            SimpleNamespace(position=1, original_text="2 cups tomatoes")
+        ],
+        steps=[
+            SimpleNamespace(position=1, instruction="Simmer the tomatoes.")
+        ],
+        tips=[SimpleNamespace(position=1, tip="Finish with fresh basil.")],
+        tags=[SimpleNamespace(name="Dinner")],
+    )
+
+    recipe = RecipeRead.model_validate(recipe_record)
+
+    assert recipe.id == recipe_id
+    assert recipe.title == "Tomato Soup"
+    assert isinstance(recipe.ingredients[0], IngredientDraft)
+    assert isinstance(recipe.steps[0], RecipeStepDraft)
+    assert isinstance(recipe.tips[0], RecipeTipDraft)
+    assert recipe.tags == ["Dinner"]
