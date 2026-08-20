@@ -1,8 +1,14 @@
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.orm import Session
 
-from app.schemas.recipe import RecipeCreate, RecipeUpdate
+from app.core.database import get_db
+from app.models import Recipe
+from app.repositories.recipe_repository import create_recipe as create_recipe_record
+from app.repositories.user_repository import get_or_create_dev_user
+from app.schemas.recipe import RecipeCreate, RecipeRead, RecipeUpdate
 
 router = APIRouter()
 
@@ -20,9 +26,28 @@ def list_recipes(
     return {"items": []}
 
 
-@router.post("", status_code=status.HTTP_501_NOT_IMPLEMENTED)
-def create_recipe(payload: RecipeCreate) -> None:
-    raise HTTPException(status_code=501, detail="Recipe creation is not implemented yet.")
+@router.post(
+    "",
+    response_model=RecipeRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_recipe(
+    payload: RecipeCreate,
+    session: Annotated[Session, Depends(get_db)],
+) -> Recipe:
+    try:
+        user = get_or_create_dev_user(session)
+        recipe = create_recipe_record(
+            session,
+            user_id=user.id,
+            payload=payload,
+        )
+        session.commit()
+        session.refresh(recipe)
+        return recipe
+    except Exception:
+        session.rollback()
+        raise
 
 
 @router.get("/{recipe_id}", status_code=status.HTTP_501_NOT_IMPLEMENTED)
