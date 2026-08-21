@@ -2,7 +2,7 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.models import Base, Recipe, Tag, User
-from app.repositories.recipe_repository import create_recipe
+from app.repositories.recipe_repository import create_recipe, list_recipes
 from app.schemas.recipe import RecipeCreate
 
 
@@ -82,3 +82,21 @@ def test_create_recipe_reuses_tags_only_for_same_owner() -> None:
         assert {tag.user_id for tag in recipe.tags} == {owner.id}
         assert existing_tag_id in {tag.id for tag in recipe.tags}
         assert other_users_tag_id not in {tag.id for tag in recipe.tags}
+
+
+def test_list_recipes_returns_only_owned_recipes() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:")
+    Base.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        owner = User(email="owner@example.com", password_hash="owner-hash")
+        other_user = User(email="other@example.com", password_hash="other-hash")
+        owners_recipe = Recipe(user=owner, title="Tomato Soup")
+        other_recipe = Recipe(user=other_user, title="Secret Cake")
+        session.add_all([owners_recipe, other_recipe])
+        session.commit()
+
+        recipes = list_recipes(session, user_id=owner.id)
+
+        assert [recipe.id for recipe in recipes] == [owners_recipe.id]
+        assert [recipe.title for recipe in recipes] == ["Tomato Soup"]

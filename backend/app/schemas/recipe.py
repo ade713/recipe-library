@@ -92,6 +92,8 @@ class RecipeUpdate(BaseModel):
 
 
 class RecipeSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     title: str
     image_url: str | None = None
@@ -99,3 +101,8 @@ class RecipeSummary(BaseModel):
     base_servings: Decimal | None = None
     is_favorite: bool
     tags: list[str] = Field(default_factory=list)
+
+    @field_validator("tags", mode="before")
+    @classmethod
+    def extract_tag_names(cls, tags: list[str | NamedTag]) -> list[str]:
+        return [tag if isinstance(tag, str) else tag.name for tag in tags]
