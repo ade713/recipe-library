@@ -56,6 +56,24 @@ def create_recipe(
     return recipe
 
 
+def get_recipe(session: Session, *, user_id: UUID, recipe_id: UUID) -> Recipe | None:
+    statement = (
+        select(Recipe)
+        .where(
+            Recipe.id == recipe_id,
+            Recipe.user_id == user_id,
+        )
+        .options(
+            selectinload(Recipe.ingredients),
+            selectinload(Recipe.steps),
+            selectinload(Recipe.tips),
+            selectinload(Recipe.tags),
+        )
+    )
+
+    return session.scalar(statement)
+
+
 def list_recipes(session: Session, *, user_id: UUID) -> list[Recipe]:
     statement = (
         select(Recipe)
