@@ -80,6 +80,9 @@ class RecipeRead(RecipeDraft):
 class RecipeUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=255)
     description: str | None = None
+    source_domain: str | None = None
+    source_site_name: str | None = None
+    source_author: str | None = None
     source_url: HttpUrl | None = None
     image_url: HttpUrl | None = None
     prep_time_minutes: int | None = Field(default=None, ge=0)
@@ -88,6 +91,9 @@ class RecipeUpdate(BaseModel):
     base_servings: Decimal | None = Field(default=None, ge=0)
     servings_unit: str | None = None
     is_favorite: bool | None = None
+    ingredients: list[IngredientDraft] | None = None
+    steps: list[RecipeStepDraft] | None = None
+    tips: list[RecipeTipDraft] | None = None
     tags: list[str] | None = None
 
 

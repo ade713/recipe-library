@@ -12,6 +12,7 @@ from app.schemas.recipe import (
     RecipeStepDraft,
     RecipeSummary,
     RecipeTipDraft,
+    RecipeUpdate,
 )
 
 
@@ -178,3 +179,26 @@ def test_recipe_summary_builds_from_orm_attributes() -> None:
     assert summary.title == "Tomato Soup"
     assert summary.total_time_minutes == 30
     assert summary.tags == ["Dinner"]
+
+
+def test_recipe_update_distinguishes_omitted_and_supplied_fields() -> None:
+    update = RecipeUpdate(
+        description=None,
+        source_domain="example.com",
+        source_site_name="Example Kitchen",
+        source_author="Jamie Example",
+        ingredients=[{"position": 1, "original_text": "3 cups tomatoes"}],
+        steps=[{"position": 1, "instruction": "Simmer slowly."}],
+        tips=[{"position": 1, "tip": "Finish with basil."}],
+    )
+
+    supplied_data = update.model_dump(exclude_unset=True)
+
+    assert "title" not in supplied_data
+    assert supplied_data["description"] is None
+    assert supplied_data["source_domain"] == "example.com"
+    assert supplied_data["source_site_name"] == "Example Kitchen"
+    assert supplied_data["source_author"] == "Jamie Example"
+    assert isinstance(update.ingredients[0], IngredientDraft)
+    assert isinstance(update.steps[0], RecipeStepDraft)
+    assert isinstance(update.tips[0], RecipeTipDraft)
