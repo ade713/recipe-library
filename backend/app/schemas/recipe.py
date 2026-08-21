@@ -106,3 +106,7 @@ class RecipeSummary(BaseModel):
     @classmethod
     def extract_tag_names(cls, tags: list[str | NamedTag]) -> list[str]:
         return [tag if isinstance(tag, str) else tag.name for tag in tags]
+
+
+class RecipeListResponse(BaseModel):
+    items: list[RecipeSummary]
