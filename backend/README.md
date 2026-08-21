@@ -45,10 +45,12 @@ Run the server and open:
 http://localhost:8000/docs
 ```
 
-## Implemented recipe endpoint
+## Implemented recipe endpoints
 
 ```text
 POST /api/v1/recipes
+GET  /api/v1/recipes
+GET  /api/v1/recipes/{recipe_id}
 ```
 
-The endpoint saves a manually entered recipe with ingredients, steps, source tips, and user-owned tags. It uses a temporary development user until authentication is implemented.
+The endpoints save, list, and retrieve manually entered recipes with ingredients, steps, source tips, and user-owned tags. They use a temporary development user until authentication is implemented, and all read queries are scoped to that user's ownership.

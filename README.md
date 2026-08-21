@@ -95,4 +95,4 @@ Explain the Python concepts involved, then help me unskip the tests and implemen
 
 ## Current status
 
-The backend database foundations and initial Alembic migration are complete. Manual recipe creation is available through `POST /api/v1/recipes` using a temporary development user until authentication is implemented. Recipe list, detail, update, and delete routes still return placeholder responses or `501 Not Implemented`.
+The backend database foundations and initial Alembic migration are complete. Manual recipe creation, user-scoped listing, and user-scoped detail retrieval are available through `/api/v1/recipes` using a temporary development user until authentication is implemented. Recipe update and delete routes still return `501 Not Implemented`.

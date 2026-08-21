@@ -40,8 +40,8 @@ Status: Complete
 Status: In progress
 
 - [x] Create recipe manually
-- [ ] List recipes
-- [ ] View recipe detail
+- [x] List recipes
+- [x] View recipe detail
 - [ ] Update recipe
 - [ ] Delete recipe
 - [x] Manual entry as fallback path for failed imports
