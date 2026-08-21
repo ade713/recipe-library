@@ -194,3 +194,30 @@ Next:
 
 - Add user-scoped recipe list and detail queries.
 ```
+
+## Recipe List and Detail
+
+```md
+## 2026-08-21
+
+Built:
+
+- Added a user-scoped repository query for listing recipes in newest-first order.
+- Added a compact ORM-aware recipe summary and list response schema.
+- Added `GET /api/v1/recipes` for the temporary development user.
+- Added a user-scoped recipe detail query with eagerly loaded ingredients, steps, tips, and tags.
+- Added `GET /api/v1/recipes/{recipe_id}` with full nested response serialization.
+- Added repository and endpoint tests proving one user cannot list or retrieve another user's recipes.
+
+Learned:
+
+- `session.scalar()` retrieves one selected value, while `session.scalars()` iterates over multiple selected ORM objects.
+- Ownership should be part of the database query rather than checked only after loading a record.
+- `selectinload()` avoids repeated lazy-load queries and keeps required relationships available after the query session closes.
+- Returning `404` for both missing and unauthorized records avoids revealing that another user's record exists.
+- FastAPI can infer a response model from a typed Pydantic return annotation.
+
+Next:
+
+- Add user-scoped recipe update and delete operations.
+```

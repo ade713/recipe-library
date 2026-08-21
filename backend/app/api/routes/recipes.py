@@ -1,29 +1,33 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models import Recipe
 from app.repositories.recipe_repository import create_recipe as create_recipe_record
+from app.repositories.recipe_repository import get_recipe as get_recipe_record
+from app.repositories.recipe_repository import list_recipes as list_recipe_records
 from app.repositories.user_repository import get_or_create_dev_user
-from app.schemas.recipe import RecipeCreate, RecipeRead, RecipeUpdate
+from app.schemas.recipe import (
+    RecipeCreate,
+    RecipeListResponse,
+    RecipeRead,
+    RecipeUpdate,
+)
 
 router = APIRouter()
 
 
 @router.get("")
 def list_recipes(
-    q: str | None = None,
-    tag: str | None = None,
-    favorite: bool | None = None,
-    max_total_time: int | None = Query(default=None, ge=1),
-    ingredient: str | None = None,
-    sort: str = "recent",
-) -> dict[str, list[dict]]:
-    # Temporary placeholder so the mobile UI can be planned before DB work.
-    return {"items": []}
+    session: Annotated[Session, Depends(get_db)],
+) -> RecipeListResponse:
+    user = get_or_create_dev_user(session)
+    recipes = list_recipe_records(session, user_id=user.id)
+
+    return RecipeListResponse.model_validate({"items": recipes})
 
 
 @router.post(
@@ -50,9 +54,25 @@ def create_recipe(
         raise
 
 
-@router.get("/{recipe_id}", status_code=status.HTTP_501_NOT_IMPLEMENTED)
-def get_recipe(recipe_id: UUID) -> None:
-    raise HTTPException(status_code=501, detail="Recipe detail is not implemented yet.")
+@router.get("/{recipe_id}", response_model=RecipeRead)
+def get_recipe(
+    recipe_id: UUID,
+    session: Annotated[Session, Depends(get_db)],
+) -> Recipe:
+    user = get_or_create_dev_user(session)
+    recipe = get_recipe_record(
+        session,
+        user_id=user.id,
+        recipe_id=recipe_id,
+    )
+
+    if recipe is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Recipe not found.",
+        )
+
+    return recipe
 
 
 @router.patch("/{recipe_id}", status_code=status.HTTP_501_NOT_IMPLEMENTED)

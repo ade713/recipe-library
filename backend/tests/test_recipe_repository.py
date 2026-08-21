@@ -1,8 +1,8 @@
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, selectinload
 
-from app.models import Base, Recipe, Tag, User
-from app.repositories.recipe_repository import create_recipe
+from app.models import Base, Recipe, RecipeIngredient, RecipeStep, RecipeTip, Tag, User
+from app.repositories.recipe_repository import create_recipe, get_recipe, list_recipes
 from app.schemas.recipe import RecipeCreate
 
 
@@ -82,3 +82,64 @@ def test_create_recipe_reuses_tags_only_for_same_owner() -> None:
         assert {tag.user_id for tag in recipe.tags} == {owner.id}
         assert existing_tag_id in {tag.id for tag in recipe.tags}
         assert other_users_tag_id not in {tag.id for tag in recipe.tags}
+
+
+def test_list_recipes_returns_only_owned_recipes() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:")
+    Base.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        owner = User(email="owner@example.com", password_hash="owner-hash")
+        other_user = User(email="other@example.com", password_hash="other-hash")
+        owners_recipe = Recipe(user=owner, title="Tomato Soup")
+        other_recipe = Recipe(user=other_user, title="Secret Cake")
+        session.add_all([owners_recipe, other_recipe])
+        session.commit()
+
+        recipes = list_recipes(session, user_id=owner.id)
+
+        assert [recipe.id for recipe in recipes] == [owners_recipe.id]
+        assert [recipe.title for recipe in recipes] == ["Tomato Soup"]
+
+
+def test_get_recipe_returns_owned_detail_and_hides_other_users_recipe() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:")
+    Base.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        owner = User(email="owner@example.com", password_hash="owner-hash")
+        other_user = User(email="other@example.com", password_hash="other-hash")
+        owners_recipe = Recipe(
+            user=owner,
+            title="Tomato Soup",
+            ingredients=[RecipeIngredient(position=1, original_text="2 cups tomatoes")],
+            steps=[RecipeStep(position=1, instruction="Simmer the tomatoes.")],
+            tips=[RecipeTip(position=1, tip="Finish with basil.")],
+            tags=[Tag(user=owner, name="Dinner")],
+        )
+        other_recipe = Recipe(user=other_user, title="Secret Cake")
+        session.add_all([owners_recipe, other_recipe])
+        session.commit()
+        owner_id = owner.id
+        owners_recipe_id = owners_recipe.id
+        other_recipe_id = other_recipe.id
+
+    with Session(engine) as session:
+        recipe = get_recipe(
+            session,
+            user_id=owner_id,
+            recipe_id=owners_recipe_id,
+        )
+        hidden_recipe = get_recipe(
+            session,
+            user_id=owner_id,
+            recipe_id=other_recipe_id,
+        )
+
+    assert recipe is not None
+    assert recipe.title == "Tomato Soup"
+    assert recipe.ingredients[0].original_text == "2 cups tomatoes"
+    assert recipe.steps[0].instruction == "Simmer the tomatoes."
+    assert recipe.tips[0].tip == "Finish with basil."
+    assert recipe.tags[0].name == "Dinner"
+    assert hidden_recipe is None

@@ -10,6 +10,7 @@ from app.schemas.recipe import (
     RecipeDraft,
     RecipeRead,
     RecipeStepDraft,
+    RecipeSummary,
     RecipeTipDraft,
 )
 
@@ -157,3 +158,23 @@ def test_recipe_read_builds_from_orm_attributes() -> None:
     assert isinstance(recipe.steps[0], RecipeStepDraft)
     assert isinstance(recipe.tips[0], RecipeTipDraft)
     assert recipe.tags == ["Dinner"]
+
+
+def test_recipe_summary_builds_from_orm_attributes() -> None:
+    recipe_id = uuid4()
+    recipe_record = SimpleNamespace(
+        id=recipe_id,
+        title="Tomato Soup",
+        image_url=None,
+        total_time_minutes=30,
+        base_servings=Decimal("4"),
+        is_favorite=True,
+        tags=[SimpleNamespace(name="Dinner")],
+    )
+
+    summary = RecipeSummary.model_validate(recipe_record)
+
+    assert summary.id == recipe_id
+    assert summary.title == "Tomato Soup"
+    assert summary.total_time_minutes == 30
+    assert summary.tags == ["Dinner"]

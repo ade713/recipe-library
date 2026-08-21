@@ -5,7 +5,7 @@ Keep API route handlers thin by moving recipe queries here.
 from uuid import UUID
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.models import Recipe, RecipeIngredient, RecipeStep, RecipeTip, Tag
 from app.schemas.recipe import RecipeCreate
@@ -54,3 +54,32 @@ def create_recipe(
     session.flush()
 
     return recipe
+
+
+def get_recipe(session: Session, *, user_id: UUID, recipe_id: UUID) -> Recipe | None:
+    statement = (
+        select(Recipe)
+        .where(
+            Recipe.id == recipe_id,
+            Recipe.user_id == user_id,
+        )
+        .options(
+            selectinload(Recipe.ingredients),
+            selectinload(Recipe.steps),
+            selectinload(Recipe.tips),
+            selectinload(Recipe.tags),
+        )
+    )
+
+    return session.scalar(statement)
+
+
+def list_recipes(session: Session, *, user_id: UUID) -> list[Recipe]:
+    statement = (
+        select(Recipe)
+        .where(Recipe.user_id == user_id)
+        .options(selectinload(Recipe.tags))
+        .order_by(Recipe.created_at.desc())
+    )
+
+    return list(session.scalars(statement))
