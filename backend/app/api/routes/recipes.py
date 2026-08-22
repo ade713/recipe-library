@@ -9,6 +9,7 @@ from app.models import Recipe
 from app.repositories.recipe_repository import create_recipe as create_recipe_record
 from app.repositories.recipe_repository import get_recipe as get_recipe_record
 from app.repositories.recipe_repository import list_recipes as list_recipe_records
+from app.repositories.recipe_repository import update_recipe as update_recipe_record
 from app.repositories.user_repository import get_or_create_dev_user
 from app.schemas.recipe import (
     RecipeCreate,
@@ -75,9 +76,33 @@ def get_recipe(
     return recipe
 
 
-@router.patch("/{recipe_id}", status_code=status.HTTP_501_NOT_IMPLEMENTED)
-def update_recipe(recipe_id: UUID, payload: RecipeUpdate) -> None:
-    raise HTTPException(status_code=501, detail="Recipe update is not implemented yet.")
+@router.patch("/{recipe_id}", response_model=RecipeRead)
+def update_recipe(
+    payload: RecipeUpdate,
+    recipe_id: UUID,
+    session: Annotated[Session, Depends(get_db)],
+) -> Recipe:
+    try:
+        user = get_or_create_dev_user(session)
+        recipe = update_recipe_record(
+            session,
+            user_id=user.id,
+            recipe_id=recipe_id,
+            payload=payload,
+        )
+
+        if recipe is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Recipe not found.",
+            )
+
+        session.commit()
+        session.refresh(recipe)
+        return recipe
+    except Exception:
+        session.rollback()
+        raise
 
 
 @router.delete("/{recipe_id}", status_code=status.HTTP_501_NOT_IMPLEMENTED)
