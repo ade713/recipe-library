@@ -221,3 +221,29 @@ Next:
 
 - Add user-scoped recipe update and delete operations.
 ```
+
+## Recipe Update and Delete
+
+```md
+## 2026-08-22
+
+Built:
+
+- Extended the partial-update schema to support scalar and nested recipe fields.
+- Added user-scoped repository methods and FastAPI endpoints for recipe updates and deletion.
+- Preserved omitted fields during partial updates while allowing explicitly supplied nested collections to be replaced or cleared.
+- Added repository and endpoint tests for ownership, nested-record cleanup, reusable tag preservation, and HTTP responses.
+
+Learned:
+
+- `exclude_unset=True` distinguishes omitted PATCH fields from explicitly supplied values such as `None` or an empty list.
+- SQLAlchemy relationship fields require conversion from Pydantic models rather than generic scalar assignment.
+- Repositories flush database work while routes own commit and rollback for the complete request transaction.
+- A successful DELETE returns `204 No Content` and does not refresh the deleted ORM object.
+- Returning `404` for missing and unauthorized records avoids revealing another user's data.
+- Recipe deletion cascades to owned child rows while reusable tag records remain available.
+
+Next:
+
+- Build notes, tags, and search basics.
+```
