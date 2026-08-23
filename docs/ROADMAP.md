@@ -37,13 +37,13 @@ Status: Complete
 
 ## Phase 5: Manual recipe CRUD
 
-Status: In progress
+Status: Complete
 
 - [x] Create recipe manually
 - [x] List recipes
 - [x] View recipe detail
-- [ ] Update recipe
-- [ ] Delete recipe
+- [x] Update recipe
+- [x] Delete recipe
 - [x] Manual entry as fallback path for failed imports
 
 ## Phase 6: Notes/tags/search basics

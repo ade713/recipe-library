@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.models import Recipe, RecipeIngredient, RecipeStep, RecipeTip, Tag
-from app.schemas.recipe import RecipeCreate
+from app.schemas.recipe import RecipeCreate, RecipeUpdate
 
 
 def create_recipe(
@@ -33,22 +33,11 @@ def create_recipe(
     recipe.ingredients = recipe_ingredients
     recipe.steps = recipe_steps
     recipe.tips = recipe_tips
-
-    recipe_tags: list[Tag] = []
-    for tag_name in dict.fromkeys(payload.tags):
-        tag = session.scalar(
-            select(Tag).where(
-                Tag.user_id == user_id,
-                Tag.name == tag_name,
-            )
-        )
-
-        if tag is None:
-            tag = Tag(user_id=user_id, name=tag_name)
-
-        recipe_tags.append(tag)
-
-    recipe.tags = recipe_tags
+    recipe.tags = _resolve_tags(
+        session,
+        user_id=user_id,
+        tag_names=payload.tags,
+    )
 
     session.add(recipe)
     session.flush()
@@ -83,3 +72,95 @@ def list_recipes(session: Session, *, user_id: UUID) -> list[Recipe]:
     )
 
     return list(session.scalars(statement))
+
+
+def update_recipe(
+    session: Session,
+    *,
+    user_id: UUID,
+    recipe_id: UUID,
+    payload: RecipeUpdate,
+) -> Recipe | None:
+    recipe = get_recipe(
+        session,
+        user_id=user_id,
+        recipe_id=recipe_id,
+    )
+
+    if recipe is None:
+        return None
+
+    scalar_data = payload.model_dump(
+        exclude_unset=True,
+        exclude={"ingredients", "steps", "tips", "tags"},
+        mode="json",
+    )
+
+    for field_name, value in scalar_data.items():
+        setattr(recipe, field_name, value)
+
+    supplied_fields = payload.model_fields_set
+
+    if "ingredients" in supplied_fields:
+        recipe.ingredients = [
+            RecipeIngredient(**ingredient.model_dump(mode="json"))
+            for ingredient in (payload.ingredients or [])
+        ]
+
+    if "steps" in supplied_fields:
+        recipe.steps = [
+            RecipeStep(**step.model_dump(mode="json"))
+            for step in (payload.steps or [])
+        ]
+
+    if "tips" in supplied_fields:
+        recipe.tips = [
+            RecipeTip(**tip.model_dump(mode="json"))
+            for tip in (payload.tips or [])
+        ]
+
+    if "tags" in supplied_fields:
+        recipe.tags = _resolve_tags(
+            session,
+            user_id=user_id,
+            tag_names=payload.tags or []
+        )
+
+    session.flush()
+
+    return recipe
+
+
+def delete_recipe(session: Session, *, user_id: UUID, recipe_id: UUID) -> bool:
+    recipe = get_recipe(
+        session,
+        user_id=user_id,
+        recipe_id=recipe_id,
+    )
+
+    if recipe is None:
+        return False
+
+    session.delete(recipe)
+    session.flush()
+
+    return True
+
+
+def _resolve_tags(session: Session, *, user_id: UUID, tag_names: list[str]) -> list[Tag]:
+    tags: list[Tag] = []
+
+    for tag_name in dict.fromkeys(tag_names):
+        tag = session.scalar(
+            select(Tag).where(
+                Tag.user_id == user_id,
+                Tag.name == tag_name,
+            )
+        )
+
+        if tag is None:
+            tag = Tag(user_id=user_id, name=tag_name)
+
+        tags.append(tag)
+
+    return tags

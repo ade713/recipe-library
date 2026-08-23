@@ -2,8 +2,14 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.models import Base, Recipe, RecipeIngredient, RecipeStep, RecipeTip, Tag, User
-from app.repositories.recipe_repository import create_recipe, get_recipe, list_recipes
-from app.schemas.recipe import RecipeCreate
+from app.repositories.recipe_repository import (
+    create_recipe,
+    delete_recipe,
+    get_recipe,
+    list_recipes,
+    update_recipe,
+)
+from app.schemas.recipe import RecipeCreate, RecipeUpdate
 
 
 def test_create_recipe_saves_nested_records_for_owner() -> None:
@@ -143,3 +149,105 @@ def test_get_recipe_returns_owned_detail_and_hides_other_users_recipe() -> None:
     assert recipe.tips[0].tip == "Finish with basil."
     assert recipe.tags[0].name == "Dinner"
     assert hidden_recipe is None
+
+
+def test_update_recipe_applies_supplied_fields_only_for_owner() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:")
+    Base.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        owner = User(email="owner@example.com", password_hash="owner-hash")
+        other_user = User(email="other@example.com", password_hash="other-hash")
+        recipe = Recipe(
+            user=owner,
+            title="Tomato Soup",
+            description="Original description",
+            ingredients=[RecipeIngredient(position=1, original_text="2 cups tomatoes")],
+            steps=[RecipeStep(position=1, instruction="Simmer the tomatoes.")],
+            tips=[RecipeTip(position=1, tip="Keep this tip.")],
+            tags=[Tag(user=owner, name="Dinner")],
+        )
+        other_recipe = Recipe(user=other_user, title="Secret Cake")
+        other_users_tag = Tag(user=other_user, name="Quick")
+        session.add_all([recipe, other_recipe, other_users_tag])
+        session.commit()
+
+        payload = RecipeUpdate(
+            description=None,
+            ingredients=[{"position": 1, "original_text": "3 cups tomatoes"}],
+            steps=[],
+            tags=["Quick"],
+        )
+
+        updated_recipe = update_recipe(
+            session,
+            user_id=owner.id,
+            recipe_id=recipe.id,
+            payload=payload,
+        )
+        hidden_recipe = update_recipe(
+            session,
+            user_id=owner.id,
+            recipe_id=other_recipe.id,
+            payload=RecipeUpdate(title="Stolen Cake"),
+        )
+        session.commit()
+
+        assert updated_recipe is not None
+        assert updated_recipe.title == "Tomato Soup"
+        assert updated_recipe.description is None
+        assert [item.original_text for item in updated_recipe.ingredients] == [
+            "3 cups tomatoes"
+        ]
+        assert updated_recipe.steps == []
+        assert [tip.tip for tip in updated_recipe.tips] == ["Keep this tip."]
+        assert [tag.name for tag in updated_recipe.tags] == ["Quick"]
+        assert {tag.user_id for tag in updated_recipe.tags} == {owner.id}
+        assert hidden_recipe is None
+        assert other_recipe.title == "Secret Cake"
+
+
+def test_delete_recipe_removes_owned_recipe_children_but_preserves_tags() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:")
+    Base.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        owner = User(email="owner@example.com", password_hash="owner-hash")
+        other_user = User(email="other@example.com", password_hash="other-hash")
+        tag = Tag(user=owner, name="Dinner")
+        recipe = Recipe(
+            user=owner,
+            title="Tomato Soup",
+            ingredients=[RecipeIngredient(position=1, original_text="2 cups tomatoes")],
+            steps=[RecipeStep(position=1, instruction="Simmer the tomatoes.")],
+            tips=[RecipeTip(position=1, tip="Finish with basil.")],
+            tags=[tag],
+        )
+        other_recipe = Recipe(user=other_user, title="Secret Cake")
+        session.add_all([recipe, other_recipe])
+        session.commit()
+
+        recipe_id = recipe.id
+        other_recipe_id = other_recipe.id
+        tag_id = tag.id
+
+        deleted = delete_recipe(
+            session,
+            user_id=owner.id,
+            recipe_id=recipe_id,
+        )
+        hidden_delete = delete_recipe(
+            session,
+            user_id=owner.id,
+            recipe_id=other_recipe_id,
+        )
+        session.commit()
+
+        assert deleted is True
+        assert hidden_delete is False
+        assert session.get(Recipe, recipe_id) is None
+        assert session.get(Recipe, other_recipe_id) is not None
+        assert session.scalar(select(RecipeIngredient)) is None
+        assert session.scalar(select(RecipeStep)) is None
+        assert session.scalar(select(RecipeTip)) is None
+        assert session.get(Tag, tag_id) is not None
