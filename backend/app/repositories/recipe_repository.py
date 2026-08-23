@@ -131,6 +131,22 @@ def update_recipe(
     return recipe
 
 
+def delete_recipe(session: Session, *, user_id: UUID, recipe_id: UUID) -> bool:
+    recipe = get_recipe(
+        session,
+        user_id=user_id,
+        recipe_id=recipe_id,
+    )
+
+    if recipe is None:
+        return False
+
+    session.delete(recipe)
+    session.flush()
+
+    return True
+
+
 def _resolve_tags(session: Session, *, user_id: UUID, tag_names: list[str]) -> list[Tag]:
     tags: list[Tag] = []
 
