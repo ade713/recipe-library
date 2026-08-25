@@ -247,3 +247,29 @@ Next:
 
 - Build notes, tags, and search basics.
 ```
+
+## Recipe Notes CRUD
+
+```md
+## 2026-08-24
+
+Built:
+
+- Added ORM-aware request and response schemas for personal recipe notes.
+- Added repository methods for creating, listing, updating, and deleting user-scoped notes.
+- Added nested FastAPI endpoints under `/api/v1/recipes/{recipe_id}/notes`.
+- Tested empty note validation, owned-recipe behavior, cross-user protection, persisted updates, and deletion responses.
+
+Learned:
+
+- `from_attributes=True` lets a Pydantic response model read SQLAlchemy object attributes before FastAPI serializes the response.
+- Returning `None` for an inaccessible recipe and `[]` for an owned recipe with no notes preserves two different outcomes.
+- `session.flush()` assigns generated values and sends pending SQL while leaving commit control with the route.
+- Reassigning a local variable creates or points to a different object; changing a tracked ORM object's attribute produces an update.
+- Filtering a nested note by `note_id`, `recipe_id`, and `user_id` enforces both route nesting and ownership.
+- Read routes do not need transaction commits, while write routes commit on success and roll back on failure.
+
+Next:
+
+- Build user-scoped tags CRUD.
+```
