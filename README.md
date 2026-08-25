@@ -95,4 +95,4 @@ Explain the Python concepts involved, then help me unskip the tests and implemen
 
 ## Current status
 
-The backend database foundations and initial Alembic migration are complete. User-scoped manual recipe CRUD and nested personal-note CRUD are available through `/api/v1/recipes` using a temporary development user until authentication is implemented.
+The backend database foundations and initial Alembic migration are complete. User-scoped manual recipe CRUD, nested personal-note CRUD, and tag management are available through `/api/v1` using a temporary development user until authentication is implemented.
