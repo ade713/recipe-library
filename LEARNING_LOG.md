@@ -273,3 +273,30 @@ Next:
 
 - Build user-scoped tags CRUD.
 ```
+
+## Tags CRUD
+
+```md
+## 2026-08-25
+
+Built:
+
+- Added ORM-aware tag response and list schemas.
+- Added repository methods and FastAPI endpoints for user-scoped tag creation, listing, updates, and deletion.
+- Enforced exact tag-name uniqueness per user while allowing different users to reuse the same name.
+- Preserved recipes when deleting tags by removing only their many-to-many associations.
+- Added tests for ownership, duplicate conflicts, deterministic listing, recipe preservation, and HTTP responses.
+
+Learned:
+
+- A SQLAlchemy `Select` object describes a query; the session must execute it before code can determine whether a row exists.
+- A conflict lookup must exclude the tag being updated so an unchanged name remains valid.
+- `409 Conflict` represents a request that conflicts with current resource state, while `404` hides missing and unauthorized tags alike.
+- Specific exceptions must be caught before broad `Exception` handling.
+- FastAPI treats unbound typed route parameters as client input, so ownership scope must come from server-side authentication or the temporary user helper.
+- Deleting a many-to-many tag removes association rows without deleting recipes.
+
+Next:
+
+- Add user-scoped recipe search and filters.
+```

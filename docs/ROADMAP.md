@@ -51,7 +51,7 @@ Status: Complete
 Status: In progress
 
 - [x] Notes CRUD
-- [ ] Tags CRUD
+- [x] Tags CRUD
 - [ ] Search and filters
 
 ## Phase 7: Auth and ownership
