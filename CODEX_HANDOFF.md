@@ -743,7 +743,17 @@ Build:
 - Protected routes
 - User ownership checks
 
-### Stage 7: Import pipeline
+### Stage 7: Search/filter
+
+Build:
+
+- Title search
+- Ingredient search
+- Tag filter
+- Favorite filter
+- Sort options
+
+### Stage 8: Import pipeline
 
 Build:
 
@@ -754,16 +764,6 @@ Build:
 - Save import logs
 - Return warnings when partial
 - Return manual-entry fallback when failed/blocked
-
-### Stage 8: Search/filter
-
-Build:
-
-- Title search
-- Ingredient search
-- Tag filter
-- Favorite filter
-- Sort options
 
 ### Stage 9: Mobile app
 
@@ -891,12 +891,11 @@ Steps:
 
 1. Add notes endpoints.
 2. Add tag endpoints.
-3. Add tag filtering.
 
 Done when:
 
 - User can add notes to a recipe.
-- User can filter recipes by tag.
+- User can create, rename, and delete tags without deleting recipes.
 
 ### Phase 8: Auth and ownership checks
 
@@ -913,7 +912,21 @@ Done when:
 
 - Users can only see their own recipes, notes, tags, and imports.
 
-### Phase 9: Safe import preview
+### Phase 9: Search/filter
+
+Steps:
+
+1. Search by title.
+2. Search by ingredient.
+3. Filter by favorite.
+4. Filter by tag.
+5. Filter by max total time.
+
+Done when:
+
+- Recipe list supports the MVP query params.
+
+### Phase 10: Safe import preview
 
 Steps:
 
@@ -933,7 +946,7 @@ Done when:
 - Failed/blocked imports are handled clearly.
 - No unsafe URL target is fetched.
 
-### Phase 10: Save imported recipe
+### Phase 11: Save imported recipe
 
 Steps:
 
@@ -946,20 +959,6 @@ Done when:
 
 - Imported recipe appears in saved recipe library.
 - Saved result reflects the user's edited draft, not unreviewed scrape output.
-
-### Phase 11: Search/filter
-
-Steps:
-
-1. Search by title.
-2. Search by ingredient.
-3. Filter by favorite.
-4. Filter by tag.
-5. Filter by max total time.
-
-Done when:
-
-- Recipe list supports the MVP query params.
 
 ### Phase 12: Mobile MVP
 

@@ -32,9 +32,10 @@ Codex explains, writes tests/skeletons, gives hints, reviews, and debugs.
 6. Simple FastAPI endpoint
 7. SQLAlchemy model
 8. Manual recipe CRUD
-9. Notes/tags/search basics
+9. Notes and tags basics
 10. Auth dependency and ownership checks
-11. Safe import preview service
+11. Recipe search and filters
+12. Safe import preview service
 
 ## Why manual recipes come before scraping
 
