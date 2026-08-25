@@ -113,13 +113,13 @@ def delete_recipe(
 ) -> None:
     try:
         user = get_or_create_dev_user(session)
-        recipe_deleted = delete_recipe_record(
+        is_recipe_deleted = delete_recipe_record(
             session,
             user_id=user.id,
             recipe_id=recipe_id,
         )
 
-        if not recipe_deleted:
+        if not is_recipe_deleted:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Recipe not found.",

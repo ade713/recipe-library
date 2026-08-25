@@ -48,9 +48,11 @@ Status: Complete
 
 ## Phase 6: Notes/tags/search basics
 
-- Notes CRUD
-- Tags CRUD
-- Search and filters
+Status: In progress
+
+- [x] Notes CRUD
+- [ ] Tags CRUD
+- [ ] Search and filters
 
 ## Phase 7: Auth and ownership
 
