@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class TagCreate(BaseModel):
@@ -12,5 +12,11 @@ class TagUpdate(BaseModel):
 
 
 class TagResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     name: str
+
+
+class TagListResponse(BaseModel):
+    items: list[TagResponse]
