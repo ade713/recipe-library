@@ -1,13 +1,13 @@
-"""Security helpers.
+"""Security helpers."""
 
-TODO: Implement password hashing and token creation during the auth phase.
-Start simple and ask Codex to explain each concept before implementation.
-"""
+from pwdlib import PasswordHash
+
+password_hasher = PasswordHash.recommended()
 
 
 def hash_password(password: str) -> str:
-    raise NotImplementedError("Implement during the auth phase.")
+    return password_hasher.hash(password)
 
 
-def verify_password(plain_password: str, password_hash: str) -> bool:
-    raise NotImplementedError("Implement during the auth phase.")
+def verify_password(plain_password: str, stored_password_hash: str) -> bool:
+    return password_hasher.verify(plain_password, stored_password_hash)

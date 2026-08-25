@@ -15,7 +15,7 @@ dependencies = [
   "alembic",
   "psycopg[binary]",
   "python-jose[cryptography]",
-  "passlib[bcrypt]",
+  "pwdlib[argon2]",
   "httpx",
   "recipe-scrapers",
   "beautifulsoup4",
