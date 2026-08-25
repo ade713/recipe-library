@@ -6,8 +6,11 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models import Tag
+from app.repositories.tag_repository import TagNameConflictError
 from app.repositories.tag_repository import create_tag as create_tag_record
+from app.repositories.tag_repository import delete_tag as delete_tag_record
 from app.repositories.tag_repository import list_tags as list_tag_records
+from app.repositories.tag_repository import update_tag as update_tag_record
 from app.repositories.user_repository import get_or_create_dev_user
 from app.schemas.tag import TagCreate, TagListResponse, TagResponse, TagUpdate
 
@@ -55,11 +58,61 @@ def create_tag(
         raise
 
 
-@router.patch("/{tag_id}", status_code=status.HTTP_501_NOT_IMPLEMENTED)
-def update_tag(tag_id: UUID, payload: TagUpdate) -> None:
-    raise HTTPException(status_code=501, detail="Updating tags is not implemented yet.")
+@router.patch("/{tag_id}", response_model=TagResponse)
+def update_tag(
+    tag_id: UUID,
+    payload: TagUpdate,
+    session: Annotated[Session, Depends(get_db)],
+) -> Tag:
+    try:
+        user = get_or_create_dev_user(session)
+        tag = update_tag_record(
+            session,
+            user_id=user.id,
+            tag_id=tag_id,
+            payload=payload,
+        )
+
+        if tag is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Tag not found.",
+            )
+
+        session.commit()
+        session.refresh(tag)
+        return tag
+    except TagNameConflictError as error:
+        session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Tag already exists.",
+        ) from error
+    except Exception:
+        session.rollback()
+        raise
 
 
-@router.delete("/{tag_id}", status_code=status.HTTP_501_NOT_IMPLEMENTED)
-def delete_tag(tag_id: UUID) -> None:
-    raise HTTPException(status_code=501, detail="Deleting tags is not implemented yet.")
+@router.delete("/{tag_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_tag(
+    tag_id: UUID,
+    session: Annotated[Session, Depends(get_db)],
+) -> None:
+    try:
+        user = get_or_create_dev_user(session)
+        is_tag_deleted = delete_tag_record(
+            session,
+            tag_id=tag_id,
+            user_id=user.id,
+        )
+
+        if not is_tag_deleted:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Tag not found.",
+            )
+
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
