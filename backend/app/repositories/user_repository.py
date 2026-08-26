@@ -50,3 +50,15 @@ def create_user(
     session.add(user)
     session.flush()
     return user
+
+
+def get_user_by_email(
+    session: Session,
+    *,
+    email: str,
+) -> User | None:
+    normalized_email = email.strip().lower()
+
+    return session.scalar(
+        select(User).where(User.email == normalized_email)
+    )
