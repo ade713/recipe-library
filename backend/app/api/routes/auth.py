@@ -5,9 +5,16 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.security import create_access_token
 from app.models import User
 from app.repositories.user_repository import create_user as create_user_record
-from app.schemas.auth import LoginRequest, RegisterRequest, UserResponse
+from app.schemas.auth import (
+    LoginRequest,
+    RegisterRequest,
+    TokenResponse,
+    UserResponse,
+)
+from app.services.authentication import authenticate_user
 
 router = APIRouter()
 
@@ -47,9 +54,23 @@ def register_user(
         raise
 
 
-@router.post("/login", status_code=status.HTTP_501_NOT_IMPLEMENTED)
-def login(payload: LoginRequest) -> None:
-    raise HTTPException(status_code=501, detail="Auth login is not implemented yet.")
+@router.post("/login", response_model=TokenResponse)
+def login(
+    payload: LoginRequest,
+    session: Annotated[Session, Depends(get_db)],
+) -> TokenResponse:
+    user = authenticate_user(session, payload=payload)
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    access_token = create_access_token(str(user.id))
+
+    return TokenResponse(access_token=access_token)
 
 
 @router.post("/logout", status_code=status.HTTP_501_NOT_IMPLEMENTED)
