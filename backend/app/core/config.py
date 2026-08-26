@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     app_name: str = "Recipe Library API"
     environment: str = "development"
     database_url: str = "postgresql+psycopg://recipe_library:recipe_library_dev_password@localhost:5433/recipe_library"
-    secret_key: str = "change-me-in-real-development"
+    secret_key: str = "development-only-secret-key-change-me"
     access_token_expire_minutes: int = 60
     cors_origins: list[str] = Field(
         default_factory=lambda: ["http://localhost:19006", "http://localhost:3000"]
