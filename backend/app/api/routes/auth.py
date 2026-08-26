@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.api.dependencies import get_current_user as get_session_current_user
 from app.core.database import get_db
 from app.core.security import create_access_token
 from app.models import User
@@ -78,6 +79,8 @@ def logout() -> None:
     raise HTTPException(status_code=501, detail="Auth logout is not implemented yet.")
 
 
-@router.get("/me", status_code=status.HTTP_501_NOT_IMPLEMENTED)
-def get_me() -> None:
-    raise HTTPException(status_code=501, detail="Current user endpoint is not implemented yet.")
+@router.get("/me", response_model=UserResponse)
+def get_me(
+    current_user: Annotated[User, Depends(get_session_current_user)]
+) -> User:
+    return current_user

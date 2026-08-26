@@ -3,6 +3,8 @@
 The temporary development-user helper will be replaced during the authentication phase.
 """
 
+from uuid import UUID
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -62,3 +64,11 @@ def get_user_by_email(
     return session.scalar(
         select(User).where(User.email == normalized_email)
     )
+
+
+def get_user_by_id(
+    session: Session,
+    *,
+    user_id: UUID,
+) -> User | None:
+    return session.get(User, user_id)
