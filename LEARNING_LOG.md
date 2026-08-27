@@ -300,3 +300,39 @@ Next:
 
 - Add user-scoped recipe search and filters.
 ```
+
+## Authentication and Protected User Data
+
+```md
+## 2026-08-27
+
+Built:
+
+- Added Argon2 password hashing and verification with `pwdlib`.
+- Added safe registration request and response schemas that never expose password hashes.
+- Added normalized-email registration with duplicate protection and transaction handling.
+- Added login authentication with uniform credential errors and JWT access-token creation.
+- Added a reusable FastAPI bearer-token dependency that decodes the token, validates its subject, and loads the current user.
+- Added authenticated `/auth/me` and stateless `/auth/logout` endpoints.
+- Replaced the temporary development user across recipe, note, and tag routes with the authenticated user.
+- Removed the obsolete development-user helper and updated current-state documentation.
+- Added tests for password security, registration, login, JWT validation, current-user lookup, logout, and authenticated ownership boundaries.
+
+Learned:
+
+- Password hashes are one-way verification values rather than encrypted passwords, and unique salts mean matching passwords can produce different hashes.
+- Passwords must not be silently truncated because different inputs could then authenticate as the same password.
+- Normalizing emails before lookup and creation prevents case and whitespace variations from bypassing duplicate checks.
+- A dummy password-hash verification reduces timing differences between unknown-email and wrong-password login attempts.
+- A JWT contains signed claims; the `sub` claim identifies the user, while the allowed algorithm must be explicitly constrained during decoding.
+- `Depends(oauth2_scheme)` extracts the bearer token from the request, while the scheme name is only descriptive metadata.
+- Authentication establishes who made the request, while repository query filters enforce which records that user may access.
+- Client-supplied user IDs cannot be trusted for authorization; routes pass the token-derived `current_user.id` to repositories.
+- Returning the same `401` for malformed, expired, and unknown-user tokens limits unnecessary authentication details.
+- Returning `404` for another user's resource avoids revealing whether that resource exists outside the authenticated scope.
+- Stateless logout validates the access token and returns `204`, but the client must delete the token because the server does not maintain a revocation list.
+
+Next:
+
+- Open the authentication pull request, then build user-scoped recipe search and filters in a smaller feature branch.
+```
