@@ -1,6 +1,4 @@
 """Database access for users.
-
-The temporary development-user helper will be replaced during the authentication phase.
 """
 
 from uuid import UUID
@@ -11,24 +9,6 @@ from sqlalchemy.orm import Session
 from app.core.security import hash_password
 from app.models import User
 from app.schemas.auth import RegisterRequest
-
-DEV_USER_EMAIL = "dev@recipe-library.local"
-
-
-def get_or_create_dev_user(session: Session) -> User:
-    user = session.scalar(select(User).where(User.email == DEV_USER_EMAIL))
-
-    if user is not None:
-        return user
-
-    user = User(
-        email=DEV_USER_EMAIL,
-        password_hash="development-only-not-a-real-hash",
-    )
-    session.add(user)
-    session.flush()
-
-    return user
 
 
 def create_user(
