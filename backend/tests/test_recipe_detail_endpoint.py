@@ -6,9 +6,9 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.core.database import get_db
+from app.core.security import create_access_token
 from app.main import create_app
 from app.models import Base, Recipe, RecipeIngredient, RecipeStep, RecipeTip, Tag, User
-from app.repositories.user_repository import DEV_USER_EMAIL
 
 
 def test_recipe_detail_endpoint_returns_owned_recipe_and_hides_other_users() -> None:
@@ -21,20 +21,21 @@ def test_recipe_detail_endpoint_returns_owned_recipe_and_hides_other_users() -> 
     testing_session = sessionmaker(bind=engine, autoflush=False)
 
     with testing_session() as session:
-        dev_user = User(email=DEV_USER_EMAIL, password_hash="dev-hash")
+        current_user = User(email="current@example.com", password_hash="test-hash")
         other_user = User(email="other@example.com", password_hash="other-hash")
-        dev_recipe = Recipe(
-            user=dev_user,
+        current_user_recipe = Recipe(
+            user=current_user,
             title="Tomato Soup",
             ingredients=[RecipeIngredient(position=1, original_text="2 cups tomatoes")],
             steps=[RecipeStep(position=1, instruction="Simmer the tomatoes.")],
             tips=[RecipeTip(position=1, tip="Finish with basil.")],
-            tags=[Tag(user=dev_user, name="Dinner")],
+            tags=[Tag(user=current_user, name="Dinner")],
         )
         other_recipe = Recipe(user=other_user, title="Secret Cake")
-        session.add_all([dev_recipe, other_recipe])
+        session.add_all([current_user_recipe, other_recipe])
         session.commit()
-        dev_recipe_id = dev_recipe.id
+        current_user_id = current_user.id
+        current_user_recipe_id = current_user_recipe.id
         other_recipe_id = other_recipe.id
 
     def override_get_db() -> Generator[Session, None, None]:
@@ -43,17 +44,25 @@ def test_recipe_detail_endpoint_returns_owned_recipe_and_hides_other_users() -> 
 
     app = create_app()
     app.dependency_overrides[get_db] = override_get_db
+    access_token = create_access_token(str(current_user_id))
+    headers = {"Authorization": f"Bearer {access_token}"}
 
     try:
         with TestClient(app) as client:
-            detail_response = client.get(f"/api/v1/recipes/{dev_recipe_id}")
-            hidden_response = client.get(f"/api/v1/recipes/{other_recipe_id}")
+            detail_response = client.get(
+                f"/api/v1/recipes/{current_user_recipe_id}",
+                headers=headers,
+            )
+            hidden_response = client.get(
+                f"/api/v1/recipes/{other_recipe_id}",
+                headers=headers,
+            )
     finally:
         app.dependency_overrides.clear()
 
     assert detail_response.status_code == 200
     detail = detail_response.json()
-    assert detail["id"] == str(dev_recipe_id)
+    assert detail["id"] == str(current_user_recipe_id)
     assert detail["title"] == "Tomato Soup"
     assert detail["ingredients"][0]["original_text"] == "2 cups tomatoes"
     assert detail["steps"][0]["instruction"] == "Simmer the tomatoes."

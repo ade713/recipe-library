@@ -6,12 +6,12 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.core.database import get_db
+from app.core.security import create_access_token
 from app.main import create_app
 from app.models import Base, Recipe, Tag, User
-from app.repositories.user_repository import DEV_USER_EMAIL
 
 
-def test_list_recipes_endpoint_returns_only_dev_users_recipes() -> None:
+def test_list_recipes_endpoint_returns_only_current_users_recipes() -> None:
     engine = create_engine(
         "sqlite+pysqlite:///:memory:",
         connect_args={"check_same_thread": False},
@@ -21,18 +21,19 @@ def test_list_recipes_endpoint_returns_only_dev_users_recipes() -> None:
     testing_session = sessionmaker(bind=engine, autoflush=False)
 
     with testing_session() as session:
-        dev_user = User(email=DEV_USER_EMAIL, password_hash="dev-hash")
+        current_user = User(email="current@example.com", password_hash="test-hash")
         other_user = User(email="other@example.com", password_hash="other-hash")
-        dev_recipe = Recipe(
-            user=dev_user,
+        current_user_recipe = Recipe(
+            user=current_user,
             title="Tomato Soup",
             is_favorite=True,
-            tags=[Tag(user=dev_user, name="Dinner")],
+            tags=[Tag(user=current_user, name="Dinner")],
         )
         other_recipe = Recipe(user=other_user, title="Secret Cake")
-        session.add_all([dev_recipe, other_recipe])
+        session.add_all([current_user_recipe, other_recipe])
         session.commit()
-        dev_recipe_id = dev_recipe.id
+        current_user_id = current_user.id
+        current_user_recipe_id = current_user_recipe.id
 
     def override_get_db() -> Generator[Session, None, None]:
         with testing_session() as session:
@@ -40,10 +41,12 @@ def test_list_recipes_endpoint_returns_only_dev_users_recipes() -> None:
 
     app = create_app()
     app.dependency_overrides[get_db] = override_get_db
+    access_token = create_access_token(str(current_user_id))
+    headers = {"Authorization": f"Bearer {access_token}"}
 
     try:
         with TestClient(app) as client:
-            response = client.get("/api/v1/recipes")
+            response = client.get("/api/v1/recipes", headers=headers)
     finally:
         app.dependency_overrides.clear()
 
@@ -51,7 +54,7 @@ def test_list_recipes_endpoint_returns_only_dev_users_recipes() -> None:
     assert response.json() == {
         "items": [
             {
-                "id": str(dev_recipe_id),
+                "id": str(current_user_recipe_id),
                 "title": "Tomato Soup",
                 "image_url": None,
                 "total_time_minutes": None,

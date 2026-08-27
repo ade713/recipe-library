@@ -1,5 +1,4 @@
 from collections.abc import Generator
-from types import SimpleNamespace
 from unittest.mock import Mock
 from uuid import uuid4
 
@@ -11,6 +10,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.api.routes import recipes as recipe_routes
 from app.core.database import get_db
+from app.core.security import create_access_token
 from app.main import create_app
 from app.models import Base, Recipe, User
 from app.schemas.recipe import RecipeCreate
@@ -25,17 +25,29 @@ def test_create_recipe_endpoint_saves_and_returns_recipe() -> None:
     Base.metadata.create_all(engine)
     testing_session = sessionmaker(bind=engine, autoflush=False)
 
+    with testing_session() as session:
+        current_user = User(
+            email="current@example.com",
+            password_hash="test-hash",
+        )
+        session.add(current_user)
+        session.commit()
+        current_user_id = current_user.id
+
     def override_get_db() -> Generator[Session, None, None]:
         with testing_session() as session:
             yield session
 
     app = create_app()
     app.dependency_overrides[get_db] = override_get_db
+    access_token = create_access_token(str(current_user_id))
+    headers = {"Authorization": f"Bearer {access_token}"}
 
     try:
         with TestClient(app) as client:
             response = client.post(
                 "/api/v1/recipes",
+                headers=headers,
                 json={
                     "title": "Tomato Soup",
                     "ingredients": [{"position": 1, "original_text": "2 cups tomatoes"}],
@@ -70,17 +82,29 @@ def test_create_recipe_endpoint_rejects_invalid_payload_before_db_work() -> None
     Base.metadata.create_all(engine)
     testing_session = sessionmaker(bind=engine, autoflush=False)
 
+    with testing_session() as session:
+        current_user = User(
+            email="current@example.com",
+            password_hash="test-hash",
+        )
+        session.add(current_user)
+        session.commit()
+        current_user_id = current_user.id
+
     def override_get_db() -> Generator[Session, None, None]:
         with testing_session() as session:
             yield session
 
     app = create_app()
     app.dependency_overrides[get_db] = override_get_db
+    access_token = create_access_token(str(current_user_id))
+    headers = {"Authorization": f"Bearer {access_token}"}
 
     try:
         with TestClient(app) as client:
             response = client.post(
                 "/api/v1/recipes",
+                headers=headers,
                 json={"title": ""},
             )
     finally:
@@ -93,19 +117,17 @@ def test_create_recipe_endpoint_rejects_invalid_payload_before_db_work() -> None
         user_count = session.scalar(select(func.count()).select_from(User))
 
         assert recipe_count == 0
-        assert user_count == 0
+        assert user_count == 1
 
 
 def test_create_recipe_endpoint_rolls_back_when_repository_fails(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     session = Mock(spec=Session)
-    user = SimpleNamespace(id=uuid4())
-
-    monkeypatch.setattr(
-        recipe_routes,
-        "get_or_create_dev_user",
-        lambda _session: user,
+    user = User(
+        id=uuid4(),
+        email="current@example.com",
+        password_hash="test-hash",
     )
 
     def fail_to_create_recipe(*_args: object, **_kwargs: object) -> None:
@@ -119,6 +141,7 @@ def test_create_recipe_endpoint_rolls_back_when_repository_fails(
 
     with pytest.raises(RuntimeError, match="database write failed"):
         recipe_routes.create_recipe(
+            current_user=user,
             payload=RecipeCreate(title="Tomato Soup"),
             session=session,
         )

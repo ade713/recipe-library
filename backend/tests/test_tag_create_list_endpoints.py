@@ -6,9 +6,9 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.core.database import get_db
+from app.core.security import create_access_token
 from app.main import create_app
 from app.models import Base, Tag, User
-from app.repositories.user_repository import DEV_USER_EMAIL
 
 
 def test_tag_create_and_list_endpoints_are_scoped_to_current_user() -> None:
@@ -21,9 +21,9 @@ def test_tag_create_and_list_endpoints_are_scoped_to_current_user() -> None:
     testing_session = sessionmaker(bind=engine, autoflush=False)
 
     with testing_session() as session:
-        user = User(
-            email=DEV_USER_EMAIL,
-            password_hash="dev-password-hash",
+        current_user = User(
+            email="current@example.com",
+            password_hash="test-hash",
             tags=[Tag(name="Dinner")],
         )
         other_user = User(
@@ -31,8 +31,9 @@ def test_tag_create_and_list_endpoints_are_scoped_to_current_user() -> None:
             password_hash="other-password-hash",
             tags=[Tag(name="Quick")],
         )
-        session.add_all([user, other_user])
+        session.add_all([current_user, other_user])
         session.commit()
+        current_user_id = current_user.id
 
     def override_get_db() -> Generator[Session, None, None]:
         with testing_session() as session:
@@ -40,18 +41,25 @@ def test_tag_create_and_list_endpoints_are_scoped_to_current_user() -> None:
 
     app = create_app()
     app.dependency_overrides[get_db] = override_get_db
+    access_token = create_access_token(str(current_user_id))
+    headers = {"Authorization": f"Bearer {access_token}"}
 
     try:
         with TestClient(app) as client:
             create_response = client.post(
                 "/api/v1/tags",
+                headers=headers,
                 json={"name": "Quick"},
             )
             duplicate_response = client.post(
                 "/api/v1/tags",
+                headers=headers,
                 json={"name": "Dinner"},
             )
-            list_response = client.get("/api/v1/tags")
+            list_response = client.get(
+                "/api/v1/tags",
+                headers=headers,
+            )
     finally:
         app.dependency_overrides.clear()
 
@@ -68,7 +76,7 @@ def test_tag_create_and_list_endpoints_are_scoped_to_current_user() -> None:
     with testing_session() as session:
         tags = list(
             session.scalars(
-                select(Tag).join(User).where(User.email == DEV_USER_EMAIL)
+                select(Tag).join(User).where(User.email == "current@example.com")
             )
         )
         assert {tag.name for tag in tags} == {"Dinner", "Quick"}

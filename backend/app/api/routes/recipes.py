@@ -4,14 +4,14 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.api.dependencies import get_current_user
 from app.core.database import get_db
-from app.models import Recipe
+from app.models import Recipe, User
 from app.repositories.recipe_repository import create_recipe as create_recipe_record
 from app.repositories.recipe_repository import delete_recipe as delete_recipe_record
 from app.repositories.recipe_repository import get_recipe as get_recipe_record
 from app.repositories.recipe_repository import list_recipes as list_recipe_records
 from app.repositories.recipe_repository import update_recipe as update_recipe_record
-from app.repositories.user_repository import get_or_create_dev_user
 from app.schemas.recipe import (
     RecipeCreate,
     RecipeListResponse,
@@ -24,10 +24,10 @@ router = APIRouter()
 
 @router.get("")
 def list_recipes(
+    current_user: Annotated[User, Depends(get_current_user)],
     session: Annotated[Session, Depends(get_db)],
 ) -> RecipeListResponse:
-    user = get_or_create_dev_user(session)
-    recipes = list_recipe_records(session, user_id=user.id)
+    recipes = list_recipe_records(session, user_id=current_user.id)
 
     return RecipeListResponse.model_validate({"items": recipes})
 
@@ -38,14 +38,14 @@ def list_recipes(
     status_code=status.HTTP_201_CREATED,
 )
 def create_recipe(
+    current_user: Annotated[User, Depends(get_current_user)],
     payload: RecipeCreate,
     session: Annotated[Session, Depends(get_db)],
 ) -> Recipe:
     try:
-        user = get_or_create_dev_user(session)
         recipe = create_recipe_record(
             session,
-            user_id=user.id,
+            user_id=current_user.id,
             payload=payload,
         )
         session.commit()
@@ -58,13 +58,13 @@ def create_recipe(
 
 @router.get("/{recipe_id}", response_model=RecipeRead)
 def get_recipe(
+    current_user: Annotated[User, Depends(get_current_user)],
     recipe_id: UUID,
     session: Annotated[Session, Depends(get_db)],
 ) -> Recipe:
-    user = get_or_create_dev_user(session)
     recipe = get_recipe_record(
         session,
-        user_id=user.id,
+        user_id=current_user.id,
         recipe_id=recipe_id,
     )
 
@@ -79,15 +79,15 @@ def get_recipe(
 
 @router.patch("/{recipe_id}", response_model=RecipeRead)
 def update_recipe(
+    current_user: Annotated[User, Depends(get_current_user)],
     payload: RecipeUpdate,
     recipe_id: UUID,
     session: Annotated[Session, Depends(get_db)],
 ) -> Recipe:
     try:
-        user = get_or_create_dev_user(session)
         recipe = update_recipe_record(
             session,
-            user_id=user.id,
+            user_id=current_user.id,
             recipe_id=recipe_id,
             payload=payload,
         )
@@ -108,14 +108,14 @@ def update_recipe(
 
 @router.delete("/{recipe_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_recipe(
+    current_user: Annotated[User, Depends(get_current_user)],
     recipe_id: UUID,
     session: Annotated[Session, Depends(get_db)],
 ) -> None:
     try:
-        user = get_or_create_dev_user(session)
         is_recipe_deleted = delete_recipe_record(
             session,
-            user_id=user.id,
+            user_id=current_user.id,
             recipe_id=recipe_id,
         )
 

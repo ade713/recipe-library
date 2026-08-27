@@ -46,22 +46,31 @@ Status: Complete
 - [x] Delete recipe
 - [x] Manual entry as fallback path for failed imports
 
-## Phase 6: Notes/tags/search basics
+## Phase 6: Notes and tags basics
 
-Status: In progress
+Status: Complete
 
 - [x] Notes CRUD
 - [x] Tags CRUD
-- [ ] Search and filters
 
 ## Phase 7: Auth and ownership
 
-- Register/login
-- Current user dependency
-- Protected routes
-- Ownership checks for recipes, notes, tags, and imports
+Status: In progress
 
-## Phase 8: Safe recipe import
+- [ ] Register/login
+- [ ] Current user dependency
+- [ ] Protected routes
+- [ ] Ownership checks for recipes, notes, tags, and imports
+
+## Phase 8: Search and filters
+
+- Title and ingredient search
+- Tag filter
+- Favorite filter
+- Maximum total-time filter
+- Sort options
+
+## Phase 9: Safe recipe import
 
 - Preview endpoint
 - Duplicate URL check
@@ -71,13 +80,13 @@ Status: In progress
 - Save import logs
 - Failed/blocked/manual-entry fallback behavior
 
-## Phase 9: Save imported recipes
+## Phase 10: Save imported recipes
 
 - Save edited import draft
 - Preserve source URL/domain
 - Link import log to saved recipe
 
-## Phase 10: Mobile MVP
+## Phase 11: Mobile MVP
 
 - Expo setup
 - Library screen
@@ -87,7 +96,7 @@ Status: In progress
 - Recipe detail screen
 - Notes UI
 
-## Phase 11: Portfolio polish
+## Phase 12: Portfolio polish
 
 - Screenshots
 - README demo flow

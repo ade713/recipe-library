@@ -6,9 +6,9 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.core.database import get_db
+from app.core.security import create_access_token
 from app.main import create_app
 from app.models import Base, Recipe, RecipeIngredient, RecipeTip, User
-from app.repositories.user_repository import DEV_USER_EMAIL
 
 
 def test_update_recipe_endpoint_applies_only_supplied_fields() -> None:
@@ -21,9 +21,12 @@ def test_update_recipe_endpoint_applies_only_supplied_fields() -> None:
     testing_session = sessionmaker(bind=engine, autoflush=False)
 
     with testing_session() as session:
-        user = User(email=DEV_USER_EMAIL, password_hash="dev-password-hash")
+        current_user = User(
+            email="current@example.com",
+            password_hash="test-hash",
+        )
         recipe = Recipe(
-            user=user,
+            user=current_user,
             title="Tomato Soup",
             description="Original description",
             ingredients=[
@@ -31,9 +34,10 @@ def test_update_recipe_endpoint_applies_only_supplied_fields() -> None:
             ],
             tips=[RecipeTip(position=1, tip="Keep this tip.")],
         )
-        session.add(recipe)
+        session.add_all([current_user, recipe])
         session.commit()
         recipe_id = recipe.id
+        current_user_id = current_user.id
 
     def override_get_db() -> Generator[Session, None, None]:
         with testing_session() as session:
@@ -41,11 +45,14 @@ def test_update_recipe_endpoint_applies_only_supplied_fields() -> None:
 
     app = create_app()
     app.dependency_overrides[get_db] = override_get_db
+    access_token = create_access_token(str(current_user_id))
+    headers = {"Authorization": f"Bearer {access_token}"}
 
     try:
         with TestClient(app) as client:
             response = client.patch(
                 f"/api/v1/recipes/{recipe_id}",
+                headers=headers,
                 json={
                     "description": None,
                     "ingredients": [
@@ -79,12 +86,16 @@ def test_update_recipe_endpoint_hides_another_users_recipe() -> None:
     testing_session = sessionmaker(bind=engine, autoflush=False)
 
     with testing_session() as session:
-        session.add(User(email=DEV_USER_EMAIL, password_hash="dev-password-hash"))
+        current_user = User(
+            email="current@example.com",
+            password_hash="test-hash",
+        )
         other_user = User(email="other@example.com", password_hash="other-password-hash")
         other_recipe = Recipe(user=other_user, title="Secret Cake")
-        session.add(other_recipe)
+        session.add_all([current_user, other_recipe])
         session.commit()
         other_recipe_id = other_recipe.id
+        current_user_id = current_user.id
 
     def override_get_db() -> Generator[Session, None, None]:
         with testing_session() as session:
@@ -92,11 +103,14 @@ def test_update_recipe_endpoint_hides_another_users_recipe() -> None:
 
     app = create_app()
     app.dependency_overrides[get_db] = override_get_db
+    access_token = create_access_token(str(current_user_id))
+    headers = {"Authorization": f"Bearer {access_token}"}
 
     try:
         with TestClient(app) as client:
             response = client.patch(
                 f"/api/v1/recipes/{other_recipe_id}",
+                headers=headers,
                 json={"title": "Stolen Cake"},
             )
     finally:

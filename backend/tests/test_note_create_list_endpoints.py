@@ -6,9 +6,9 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.core.database import get_db
+from app.core.security import create_access_token
 from app.main import create_app
 from app.models import Base, Recipe, RecipeNote, User
-from app.repositories.user_repository import DEV_USER_EMAIL
 
 
 def test_note_create_and_list_endpoints_use_owned_recipe() -> None:
@@ -21,14 +21,15 @@ def test_note_create_and_list_endpoints_use_owned_recipe() -> None:
     testing_session = sessionmaker(bind=engine, autoflush=False)
 
     with testing_session() as session:
-        user = User(email=DEV_USER_EMAIL, password_hash="dev-password-hash")
+        current_user = User(email="current@example.com", password_hash="test-hash")
         recipe = Recipe(
-            user=user,
+            user=current_user,
             title="Tomato Soup",
-            notes=[RecipeNote(user=user, note="Use less salt.")],
+            notes=[RecipeNote(user=current_user, note="Use less salt.")],
         )
-        session.add(recipe)
+        session.add_all([current_user, recipe])
         session.commit()
+        current_user_id = current_user.id
         recipe_id = recipe.id
 
     def override_get_db() -> Generator[Session, None, None]:
@@ -37,14 +38,20 @@ def test_note_create_and_list_endpoints_use_owned_recipe() -> None:
 
     app = create_app()
     app.dependency_overrides[get_db] = override_get_db
+    access_token = create_access_token(str(current_user_id))
+    headers = {"Authorization": f"Bearer {access_token}"}
 
     try:
         with TestClient(app) as client:
             create_response = client.post(
                 f"/api/v1/recipes/{recipe_id}/notes",
+                headers=headers,
                 json={"note": "Add more basil."},
             )
-            list_response = client.get(f"/api/v1/recipes/{recipe_id}/notes")
+            list_response = client.get(
+                f"/api/v1/recipes/{recipe_id}/notes",
+                headers=headers,
+            )
     finally:
         app.dependency_overrides.clear()
 
@@ -78,11 +85,13 @@ def test_note_create_and_list_endpoints_hide_another_users_recipe() -> None:
     testing_session = sessionmaker(bind=engine, autoflush=False)
 
     with testing_session() as session:
-        session.add(User(email=DEV_USER_EMAIL, password_hash="dev-password-hash"))
+        current_user = User(email="current@example.com", password_hash="test-hash")
+        session.add(current_user)
         other_user = User(email="other@example.com", password_hash="other-password-hash")
         other_recipe = Recipe(user=other_user, title="Secret Cake")
         session.add(other_recipe)
         session.commit()
+        current_user_id = current_user.id
         other_recipe_id = other_recipe.id
 
     def override_get_db() -> Generator[Session, None, None]:
@@ -91,15 +100,19 @@ def test_note_create_and_list_endpoints_hide_another_users_recipe() -> None:
 
     app = create_app()
     app.dependency_overrides[get_db] = override_get_db
+    access_token = create_access_token(str(current_user_id))
+    headers = {"Authorization": f"Bearer {access_token}"}
 
     try:
         with TestClient(app) as client:
             create_response = client.post(
                 f"/api/v1/recipes/{other_recipe_id}/notes",
+                headers=headers,
                 json={"note": "This must not be saved."},
             )
             list_response = client.get(
-                f"/api/v1/recipes/{other_recipe_id}/notes"
+                f"/api/v1/recipes/{other_recipe_id}/notes",
+                headers=headers,
             )
     finally:
         app.dependency_overrides.clear()

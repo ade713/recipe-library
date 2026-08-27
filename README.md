@@ -95,4 +95,4 @@ Explain the Python concepts involved, then help me unskip the tests and implemen
 
 ## Current status
 
-The backend database foundations and initial Alembic migration are complete. User-scoped manual recipe CRUD, nested personal-note CRUD, and tag management are available through `/api/v1` using a temporary development user until authentication is implemented.
+The backend database foundations and initial Alembic migration are complete. Email/password registration, login, JWT bearer authentication, and the current-user endpoint are implemented. Manual recipe CRUD, nested personal-note CRUD, and tag management are protected and scoped to the authenticated user. Logout validates the bearer token and returns 204; the client is responsible for deleting its stored token.

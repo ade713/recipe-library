@@ -45,12 +45,18 @@ Run the server and open:
 http://localhost:8000/docs
 ```
 
-## Implemented recipe endpoints
+## Implemented API endpoints
 
 ```text
+POST   /api/v1/auth/register
+POST   /api/v1/auth/login
+GET    /api/v1/auth/me
+
 POST /api/v1/recipes
 GET  /api/v1/recipes
 GET  /api/v1/recipes/{recipe_id}
+PATCH  /api/v1/recipes/{recipe_id}
+DELETE /api/v1/recipes/{recipe_id}
 ```
 
-The endpoints save, list, and retrieve manually entered recipes with ingredients, steps, source tips, and user-owned tags. They use a temporary development user until authentication is implemented, and all read queries are scoped to that user's ownership.
+Recipe, note, and tag endpoints require JWT bearer authentication. Database queries are scoped to the authenticated user's ownership.
