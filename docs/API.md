@@ -21,7 +21,7 @@ POST /auth/logout
 GET  /auth/me
 ```
 
-Registration, login, JWT bearer authentication, and current-user lookup are implemented. Recipe, note, and tag endpoints require authentication and scope records to the current user. Logout is still pending.
+Registration, login, JWT bearer authentication, and current-user lookup are implemented. Recipe, note, and tag endpoints require authentication and scope records to the current user. Logout validates the bearer token and returns 204; the client is responsible for deleting its stored token.
 
 ## Recipes
 

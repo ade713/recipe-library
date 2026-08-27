@@ -74,9 +74,11 @@ def login(
     return TokenResponse(access_token=access_token)
 
 
-@router.post("/logout", status_code=status.HTTP_501_NOT_IMPLEMENTED)
-def logout() -> None:
-    raise HTTPException(status_code=501, detail="Auth logout is not implemented yet.")
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+def logout(
+    _current_user: Annotated[User, Depends(get_session_current_user)],
+) -> None:
+    return None
 
 
 @router.get("/me", response_model=UserResponse)
