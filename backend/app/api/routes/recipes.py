@@ -26,8 +26,15 @@ router = APIRouter()
 def list_recipes(
     current_user: Annotated[User, Depends(get_current_user)],
     session: Annotated[Session, Depends(get_db)],
+    ingredient: str | None = None,
+    q: str | None = None,
 ) -> RecipeListResponse:
-    recipes = list_recipe_records(session, user_id=current_user.id)
+    recipes = list_recipe_records(
+        session,
+        user_id=current_user.id,
+        ingredient=ingredient,
+        q=q,
+    )
 
     return RecipeListResponse.model_validate({"items": recipes})
 

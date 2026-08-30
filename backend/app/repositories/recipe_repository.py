@@ -63,14 +63,30 @@ def get_recipe(session: Session, *, user_id: UUID, recipe_id: UUID) -> Recipe | 
     return session.scalar(statement)
 
 
-def list_recipes(session: Session, *, user_id: UUID) -> list[Recipe]:
+def list_recipes(
+    session: Session,
+    *,
+    user_id: UUID,
+    q: str | None = None,
+    ingredient: str | None = None,
+) -> list[Recipe]:
     statement = (
         select(Recipe)
         .where(Recipe.user_id == user_id)
         .options(selectinload(Recipe.tags))
-        .order_by(Recipe.created_at.desc())
     )
 
+    if q is not None:
+        statement = statement.where(Recipe.title.ilike(f"%{q}%"))
+
+    if ingredient is not None:
+        statement = statement.where(
+            Recipe.ingredients.any(
+                RecipeIngredient.original_text.ilike(f"%{ingredient}%")
+            )
+        )
+
+    statement = statement.order_by(Recipe.created_at.desc())
     return list(session.scalars(statement))
 
 

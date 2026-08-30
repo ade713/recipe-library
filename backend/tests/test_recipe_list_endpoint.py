@@ -8,7 +8,7 @@ from sqlalchemy.pool import StaticPool
 from app.core.database import get_db
 from app.core.security import create_access_token
 from app.main import create_app
-from app.models import Base, Recipe, Tag, User
+from app.models import Base, Recipe, RecipeIngredient, Tag, User
 
 
 def test_list_recipes_endpoint_returns_only_current_users_recipes() -> None:
@@ -27,6 +27,12 @@ def test_list_recipes_endpoint_returns_only_current_users_recipes() -> None:
             user=current_user,
             title="Tomato Soup",
             is_favorite=True,
+            ingredients=[
+                RecipeIngredient(
+                    position=1,
+                    original_text="2 cloves garlic",
+                )
+            ],
             tags=[Tag(user=current_user, name="Dinner")],
         )
         other_recipe = Recipe(user=other_user, title="Secret Cake")
@@ -47,11 +53,25 @@ def test_list_recipes_endpoint_returns_only_current_users_recipes() -> None:
     try:
         with TestClient(app) as client:
             response = client.get("/api/v1/recipes", headers=headers)
+            title_search_response = client.get(
+                "/api/v1/recipes",
+                params={"q": "TOMATO"},
+                headers=headers,
+            )
+            ingredient_search_response = client.get(
+                "/api/v1/recipes",
+                params={"ingredient": "GARLIC"},
+                headers=headers,
+            )
+            missing_search_response = client.get(
+                "/api/v1/recipes",
+                params={"q": "missing", "ingredient": "missing"},
+                headers=headers,
+            )
     finally:
         app.dependency_overrides.clear()
 
-    assert response.status_code == 200
-    assert response.json() == {
+    expected_response = {
         "items": [
             {
                 "id": str(current_user_recipe_id),
@@ -64,3 +84,12 @@ def test_list_recipes_endpoint_returns_only_current_users_recipes() -> None:
             }
         ]
     }
+
+    assert response.status_code == 200
+    assert response.json() == expected_response
+    assert title_search_response.status_code == 200
+    assert title_search_response.json() == expected_response
+    assert ingredient_search_response.status_code == 200
+    assert ingredient_search_response.json() == expected_response
+    assert missing_search_response.status_code == 200
+    assert missing_search_response.json() == {"items": []}
