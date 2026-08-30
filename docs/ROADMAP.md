@@ -55,20 +55,21 @@ Status: Complete
 
 ## Phase 7: Auth and ownership
 
-Status: In progress
+Status: Complete for currently implemented endpoints
 
-- [ ] Register/login
-- [ ] Current user dependency
-- [ ] Protected routes
-- [ ] Ownership checks for recipes, notes, tags, and imports
+- [x] Register/login
+- [x] Current user dependency
+- [x] Protected recipe, note, and tag routes
+- [x] Ownership checks for recipes, notes, and tags
+- [ ] Protect imports when import endpoints are implemented
 
 ## Phase 8: Search and filters
 
-- Title and ingredient search
-- Tag filter
-- Favorite filter
-- Maximum total-time filter
-- Sort options
+- [x] Title and ingredient search
+- [ ] Tag filter
+- [ ] Favorite filter
+- [ ] Maximum total-time filter
+- [ ] Sort options
 
 ## Phase 9: Safe recipe import
 

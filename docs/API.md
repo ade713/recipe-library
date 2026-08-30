@@ -35,14 +35,21 @@ PATCH  /recipes/{recipe_id}
 DELETE /recipes/{recipe_id}
 ```
 
-`GET /recipes` should eventually support:
+`GET /recipes` supports case-insensitive partial title and ingredient searches:
 
 ```text
 q=chicken
+ingredient=garlic
+```
+
+When both parameters are supplied, recipes must match both conditions. Search results remain scoped to the authenticated user.
+
+Planned filters and sorting:
+
+```text
 tag=Dinner
 favorite=true
 max_total_time=30
-ingredient=garlic
 sort=recent
 ```
 

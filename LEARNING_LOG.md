@@ -336,3 +336,29 @@ Next:
 
 - Open the authentication pull request, then build user-scoped recipe search and filters in a smaller feature branch.
 ```
+
+## Recipe Title and Ingredient Search
+
+```md
+## 2026-08-30
+
+Built:
+
+- Added optional `q` and `ingredient` parameters to the user-scoped recipe-list repository query.
+- Added case-insensitive partial matching for recipe titles and original ingredient text.
+- Connected the search parameters to the authenticated `GET /api/v1/recipes` endpoint.
+- Added repository and endpoint tests for matching, non-matching, case-insensitive, combined, and cross-user behavior.
+
+Learned:
+
+- `%` is a SQL pattern wildcard, so `%chicken%` matches text containing `chicken` anywhere.
+- SQLAlchemy's `ilike()` provides case-insensitive pattern matching.
+- `Recipe.ingredients.any(...)` creates an `EXISTS` condition for a related collection without producing duplicate recipe rows.
+- SQLAlchemy query-building methods return new statement objects, so optional conditions are added by reassigning the statement.
+- Ownership and search conditions are combined in one query; ownership filtering is an authorization boundary rather than a separate preliminary database query.
+- Supplying both search parameters applies both conditions with AND behavior.
+
+Next:
+
+- Add tag, favorite, maximum-total-time filters, and sorting in a separate pull request.
+```
