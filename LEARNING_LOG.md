@@ -415,3 +415,30 @@ Next:
 
 - Begin the safe recipe-import phase with focused, security-first pull requests.
 ```
+
+## Safe Fetch Destination Validation
+
+```md
+## 2026-08-31
+
+Built:
+
+- Added a safe-target value containing the submitted URL, hostname, and validated resolved addresses.
+- Added injectable hostname resolution so tests use controlled DNS results without real network access.
+- Rejected invalid URLs, failed or empty DNS results, malformed address data, and any non-public resolved address.
+- Added focused tests for public IPv4/IPv6 results, loopback, private, link-local metadata, mixed public/private, invalid URL, and DNS failure cases.
+
+Learned:
+
+- A valid-looking domain can still resolve to an internal address, so URL syntax checks alone do not prevent SSRF.
+- Hostnames can resolve to multiple IPv4 and IPv6 addresses, and every possible destination must be safe.
+- `getaddrinfo()` returns connection records that may repeat addresses and whose broad socket types require runtime narrowing.
+- `ip_address().is_global` distinguishes public destinations from loopback, private, link-local, and reserved addresses.
+- `HostResolutionError` represents missing or unusable DNS results, while `UnsafeUrlError` represents a prohibited URL or destination.
+- Returning the validated addresses enables the later HTTP layer to remain bound to checked destinations instead of trusting an unrelated second DNS lookup.
+- Dependency-injected resolvers make security tests deterministic and prevent unit tests from depending on live DNS.
+
+Next:
+
+- Add connection/read timeouts and redirect revalidation in a separate safe-fetcher pull request.
+```
