@@ -66,9 +66,9 @@ Status: Complete for currently implemented endpoints
 ## Phase 8: Search and filters
 
 - [x] Title and ingredient search
-- [ ] Tag filter
-- [ ] Favorite filter
-- [ ] Maximum total-time filter
+- [x] Tag filter
+- [x] Favorite filter
+- [x] Maximum total-time filter
 - [ ] Sort options
 
 ## Phase 9: Safe recipe import

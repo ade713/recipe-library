@@ -362,3 +362,30 @@ Next:
 
 - Add tag, favorite, maximum-total-time filters, and sorting in a separate pull request.
 ```
+
+## Recipe List Filters
+
+```md
+## 2026-08-30
+
+Built:
+
+- Added optional tag, favorite-status, and maximum-total-time filters to the user-scoped recipe-list query.
+- Added case-insensitive exact tag matching through the recipe-to-tag relationship.
+- Connected the filters to the authenticated recipe-list endpoint.
+- Added FastAPI validation that rejects negative maximum-time values with `422`.
+- Added repository and endpoint tests for individual filters, explicit `favorite=false`, combined filters, validation, and cross-user isolation.
+
+Learned:
+
+- Optional booleans need `is not None` checks so an explicit `False` value is not mistaken for an omitted filter.
+- SQLAlchemy's `.is_(value)` expresses boolean comparisons clearly in generated SQL.
+- A comparison such as `total_time_minutes <= 30` excludes `NULL` values because SQL keeps only rows where the condition evaluates to true.
+- `Annotated` combines a Python type with FastAPI metadata such as `Query(ge=0)`.
+- FastAPI should validate external query parameters at the API boundary before repositories receive them.
+- Multiple optional `.where()` conditions combine with AND behavior while retaining the authenticated-user ownership condition.
+
+Next:
+
+- Define and implement useful recipe-list sorting options in a separate pull request.
+```
