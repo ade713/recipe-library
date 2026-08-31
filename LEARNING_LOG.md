@@ -389,3 +389,29 @@ Next:
 
 - Define and implement useful recipe-list sorting options in a separate pull request.
 ```
+
+## Recipe List Sorting
+
+```md
+## 2026-08-30
+
+Built:
+
+- Added `recent`, `title`, and `time` recipe-list sort options with recent-first as the default.
+- Added a shared `RecipeSort` string enum for repository typing, FastAPI validation, and generated API documentation.
+- Added case-insensitive title ordering and shortest-time ordering with unknown times placed last.
+- Added repository and endpoint tests for every sort order and invalid query values.
+
+Learned:
+
+- A `StrEnum` restricts values while remaining compatible with string-based API query parameters.
+- FastAPI uses enums to validate requests, return `422` for unsupported values, and document allowed choices.
+- `func.lower()` makes alphabetical ordering independent of letter casing.
+- SQL `NULL` placement can vary, so `.nulls_last()` makes the desired time-sort behavior explicit.
+- Secondary ordering makes tied results deterministic; title and time ties use newest-first ordering.
+- Tests need deliberately different expected orders so one accidental order cannot satisfy every sorting case.
+
+Next:
+
+- Begin the safe recipe-import phase with focused, security-first pull requests.
+```
