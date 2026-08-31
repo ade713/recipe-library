@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_user
@@ -26,14 +26,23 @@ router = APIRouter()
 def list_recipes(
     current_user: Annotated[User, Depends(get_current_user)],
     session: Annotated[Session, Depends(get_db)],
+    favorite: bool | None = None,
     ingredient: str | None = None,
+    max_total_time: Annotated[
+        int | None,
+        Query(ge=0),
+    ] = None,
     q: str | None = None,
+    tag: str | None = None,
 ) -> RecipeListResponse:
     recipes = list_recipe_records(
         session,
         user_id=current_user.id,
+        favorite=favorite,
         ingredient=ingredient,
+        max_total_time=max_total_time,
         q=q,
+        tag=tag,
     )
 
     return RecipeListResponse.model_validate({"items": recipes})

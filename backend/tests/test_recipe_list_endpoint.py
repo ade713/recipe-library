@@ -27,6 +27,7 @@ def test_list_recipes_endpoint_returns_only_current_users_recipes() -> None:
             user=current_user,
             title="Tomato Soup",
             is_favorite=True,
+            total_time_minutes=25,
             ingredients=[
                 RecipeIngredient(
                     position=1,
@@ -68,6 +69,40 @@ def test_list_recipes_endpoint_returns_only_current_users_recipes() -> None:
                 params={"q": "missing", "ingredient": "missing"},
                 headers=headers,
             )
+            tag_filter_response = client.get(
+                "/api/v1/recipes",
+                params={"tag": "dinner"},
+                headers=headers,
+            )
+            favorite_filter_response = client.get(
+                "/api/v1/recipes",
+                params={"favorite": "true"},
+                headers=headers,
+            )
+            nonfavorite_filter_response = client.get(
+                "/api/v1/recipes",
+                params={"favorite": "false"},
+                headers=headers,
+            )
+            time_filter_response = client.get(
+                "/api/v1/recipes",
+                params={"max_total_time": 30},
+                headers=headers,
+            )
+            combined_filter_response = client.get(
+                "/api/v1/recipes",
+                params={
+                    "tag": "dinner",
+                    "favorite": "true",
+                    "max_total_time": 30,
+                },
+                headers=headers,
+            )
+            invalid_time_response = client.get(
+                "/api/v1/recipes",
+                params={"max_total_time": -1},
+                headers=headers,
+            )
     finally:
         app.dependency_overrides.clear()
 
@@ -77,7 +112,7 @@ def test_list_recipes_endpoint_returns_only_current_users_recipes() -> None:
                 "id": str(current_user_recipe_id),
                 "title": "Tomato Soup",
                 "image_url": None,
-                "total_time_minutes": None,
+                "total_time_minutes": 25,
                 "base_servings": None,
                 "is_favorite": True,
                 "tags": ["Dinner"],
@@ -93,3 +128,16 @@ def test_list_recipes_endpoint_returns_only_current_users_recipes() -> None:
     assert ingredient_search_response.json() == expected_response
     assert missing_search_response.status_code == 200
     assert missing_search_response.json() == {"items": []}
+
+    for filtered_response in (
+        tag_filter_response,
+        favorite_filter_response,
+        time_filter_response,
+        combined_filter_response,
+    ):
+        assert filtered_response.status_code == 200
+        assert filtered_response.json() == expected_response
+
+    assert nonfavorite_filter_response.status_code == 200
+    assert nonfavorite_filter_response.json() == {"items": []}
+    assert invalid_time_response.status_code == 422
