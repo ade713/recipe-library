@@ -78,6 +78,10 @@ Status: Complete
 - [ ] Preview endpoint
 - [ ] Duplicate URL check
 - [ ] Safe URL fetcher
+  - [x] Validate URL structure and resolved public destinations
+  - [ ] Enforce connection and read timeouts
+  - [ ] Limit redirects and revalidate every destination
+  - [ ] Limit response size and require HTML content
 - [ ] Parse recipe
 - [ ] Normalize draft
 - [ ] Save import logs
