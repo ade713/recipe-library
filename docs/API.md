@@ -35,21 +35,23 @@ PATCH  /recipes/{recipe_id}
 DELETE /recipes/{recipe_id}
 ```
 
-`GET /recipes` supports case-insensitive partial title and ingredient searches:
+`GET /recipes` supports user-scoped search and filters:
 
 ```text
 q=chicken
 ingredient=garlic
-```
-
-When both parameters are supplied, recipes must match both conditions. Search results remain scoped to the authenticated user.
-
-Planned filters and sorting:
-
-```text
 tag=Dinner
 favorite=true
 max_total_time=30
+```
+
+Title and ingredient searches use case-insensitive partial matching. Tag filtering uses a case-insensitive exact match. `favorite` accepts `true` or `false`, and `max_total_time` must be a nonnegative integer.
+
+When multiple parameters are supplied, recipes must match every condition. Results remain scoped to the authenticated user.
+
+Planned sorting:
+
+```text
 sort=recent
 ```
 

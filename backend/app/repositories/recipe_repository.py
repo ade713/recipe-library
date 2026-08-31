@@ -67,8 +67,11 @@ def list_recipes(
     session: Session,
     *,
     user_id: UUID,
-    q: str | None = None,
+    favorite: bool | None = None,
     ingredient: str | None = None,
+    max_total_time: int | None = None,
+    q: str | None = None,
+    tag: str | None = None,
 ) -> list[Recipe]:
     statement = (
         select(Recipe)
@@ -84,6 +87,21 @@ def list_recipes(
             Recipe.ingredients.any(
                 RecipeIngredient.original_text.ilike(f"%{ingredient}%")
             )
+        )
+
+    if tag is not None:
+        statement = statement.where(
+            Recipe.tags.any(Tag.name.ilike(tag))
+        )
+
+    if favorite is not None:
+        statement = statement.where(
+            Recipe.is_favorite.is_(favorite)
+        )
+
+    if max_total_time is not None:
+        statement = statement.where(
+            Recipe.total_time_minutes <= max_total_time
         )
 
     statement = statement.order_by(Recipe.created_at.desc())
