@@ -1,4 +1,5 @@
 from decimal import Decimal
+from enum import StrEnum
 from typing import Protocol
 from uuid import UUID
 
@@ -116,3 +117,9 @@ class RecipeSummary(BaseModel):
 
 class RecipeListResponse(BaseModel):
     items: list[RecipeSummary]
+
+
+class RecipeSort(StrEnum):
+    RECENT = "recent"
+    TITLE = "title"
+    TIME = "time"

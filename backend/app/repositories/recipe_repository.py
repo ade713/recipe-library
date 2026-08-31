@@ -4,11 +4,11 @@ Keep API route handlers thin by moving recipe queries here.
 
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.models import Recipe, RecipeIngredient, RecipeStep, RecipeTip, Tag
-from app.schemas.recipe import RecipeCreate, RecipeUpdate
+from app.schemas.recipe import RecipeCreate, RecipeSort, RecipeUpdate
 
 
 def create_recipe(
@@ -71,6 +71,7 @@ def list_recipes(
     ingredient: str | None = None,
     max_total_time: int | None = None,
     q: str | None = None,
+    sort: RecipeSort = RecipeSort.RECENT,
     tag: str | None = None,
 ) -> list[Recipe]:
     statement = (
@@ -104,7 +105,19 @@ def list_recipes(
             Recipe.total_time_minutes <= max_total_time
         )
 
-    statement = statement.order_by(Recipe.created_at.desc())
+    if sort == RecipeSort.TITLE:
+        statement = statement.order_by(
+            func.lower(Recipe.title).asc(),
+            Recipe.created_at.desc(),
+        )
+    elif sort == RecipeSort.TIME:
+        statement = statement.order_by(
+            Recipe.total_time_minutes.asc().nulls_last(),
+            Recipe.created_at.desc(),
+        )
+    else:
+        statement = statement.order_by(Recipe.created_at.desc())
+
     return list(session.scalars(statement))
 
 

@@ -16,6 +16,7 @@ from app.schemas.recipe import (
     RecipeCreate,
     RecipeListResponse,
     RecipeRead,
+    RecipeSort,
     RecipeUpdate,
 )
 
@@ -33,6 +34,7 @@ def list_recipes(
         Query(ge=0),
     ] = None,
     q: str | None = None,
+    sort: RecipeSort = RecipeSort.RECENT,
     tag: str | None = None,
 ) -> RecipeListResponse:
     recipes = list_recipe_records(
@@ -42,6 +44,7 @@ def list_recipes(
         ingredient=ingredient,
         max_total_time=max_total_time,
         q=q,
+        sort=sort,
         tag=tag,
     )
 
