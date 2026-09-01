@@ -79,6 +79,7 @@ Status: Complete
 - [ ] Duplicate URL check
 - [ ] Safe URL fetcher
   - [x] Validate URL structure and resolved public destinations
+  - [x] Define validated limits and operational failure types
   - [ ] Enforce connection and read timeouts
   - [ ] Limit redirects and revalidate every destination
   - [ ] Limit response size and require HTML content

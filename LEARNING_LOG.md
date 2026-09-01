@@ -442,3 +442,29 @@ Next:
 
 - Add connection/read timeouts and redirect revalidation in a separate safe-fetcher pull request.
 ```
+
+## Safe Fetch Policy
+
+```md
+## 2026-08-31
+
+Built:
+
+- Added an immutable safe-fetch policy with conservative connect/read timeouts, redirect count, response-size limit, and allowed HTML content types.
+- Added validated policy boundaries so invalid security configurations fail before network work begins.
+- Added a shared operational-error base with specific timeout, redirect-limit, response-size, content-type, and hostname-resolution errors.
+- Added tests for policy defaults, invalid limits, and the operational-error hierarchy.
+
+Learned:
+
+- A frozen dataclass provides one immutable set of limits that can be injected into later transport code.
+- Defining a policy does not enforce it; the HTTP transport must explicitly apply every configured value.
+- Zero redirects is valid because it represents an intentional no-redirect policy, while negative limits are invalid.
+- `UnsafeUrlError` represents prohibited input or destinations, while `SafeFetchError` groups operational failures during safe processing.
+- Specific exception types let the future import service translate different failures into clear blocked or failed import results.
+- Conservative defaults reduce risk, but tests must also prove that invalid custom configurations cannot be constructed.
+
+Next:
+
+- Build destination-bound HTTP transport behavior that enforces connection and read timeouts.
+```
