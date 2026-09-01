@@ -9,6 +9,7 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from ipaddress import ip_address
 from socket import SOCK_STREAM, getaddrinfo
+from urllib.parse import urljoin
 
 from app.services.url_validator import extract_domain, is_valid_http_url
 
@@ -151,3 +152,17 @@ def resolve_safe_target(
         hostname=hostname,
         addresses=addresses,
     )
+
+
+def resolve_safe_redirect(
+    current_url: str,
+    location: str,
+    redirect_count: int,
+    policy: SafeFetchPolicy,
+    resolver: HostResolver = resolve_host_addresses,
+) -> SafeTarget:
+    if redirect_count >= policy.max_redirects:
+        raise RedirectLimitError("Redirect limit exceeded.")
+
+    new_url = urljoin(current_url, location)
+    return resolve_safe_target(new_url, resolver=resolver)

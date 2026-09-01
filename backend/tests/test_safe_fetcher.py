@@ -11,6 +11,7 @@ from app.services.safe_fetcher import (
     SafeFetchPolicy,
     UnsafeUrlError,
     UnsupportedContentTypeError,
+    resolve_safe_redirect,
     resolve_safe_target,
 )
 
@@ -135,3 +136,64 @@ def test_safe_fetch_operational_failures_share_a_base_type() -> None:
         UnsupportedContentTypeError,
     ):
         assert issubclass(error_type, SafeFetchError)
+
+
+def test_resolve_safe_redirect_resolves_relative_url_and_revalidates_host() -> None:
+    resolved_hosts: list[str] = []
+
+    def resolve_public_host(hostname: str) -> Iterable[str]:
+        resolved_hosts.append(hostname)
+        return ["93.184.216.34"]
+
+    target = resolve_safe_redirect(
+        current_url="https://example.com/recipes/first",
+        location="/recipes/final",
+        redirect_count=0,
+        policy=SafeFetchPolicy(max_redirects=3),
+        resolver=resolve_public_host,
+    )
+
+    assert target.url == "https://example.com/recipes/final"
+    assert target.hostname == "example.com"
+    assert resolved_hosts == ["example.com"]
+
+
+def test_resolve_safe_redirect_revalidates_absolute_destination() -> None:
+    with pytest.raises(UnsafeUrlError):
+        resolve_safe_redirect(
+            current_url="https://example.com/recipe",
+            location="http://internal.example/admin",
+            redirect_count=0,
+            policy=SafeFetchPolicy(),
+            resolver=lambda _hostname: ["127.0.0.1"],
+        )
+
+
+@pytest.mark.parametrize(
+    ("max_redirects", "redirect_count"),
+    [
+        (0, 0),
+        (3, 3),
+    ],
+)
+def test_resolve_safe_redirect_rejects_next_redirect_at_limit(
+    max_redirects: int,
+    redirect_count: int,
+) -> None:
+    resolver_called = False
+
+    def resolver(_hostname: str) -> Iterable[str]:
+        nonlocal resolver_called
+        resolver_called = True
+        return ["93.184.216.34"]
+
+    with pytest.raises(RedirectLimitError):
+        resolve_safe_redirect(
+            current_url="https://example.com/recipe",
+            location="/final",
+            redirect_count=redirect_count,
+            policy=SafeFetchPolicy(max_redirects=max_redirects),
+            resolver=resolver,
+        )
+
+    assert resolver_called is False
