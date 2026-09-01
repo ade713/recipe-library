@@ -468,3 +468,30 @@ Next:
 
 - Build destination-bound HTTP transport behavior that enforces connection and read timeouts.
 ```
+
+## Safe Fetch Connection and Read Timeouts
+
+```md
+## 2026-09-01
+
+Built:
+
+- Added a pinned asynchronous network backend that connects to a previously validated IP address instead of triggering another hostname lookup.
+- Applied the stricter of the caller's connection timeout and the safe-fetch policy timeout.
+- Added a network-stream wrapper that applies the read-timeout policy to every read, including reads after TLS starts.
+- Rejected Unix socket connections and unexpected hostnames, and translated httpcore connection/read timeouts into the app's safe-fetch timeout error.
+- Added focused tests for destination pinning, timeout capping, error translation, hostname and Unix-socket rejection, and TLS stream wrapping.
+
+Learned:
+
+- Validating DNS and then reconnecting by hostname could allow an unrelated second DNS lookup, so the transport connects to a validated address directly.
+- A wrapper can add security behavior while delegating the underlying network operations to httpcore.
+- Connection, TLS-handshake, and read timeouts protect different stages and should not overwrite one another.
+- The shorter of a caller timeout and a security-policy timeout preserves the stricter limit.
+- A TLS handshake produces another stream, which must also be wrapped so later reads keep the same policy.
+- `cast()` informs static type checkers about an interface without changing the runtime object or its behavior.
+
+Next:
+
+- Limit redirects and revalidate every redirect destination before following it.
+```
