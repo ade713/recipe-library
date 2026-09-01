@@ -17,6 +17,7 @@ dependencies = [
   "PyJWT",
   "pwdlib[argon2]",
   "httpx",
+  "httpcore>=1.0,<2",
   "recipe-scrapers",
   "beautifulsoup4",
   "python-multipart",
