@@ -3,8 +3,14 @@ from collections.abc import Iterable
 import pytest
 
 from app.services.safe_fetcher import (
+    FetchTimeoutError,
     HostResolutionError,
+    RedirectLimitError,
+    ResponseTooLargeError,
+    SafeFetchError,
+    SafeFetchPolicy,
     UnsafeUrlError,
+    UnsupportedContentTypeError,
     resolve_safe_target,
 )
 
@@ -88,3 +94,44 @@ def test_resolve_safe_target_reports_dns_failure_and_empty_results() -> None:
             "https://malformed.example/recipe",
             resolver=lambda _hostname: ["not-an-ip-address"],
         )
+
+
+def test_safe_fetch_policy_has_conservative_defaults() -> None:
+    policy = SafeFetchPolicy()
+
+    assert policy.connect_timeout_seconds == 5.0
+    assert policy.read_timeout_seconds == 10.0
+    assert policy.max_redirects == 3
+    assert policy.max_response_bytes == 2_000_000
+    assert policy.allowed_content_types == (
+        "text/html",
+        "application/xhtml+xml",
+    )
+
+
+@pytest.mark.parametrize(
+    "policy_kwargs",
+    [
+        {"connect_timeout_seconds": 0},
+        {"read_timeout_seconds": 0},
+        {"max_redirects": -1},
+        {"max_response_bytes": 0},
+        {"allowed_content_types": ()},
+    ],
+)
+def test_safe_fetch_policy_rejects_invalid_limits(
+    policy_kwargs: dict[str, object],
+) -> None:
+    with pytest.raises(ValueError):
+        SafeFetchPolicy(**policy_kwargs)  # type: ignore[arg-type]
+
+
+def test_safe_fetch_operational_failures_share_a_base_type() -> None:
+    for error_type in (
+        HostResolutionError,
+        FetchTimeoutError,
+        RedirectLimitError,
+        ResponseTooLargeError,
+        UnsupportedContentTypeError,
+    ):
+        assert issubclass(error_type, SafeFetchError)

@@ -13,8 +13,28 @@ from socket import SOCK_STREAM, getaddrinfo
 from app.services.url_validator import extract_domain, is_valid_http_url
 
 
-class HostResolutionError(RuntimeError):
+class SafeFetchError(RuntimeError):
+    """Base error for safe-fetch operations that cannot complete."""
+
+
+class HostResolutionError(SafeFetchError):
     """Raised when a hostname cannot produce usable IP addresses."""
+
+
+class FetchTimeoutError(SafeFetchError):
+    """Raised when connection or reading exceeds a configured timeout."""
+
+
+class RedirectLimitError(SafeFetchError):
+    """Raised when a response exceeds the redirect limit."""
+
+
+class ResponseTooLargeError(SafeFetchError):
+    """Raised when a response exceeds the configured byte limit."""
+
+
+class UnsupportedContentTypeError(SafeFetchError):
+    """Raised when a response is not an allowed HTML content type."""
 
 
 class UnsafeUrlError(ValueError):
@@ -35,6 +55,31 @@ class SafeFetchResult:
     final_url: str
     content_type: str
     html: str
+
+
+@dataclass(frozen=True)
+class SafeFetchPolicy:
+    connect_timeout_seconds: float = 5.0
+    read_timeout_seconds: float = 10.0
+    max_redirects: int = 3
+    max_response_bytes: int = 2_000_000
+    allowed_content_types: tuple[str, ...] = (
+        "text/html",
+        "application/xhtml+xml",
+    )
+
+    def __post_init__(self) -> None:
+        if self.connect_timeout_seconds <= 0 or self.read_timeout_seconds <= 0:
+            raise ValueError("Timeout must be greater than 0.")
+
+        if self.max_redirects < 0:
+            raise ValueError("Redirects must be greater than or equal to 0.")
+
+        if self.max_response_bytes <= 0:
+            raise ValueError("Response bytes must be greater than 0.")
+
+        if len(self.allowed_content_types) < 1:
+            raise ValueError("Must have at least 1 allowed content type.")
 
 
 HostResolver = Callable[[str], Iterable[str]]
