@@ -1,6 +1,6 @@
 import asyncio
 from collections.abc import AsyncIterator, Iterable
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpcore
 import pytest
@@ -361,3 +361,33 @@ def test_fetch_html_safely_composes_redirect_and_response_guards() -> None:
     assert result.final_url == "https://example.com/recipes/final"
     assert result.content_type == "text/html"
     assert result.html == "<h1>Crème</h1>"
+
+
+def test_fetch_html_safely_manages_default_pinned_requester() -> None:
+    requester = AsyncMock(
+        return_value=httpcore.Response(
+            200,
+            headers={"Content-Type": "text/html"},
+            content=stream_chunks(b"<h1>Recipe</h1>"),
+        )
+    )
+    requester_context = MagicMock()
+    requester_context.__aenter__ = AsyncMock(return_value=requester)
+    requester_context.__aexit__ = AsyncMock(return_value=None)
+
+    with patch(
+        "app.services.safe_transport.PinnedSafeRequester",
+        return_value=requester_context,
+    ) as requester_factory:
+        result = asyncio.run(
+            fetch_html_safely(
+                "https://example.com/recipe",
+                resolver=lambda _hostname: ["93.184.216.34"],
+            )
+        )
+
+    requester_factory.assert_called_once_with(policy=SafeFetchPolicy())
+    requester_context.__aenter__.assert_awaited_once()
+    requester_context.__aexit__.assert_awaited_once()
+    assert result.final_url == "https://example.com/recipe"
+    assert result.html == "<h1>Recipe</h1>"

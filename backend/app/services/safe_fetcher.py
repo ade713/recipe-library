@@ -106,19 +106,37 @@ def resolve_host_addresses(hostname: str) -> tuple[str, ...]:
 async def fetch_html_safely(
     url: str,
     *,
-    requester: SafeRequester,
-    policy: SafeFetchPolicy,
+    requester: SafeRequester | None = None,
+    policy: SafeFetchPolicy | None = None,
     resolver: HostResolver = resolve_host_addresses,
 ) -> SafeFetchResult:
     """Fetch recipe page HTML after safety checks."""
 
+    effective_policy = policy if policy is not None else SafeFetchPolicy()
+
+    if requester is None:
+        from app.services.safe_transport import PinnedSafeRequester
+
+        async with PinnedSafeRequester(
+            policy=effective_policy,
+        ) as managed_requester:
+            return await fetch_html_safely(
+                url,
+                requester=managed_requester,
+                policy=effective_policy,
+                resolver=resolver,
+            )
+
     validated_target, response = await request_with_safe_redirects(
         url=url,
         requester=requester,
-        policy=policy,
+        policy=effective_policy,
         resolver=resolver,
     )
-    content_type, body = await read_limited_html_body(response, policy=policy)
+    content_type, body = await read_limited_html_body(
+        response,
+        policy=effective_policy,
+    )
     html = body.decode("utf-8", errors="replace")
 
     return SafeFetchResult(
