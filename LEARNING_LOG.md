@@ -522,3 +522,30 @@ Next:
 
 - Limit streamed response size and require an allowed HTML content type.
 ```
+
+## Safe Fetch Response Limits
+
+```md
+## 2026-09-02
+
+Built:
+
+- Added case-insensitive validation of final response media types against the safe-fetch policy.
+- Accepted HTML content types with parameters such as a declared character set while comparing only the normalized media type.
+- Read response bodies incrementally and rejected them as soon as the accumulated bytes exceeded the configured limit.
+- Allowed bodies exactly equal to the configured maximum and closed responses on success or failure.
+- Added focused tests for allowed HTML, unsupported content, exact size boundaries, and oversized streamed responses.
+
+Learned:
+
+- `Content-Length` may be missing or inaccurate, so security limits must be enforced against the bytes actually received.
+- `bytearray.extend()` efficiently accumulates each byte chunk yielded by an asynchronous response stream.
+- HTTP media types are case-insensitive, and parameters after the semicolon are separate from the base media type.
+- A maximum is inclusive: a body equal to the limit is allowed, while one byte over is rejected.
+- A `finally` block runs even after a return or exception, ensuring response resources are released along every path.
+- Closing a response may release its connection back to a pool rather than necessarily closing the underlying TCP connection.
+
+Next:
+
+- Connect the safe-fetch validation, redirect, timeout, and response-limit components into the real HTML fetch operation.
+```

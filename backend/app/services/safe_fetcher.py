@@ -206,3 +206,38 @@ async def request_with_safe_redirects(
         )
 
         redirect_count += 1
+
+
+async def read_limited_html_body(
+    response: httpcore.Response,
+    policy: SafeFetchPolicy,
+) -> tuple[str, bytes]:
+    try:
+        content_type: str | None = None
+        for name, value in response.headers:
+            if name.lower() == b"content-type":
+                content_type = (
+                    value.decode("ascii")
+                    .split(";", 1)[0]
+                    .strip()
+                    .casefold()
+                )
+                break
+
+        allowed_content_types = {
+            allowed_type.strip().casefold()
+            for allowed_type in policy.allowed_content_types
+        }
+        if content_type is None or content_type not in allowed_content_types:
+            raise UnsupportedContentTypeError("Content-Type is not allowed.")
+
+        body = bytearray()
+        async for chunk in response.aiter_stream():
+            if len(body) + len(chunk) > policy.max_response_bytes:
+                raise ResponseTooLargeError("Response exceeds maximum allowed bytes.")
+
+            body.extend(chunk)
+
+        return (content_type, bytes(body))
+    finally:
+        await response.aclose()

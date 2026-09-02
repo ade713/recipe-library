@@ -82,7 +82,7 @@ Status: Complete
   - [x] Define validated limits and operational failure types
   - [x] Enforce connection and read timeouts
   - [x] Limit redirects and revalidate every destination
-  - [ ] Limit response size and require HTML content
+  - [x] Limit response size and require HTML content
 - [ ] Parse recipe
 - [ ] Normalize draft
 - [ ] Save import logs

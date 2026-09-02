@@ -1,5 +1,5 @@
 import asyncio
-from collections.abc import Iterable
+from collections.abc import AsyncIterator, Iterable
 from unittest.mock import AsyncMock
 
 import httpcore
@@ -14,6 +14,7 @@ from app.services.safe_fetcher import (
     SafeFetchPolicy,
     UnsafeUrlError,
     UnsupportedContentTypeError,
+    read_limited_html_body,
     request_with_safe_redirects,
     resolve_safe_redirect,
     resolve_safe_target,
@@ -278,3 +279,55 @@ def test_request_with_safe_redirects_allows_exact_redirect_limit() -> None:
     assert response.status == 200
     assert target.url == "https://example.com/final"
     assert requester.await_count == 4
+
+
+async def stream_chunks(*chunks: bytes) -> AsyncIterator[bytes]:
+    for chunk in chunks:
+        yield chunk
+
+
+def test_read_limited_html_body_accepts_allowed_type_and_exact_limit() -> None:
+    response = httpcore.Response(
+        200,
+        headers={"Content-Type": "Text/HTML; Charset=UTF-8"},
+        content=stream_chunks(b"<h1>", b"x</h1>"),
+    )
+
+    content_type, body = asyncio.run(
+        read_limited_html_body(
+            response,
+            policy=SafeFetchPolicy(max_response_bytes=10),
+        )
+    )
+
+    assert content_type == "text/html"
+    assert body == b"<h1>x</h1>"
+
+
+def test_read_limited_html_body_rejects_unsupported_content_type() -> None:
+    response = httpcore.Response(
+        200,
+        headers={"Content-Type": "application/json"},
+        content=stream_chunks(b'{}'),
+    )
+
+    with pytest.raises(UnsupportedContentTypeError):
+        asyncio.run(
+            read_limited_html_body(response, policy=SafeFetchPolicy())
+        )
+
+
+def test_read_limited_html_body_rejects_actual_streamed_size_over_limit() -> None:
+    response = httpcore.Response(
+        200,
+        headers={"Content-Type": "text/html"},
+        content=stream_chunks(b"123456", b"78901"),
+    )
+
+    with pytest.raises(ResponseTooLargeError):
+        asyncio.run(
+            read_limited_html_body(
+                response,
+                policy=SafeFetchPolicy(max_response_bytes=10),
+            )
+        )
