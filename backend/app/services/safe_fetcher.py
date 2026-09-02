@@ -1,9 +1,4 @@
-"""Safe URL fetching helpers for recipe imports.
-
-This module is intentionally a skeleton. Do not fetch user-submitted URLs until
-SSRF protections, timeouts, redirect validation, response size limits, and
-content-type checks are implemented and tested.
-"""
+"""Safely fetch HTML from user-submitted recipe URLs."""
 
 from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass
@@ -53,7 +48,7 @@ class SafeTarget:
 
 @dataclass(frozen=True)
 class SafeFetchResult:
-    """Result returned by the future safe fetcher."""
+    """Result returned by the safe fetcher."""
 
     final_url: str
     content_type: str

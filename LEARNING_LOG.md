@@ -549,3 +549,31 @@ Next:
 
 - Connect the safe-fetch validation, redirect, timeout, and response-limit components into the real HTML fetch operation.
 ```
+
+## Safe Fetch Integration
+
+```md
+## 2026-09-02
+
+Built:
+
+- Composed destination validation, manual redirects, response limits, content-type checks, and HTML decoding into `fetch_html_safely()`.
+- Added a production requester that creates a destination-pinned network backend and uses httpcore's unbuffered streaming API.
+- Managed connection-pool and response contexts with `AsyncExitStack` so every acquired async resource is released in reverse order.
+- Added a clear Recipe Library user agent and propagated connection/read timeout settings into each request.
+- Preserved requester and pool-factory injection so unit tests run with controlled responses and no live network access.
+
+Learned:
+
+- `pool.request()` buffers the response, while `pool.stream()` allows the app to stop downloading as soon as the byte limit is exceeded.
+- A callable class can satisfy an injected callable type through `__call__()` without inheriting from a custom base class.
+- `AsyncExitStack` manages a dynamic number of async contexts and releases dependent resources before the resources they depend on.
+- A factory is a callable responsible for constructing an object; injecting one makes resource creation testable.
+- `Self` describes the current class instance in an `__aenter__()` return annotation.
+- A local import avoids a module-level circular dependency between the safe fetcher and its transport.
+- Default arguments are evaluated when a function is defined, while names inside its body are resolved when the function runs.
+
+Next:
+
+- Build the authenticated import-preview endpoint around the safe fetcher and recipe parser.
+```
