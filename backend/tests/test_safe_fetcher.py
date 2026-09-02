@@ -1,5 +1,8 @@
+import asyncio
 from collections.abc import Iterable
+from unittest.mock import AsyncMock
 
+import httpcore
 import pytest
 
 from app.services.safe_fetcher import (
@@ -11,6 +14,8 @@ from app.services.safe_fetcher import (
     SafeFetchPolicy,
     UnsafeUrlError,
     UnsupportedContentTypeError,
+    request_with_safe_redirects,
+    resolve_safe_redirect,
     resolve_safe_target,
 )
 
@@ -135,3 +140,141 @@ def test_safe_fetch_operational_failures_share_a_base_type() -> None:
         UnsupportedContentTypeError,
     ):
         assert issubclass(error_type, SafeFetchError)
+
+
+def test_resolve_safe_redirect_resolves_relative_url_and_revalidates_host() -> None:
+    resolved_hosts: list[str] = []
+
+    def resolve_public_host(hostname: str) -> Iterable[str]:
+        resolved_hosts.append(hostname)
+        return ["93.184.216.34"]
+
+    target = resolve_safe_redirect(
+        current_url="https://example.com/recipes/first",
+        location="/recipes/final",
+        redirect_count=0,
+        policy=SafeFetchPolicy(max_redirects=3),
+        resolver=resolve_public_host,
+    )
+
+    assert target.url == "https://example.com/recipes/final"
+    assert target.hostname == "example.com"
+    assert resolved_hosts == ["example.com"]
+
+
+def test_resolve_safe_redirect_revalidates_absolute_destination() -> None:
+    with pytest.raises(UnsafeUrlError):
+        resolve_safe_redirect(
+            current_url="https://example.com/recipe",
+            location="http://internal.example/admin",
+            redirect_count=0,
+            policy=SafeFetchPolicy(),
+            resolver=lambda _hostname: ["127.0.0.1"],
+        )
+
+
+@pytest.mark.parametrize(
+    ("max_redirects", "redirect_count"),
+    [
+        (0, 0),
+        (3, 3),
+    ],
+)
+def test_resolve_safe_redirect_rejects_next_redirect_at_limit(
+    max_redirects: int,
+    redirect_count: int,
+) -> None:
+    resolver_called = False
+
+    def resolver(_hostname: str) -> Iterable[str]:
+        nonlocal resolver_called
+        resolver_called = True
+        return ["93.184.216.34"]
+
+    with pytest.raises(RedirectLimitError):
+        resolve_safe_redirect(
+            current_url="https://example.com/recipe",
+            location="/final",
+            redirect_count=redirect_count,
+            policy=SafeFetchPolicy(max_redirects=max_redirects),
+            resolver=resolver,
+        )
+
+    assert resolver_called is False
+
+
+def test_request_with_safe_redirects_follows_validated_location_manually() -> None:
+    requester = AsyncMock(
+        side_effect=[
+            httpcore.Response(
+                302,
+                headers={"Location": "/recipes/final"},
+            ),
+            httpcore.Response(200),
+        ]
+    )
+
+    target, response = asyncio.run(
+        request_with_safe_redirects(
+            "https://example.com/recipes/first",
+            requester=requester,
+            policy=SafeFetchPolicy(max_redirects=3),
+            resolver=lambda _hostname: ["93.184.216.34"],
+        )
+    )
+
+    assert response.status == 200
+    assert target.url == "https://example.com/recipes/final"
+    assert [call.args[0].url for call in requester.await_args_list] == [
+        "https://example.com/recipes/first",
+        "https://example.com/recipes/final",
+    ]
+
+
+def test_request_with_safe_redirects_never_requests_unsafe_location() -> None:
+    requester = AsyncMock(
+        return_value=httpcore.Response(
+            302,
+            headers={"Location": "http://internal.example/admin"},
+        )
+    )
+
+    with pytest.raises(UnsafeUrlError):
+        asyncio.run(
+            request_with_safe_redirects(
+                "https://example.com/recipe",
+                requester=requester,
+                policy=SafeFetchPolicy(),
+                resolver=lambda hostname: (
+                    ["127.0.0.1"]
+                    if hostname == "internal.example"
+                    else ["93.184.216.34"]
+                ),
+            )
+        )
+
+    assert requester.await_count == 1
+
+
+def test_request_with_safe_redirects_allows_exact_redirect_limit() -> None:
+    requester = AsyncMock(
+        side_effect=[
+            httpcore.Response(302, headers={"Location": "/second"}),
+            httpcore.Response(302, headers={"Location": "/third"}),
+            httpcore.Response(302, headers={"Location": "/final"}),
+            httpcore.Response(200),
+        ]
+    )
+
+    target, response = asyncio.run(
+        request_with_safe_redirects(
+            "https://example.com/first",
+            requester=requester,
+            policy=SafeFetchPolicy(max_redirects=3),
+            resolver=lambda _hostname: ["93.184.216.34"],
+        )
+    )
+
+    assert response.status == 200
+    assert target.url == "https://example.com/final"
+    assert requester.await_count == 4
