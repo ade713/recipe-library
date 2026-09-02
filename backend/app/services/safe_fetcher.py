@@ -92,20 +92,6 @@ SafeRequester = Callable[[SafeTarget], Awaitable[httpcore.Response]]
 REDIRECT_STATUS_CODES = frozenset({301, 302, 303, 307, 308})
 
 
-async def fetch_html_safely(url: str) -> SafeFetchResult:
-    """Fetch recipe page HTML after safety checks.
-
-    TODO, learning implementation later:
-    - allow only http/https
-    - reject localhost, loopback, private IPs, and cloud metadata IPs
-    - limit redirects and re-check final destinations
-    - enforce timeout, response size, and HTML content type
-    - convert network failures into import statuses
-    """
-
-    raise NotImplementedError("safe recipe fetching has not been implemented yet")
-
-
 def resolve_host_addresses(hostname: str) -> tuple[str, ...]:
     results = getaddrinfo(hostname, None, type=SOCK_STREAM)
     addresses: list[str] = []
@@ -115,6 +101,31 @@ def resolve_host_addresses(hostname: str) -> tuple[str, ...]:
             addresses.append(raw_address)
 
     return tuple(dict.fromkeys(addresses))
+
+
+async def fetch_html_safely(
+    url: str,
+    *,
+    requester: SafeRequester,
+    policy: SafeFetchPolicy,
+    resolver: HostResolver = resolve_host_addresses,
+) -> SafeFetchResult:
+    """Fetch recipe page HTML after safety checks."""
+
+    validated_target, response = await request_with_safe_redirects(
+        url=url,
+        requester=requester,
+        policy=policy,
+        resolver=resolver,
+    )
+    content_type, body = await read_limited_html_body(response, policy=policy)
+    html = body.decode("utf-8", errors="replace")
+
+    return SafeFetchResult(
+        final_url=validated_target.url,
+        content_type=content_type,
+        html=html,
+    )
 
 
 def resolve_safe_target(
