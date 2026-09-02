@@ -5,11 +5,13 @@ SSRF protections, timeouts, redirect validation, response size limits, and
 content-type checks are implemented and tested.
 """
 
-from collections.abc import Callable, Iterable
+from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass
 from ipaddress import ip_address
 from socket import SOCK_STREAM, getaddrinfo
 from urllib.parse import urljoin
+
+import httpcore
 
 from app.services.url_validator import extract_domain, is_valid_http_url
 
@@ -84,6 +86,10 @@ class SafeFetchPolicy:
 
 
 HostResolver = Callable[[str], Iterable[str]]
+
+SafeRequester = Callable[[SafeTarget], Awaitable[httpcore.Response]]
+
+REDIRECT_STATUS_CODES = frozenset({301, 302, 303, 307, 308})
 
 
 async def fetch_html_safely(url: str) -> SafeFetchResult:
@@ -166,3 +172,37 @@ def resolve_safe_redirect(
 
     new_url = urljoin(current_url, location)
     return resolve_safe_target(new_url, resolver=resolver)
+
+
+async def request_with_safe_redirects(
+    url: str,
+    requester: SafeRequester,
+    policy: SafeFetchPolicy,
+    resolver: HostResolver = resolve_host_addresses,
+) -> tuple[SafeTarget, httpcore.Response]:
+    redirect_count = 0
+    validated_target = resolve_safe_target(url, resolver=resolver)
+
+    while True:
+        response = await requester(validated_target)
+
+        location: str | None = None
+        for name, value in response.headers:
+            if name.lower() == b"location":
+                location = value.decode("ascii")
+                break
+
+        if response.status not in REDIRECT_STATUS_CODES or location is None:
+            return (validated_target, response)
+
+        await response.aclose()
+
+        validated_target = resolve_safe_redirect(
+            current_url=validated_target.url,
+            location=location,
+            redirect_count=redirect_count,
+            policy=policy,
+            resolver=resolver,
+        )
+
+        redirect_count += 1
