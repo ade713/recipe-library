@@ -77,7 +77,7 @@ Status: Complete
 - [ ] Require authentication and user ownership for import endpoints
 - [ ] Preview endpoint
 - [ ] Duplicate URL check
-- [ ] Safe URL fetcher
+- [x] Safe URL fetcher
   - [x] Validate URL structure and resolved public destinations
   - [x] Define validated limits and operational failure types
   - [x] Enforce connection and read timeouts

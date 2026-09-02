@@ -1,6 +1,8 @@
 import ssl
-from collections.abc import Iterable
-from typing import cast
+from collections.abc import Callable, Iterable
+from contextlib import AsyncExitStack
+from types import TracebackType
+from typing import Self, cast
 
 import httpcore
 
@@ -10,6 +12,17 @@ from app.services.safe_fetcher import (
     SafeTarget,
     UnsafeUrlError,
 )
+
+PoolFactory = Callable[
+    [httpcore.AsyncNetworkBackend],
+    httpcore.AsyncConnectionPool,
+]
+
+
+def create_connection_pool(
+    network_backend: httpcore.AsyncNetworkBackend,
+) -> httpcore.AsyncConnectionPool:
+    return httpcore.AsyncConnectionPool(network_backend=network_backend)
 
 
 class PinnedAsyncNetworkBackend(httpcore.AsyncNetworkBackend):
@@ -76,6 +89,64 @@ class PinnedAsyncNetworkBackend(httpcore.AsyncNetworkBackend):
 
     async def sleep(self, seconds: float) -> None:
         await self._backend.sleep(seconds)
+
+
+class PinnedSafeRequester:
+    def __init__(
+        self,
+        policy: SafeFetchPolicy,
+        pool_factory: PoolFactory = create_connection_pool,
+    ) -> None:
+        self._policy = policy
+        self._pool_factory = pool_factory
+        self._exit_stack = AsyncExitStack()
+
+    async def __aenter__(self) -> Self:
+        await self._exit_stack.__aenter__()
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> bool | None:
+        return await self._exit_stack.__aexit__(
+            exc_type,
+            exc_value,
+            traceback,
+        )
+
+    async def __call__(
+        self,
+        target: SafeTarget,
+    ) -> httpcore.Response:
+        pinned_backend = PinnedAsyncNetworkBackend(
+            target=target,
+            policy=self._policy,
+        )
+        pool = await self._exit_stack.enter_async_context(
+            self._pool_factory(pinned_backend),
+        )
+        extensions = {
+            "timeout": {
+                "connect": self._policy.connect_timeout_seconds,
+                "read": self._policy.read_timeout_seconds,
+            },
+        }
+        headers: dict[bytes | str, bytes | str] = {
+            "User-Agent": "RecipeLibrary/0.1"
+        }
+        response = await self._exit_stack.enter_async_context(
+            pool.stream(
+                "GET",
+                target.url,
+                headers=headers,
+                extensions=extensions,
+            ),
+        )
+
+        return response
 
 
 class TimeoutAsyncNetworkStream(httpcore.AsyncNetworkStream):

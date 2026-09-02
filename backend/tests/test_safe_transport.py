@@ -1,6 +1,6 @@
 import asyncio
 from typing import cast
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock, MagicMock, Mock
 
 import httpcore
 import pytest
@@ -13,6 +13,7 @@ from app.services.safe_fetcher import (
 )
 from app.services.safe_transport import (
     PinnedAsyncNetworkBackend,
+    PinnedSafeRequester,
     TimeoutAsyncNetworkStream,
 )
 
@@ -169,3 +170,50 @@ def test_timeout_stream_wraps_stream_returned_after_tls_starts() -> None:
     content = asyncio.run(wrapped_tls_stream.read(1024, timeout=30.0))
     assert content == b"recipe html"
     tls_stream.read.assert_awaited_once_with(1024, timeout=10.0)
+
+
+def test_pinned_requester_opens_stream_without_buffering_response() -> None:
+    response = httpcore.Response(200)
+    response_context = MagicMock()
+    response_context.__aenter__ = AsyncMock(return_value=response)
+    response_context.__aexit__ = AsyncMock(return_value=None)
+    pool = MagicMock(spec=httpcore.AsyncConnectionPool)
+    pool.__aenter__ = AsyncMock(return_value=pool)
+    pool.__aexit__ = AsyncMock(return_value=None)
+    pool.stream.return_value = response_context
+    pool_factory = Mock(return_value=pool)
+    target = SafeTarget(
+        url="https://example.com/recipe",
+        hostname="example.com",
+        addresses=("93.184.216.34",),
+    )
+    policy = SafeFetchPolicy(
+        connect_timeout_seconds=5.0,
+        read_timeout_seconds=10.0,
+    )
+
+    async def make_request() -> httpcore.Response:
+        async with PinnedSafeRequester(
+            policy=policy,
+            pool_factory=pool_factory,
+        ) as requester:
+            return await requester(target)
+
+    actual_response = asyncio.run(make_request())
+
+    assert actual_response is response
+    network_backend = pool_factory.call_args.args[0]
+    assert isinstance(network_backend, PinnedAsyncNetworkBackend)
+    pool.stream.assert_called_once_with(
+        "GET",
+        target.url,
+        headers={"User-Agent": "RecipeLibrary/0.1"},
+        extensions={
+            "timeout": {
+                "connect": 5.0,
+                "read": 10.0,
+            }
+        },
+    )
+    response_context.__aexit__.assert_awaited_once()
+    pool.__aexit__.assert_awaited_once()

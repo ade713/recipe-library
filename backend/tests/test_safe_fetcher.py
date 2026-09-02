@@ -1,6 +1,6 @@
 import asyncio
 from collections.abc import AsyncIterator, Iterable
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpcore
 import pytest
@@ -14,6 +14,7 @@ from app.services.safe_fetcher import (
     SafeFetchPolicy,
     UnsafeUrlError,
     UnsupportedContentTypeError,
+    fetch_html_safely,
     read_limited_html_body,
     request_with_safe_redirects,
     resolve_safe_redirect,
@@ -331,3 +332,62 @@ def test_read_limited_html_body_rejects_actual_streamed_size_over_limit() -> Non
                 policy=SafeFetchPolicy(max_response_bytes=10),
             )
         )
+
+
+def test_fetch_html_safely_composes_redirect_and_response_guards() -> None:
+    requester = AsyncMock(
+        side_effect=[
+            httpcore.Response(
+                302,
+                headers={"Location": "/recipes/final"},
+            ),
+            httpcore.Response(
+                200,
+                headers={"Content-Type": "text/html; charset=utf-8"},
+                content=stream_chunks("<h1>Crème</h1>".encode()),
+            ),
+        ]
+    )
+
+    result = asyncio.run(
+        fetch_html_safely(
+            "https://example.com/recipes/first",
+            requester=requester,
+            policy=SafeFetchPolicy(),
+            resolver=lambda _hostname: ["93.184.216.34"],
+        )
+    )
+
+    assert result.final_url == "https://example.com/recipes/final"
+    assert result.content_type == "text/html"
+    assert result.html == "<h1>Crème</h1>"
+
+
+def test_fetch_html_safely_manages_default_pinned_requester() -> None:
+    requester = AsyncMock(
+        return_value=httpcore.Response(
+            200,
+            headers={"Content-Type": "text/html"},
+            content=stream_chunks(b"<h1>Recipe</h1>"),
+        )
+    )
+    requester_context = MagicMock()
+    requester_context.__aenter__ = AsyncMock(return_value=requester)
+    requester_context.__aexit__ = AsyncMock(return_value=None)
+
+    with patch(
+        "app.services.safe_transport.PinnedSafeRequester",
+        return_value=requester_context,
+    ) as requester_factory:
+        result = asyncio.run(
+            fetch_html_safely(
+                "https://example.com/recipe",
+                resolver=lambda _hostname: ["93.184.216.34"],
+            )
+        )
+
+    requester_factory.assert_called_once_with(policy=SafeFetchPolicy())
+    requester_context.__aenter__.assert_awaited_once()
+    requester_context.__aexit__.assert_awaited_once()
+    assert result.final_url == "https://example.com/recipe"
+    assert result.html == "<h1>Recipe</h1>"
