@@ -495,3 +495,30 @@ Next:
 
 - Limit redirects and revalidate every redirect destination before following it.
 ```
+
+## Safe Fetch Redirect Validation
+
+```md
+## 2026-09-01
+
+Built:
+
+- Added safe redirect resolution for absolute, root-relative, path-relative, and scheme-relative locations.
+- Revalidated each redirect destination through the existing URL and public-address checks before allowing another request.
+- Added a manual redirect loop with an explicit policy limit instead of relying on automatic redirect handling.
+- Closed intermediate redirect responses before continuing and stopped before requesting an unsafe destination.
+- Added tests for relative and absolute redirects, unsafe destinations, zero and reached limits, and the redirect-count boundary.
+
+Learned:
+
+- A redirect `Location` comes from a remote response and remains untrusted even when the original URL was safe.
+- `urljoin()` combines the current URL with multiple forms of redirect location before the resulting URL is validated.
+- Automatic redirect handling would bypass the app's opportunity to resolve and validate every destination before connecting.
+- The redirect count represents redirects already followed, which avoids off-by-one errors at the configured limit.
+- Closing intermediate responses releases network resources; the redirect counter, rather than response closing, prevents infinite redirect loops.
+- A limit of three redirects allows up to four HTTP requests when the fourth request produces the final response.
+
+Next:
+
+- Limit streamed response size and require an allowed HTML content type.
+```

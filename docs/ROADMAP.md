@@ -81,7 +81,7 @@ Status: Complete
   - [x] Validate URL structure and resolved public destinations
   - [x] Define validated limits and operational failure types
   - [x] Enforce connection and read timeouts
-  - [ ] Limit redirects and revalidate every destination
+  - [x] Limit redirects and revalidate every destination
   - [ ] Limit response size and require HTML content
 - [ ] Parse recipe
 - [ ] Normalize draft
