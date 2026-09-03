@@ -606,3 +606,32 @@ Next:
 
 - Normalize parsed recipe data into an editable `RecipeDraft` with source attribution and warnings.
 ```
+
+## Recipe Draft Normalization
+
+```md
+## 2026-09-03
+
+Built:
+
+- Added a normalization service that converts raw `ParsedRecipe` data into an editable `RecipeDraft` without saving it.
+- Preserved source attribution and parser warnings alongside the normalized draft.
+- Converted raw ingredient and instruction text into ordered, one-based draft entries while leaving ingredients unparsed by default.
+- Parsed clear yield formats such as `4 servings`, `Serves 6`, and `12 cookies` into decimal serving quantities and normalized units.
+- Kept unclear yield text out of structured serving fields and added a warning instead of guessing.
+- Discarded invalid optional image URLs with a warning while keeping imported source URL validation strict.
+
+Learned:
+
+- Normalization separates unstructured parser output from the validated schema returned to an import-preview client.
+- `re.fullmatch()` is safer than partial matching when the entire yield string must fit a supported format.
+- `Decimal` avoids the binary precision behavior of `float` and matches the recipe schema's serving quantity type.
+- Parser warnings belong beside the draft because they describe import quality rather than saved recipe content.
+- Variables assigned only inside a conditional may remain undefined, so initializing an optional result to `None` provides a safe fallback.
+- Catching Pydantic's `ValidationError` handles expected invalid metadata without hiding unrelated programming errors.
+- A source URL is optional for recipes in general but required within the URL-import workflow for attribution and safe-fetch provenance.
+
+Next:
+
+- Build the authenticated import-preview endpoint that composes safe fetching, parsing, and draft normalization.
+```
