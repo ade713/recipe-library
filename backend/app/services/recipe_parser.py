@@ -1,11 +1,10 @@
 """Recipe parsing service.
 
-First parser target:
-- Use recipe-scrapers for supported sites and structured recipe data.
+Current parser:
+- Use recipe-scrapers for supported sites and generic structured recipe data.
 
-Later fallback targets:
-- JSON-LD Recipe objects
-- Microdata/RDFa
+Later app-owned fallback targets:
+- Direct JSON-LD Recipe extraction
 - Basic OpenGraph metadata
 """
 

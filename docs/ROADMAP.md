@@ -83,7 +83,7 @@ Status: Complete
   - [x] Enforce connection and read timeouts
   - [x] Limit redirects and revalidate every destination
   - [x] Limit response size and require HTML content
-- [ ] Parse recipe
+- [x] Parse recipe
 - [ ] Normalize draft
 - [ ] Save import logs
 - [ ] Failed/blocked/manual-entry fallback behavior

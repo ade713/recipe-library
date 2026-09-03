@@ -577,3 +577,32 @@ Next:
 
 - Build the authenticated import-preview endpoint around the safe fetcher and recipe parser.
 ```
+
+## Recipe Import Parser
+
+```md
+## 2026-09-02
+
+Built:
+
+- Added a recipe parser that consumes already-fetched HTML and explicitly prevents `recipe-scrapers` from making its own network request.
+- Extracted immutable raw title, ingredient, instruction, source-attribution, image, author, site, time, and yield data.
+- Preserved raw yield text for conservative normalization in a later step.
+- Converted expected missing optional fields into `None` values and warnings, and missing ingredients/instructions into empty tuples with warnings.
+- Raised a chained application-level parse error when required title or usable recipe schema data is unavailable.
+- Kept unexpected parser failures visible instead of hiding them behind a broad exception handler.
+
+Learned:
+
+- `instructions()` returns one string, while `instructions_list()` returns separate instruction steps.
+- Converting a scraper list to a tuple creates an immutable snapshot but does not mutate or freeze the original list.
+- Passing a method such as `scraper.description` lets a helper invoke it inside its own exception boundary; adding parentheses would invoke it too early.
+- A generic optional-field helper can report absence uniformly while each caller chooses a type-appropriate fallback.
+- Narrow exception handling prevents unrelated bugs from being mislabeled as expected missing data.
+- Exception chaining preserves the original library failure for debugging while exposing a stable application-level error to callers.
+- Different third-party exceptions can map to one application meaning without leaking library-specific behavior across the codebase.
+
+Next:
+
+- Normalize parsed recipe data into an editable `RecipeDraft` with source attribution and warnings.
+```
