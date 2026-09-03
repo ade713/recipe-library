@@ -11,8 +11,16 @@ Later fallback targets:
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import TypeVar
 
-from recipe_scrapers import AbstractScraper, scrape_html
+from recipe_scrapers import (
+    AbstractScraper,
+    ElementNotFoundInHtml,
+    FieldNotProvidedByWebsiteException,
+    scrape_html,
+)
+
+FieldValue = TypeVar("FieldValue")
 
 ScraperFactory = Callable[..., AbstractScraper]
 
@@ -23,6 +31,7 @@ class ParsedRecipe:
     ingredients: tuple[str, ...]
     instructions: tuple[str, ...]
     source_url: str
+    warnings: tuple[str, ...]
     description: str | None
     image_url: str | None
     author: str | None
@@ -51,23 +60,59 @@ class RecipeParser:
             online=False,
             supported_only=False,
         )
+
+        warnings: list[str] = []
         title = scraper.title()
         ingredients = tuple(scraper.ingredients())
         instructions = tuple(scraper.instructions_list())
-        description = scraper.description()
-        image_url = scraper.image()
-        author = scraper.author()
-        site_name = scraper.site_name()
-        prep_time_minutes = scraper.prep_time()
-        cook_time_minutes = scraper.cook_time()
-        total_time_minutes = scraper.total_time()
-        yields_text = scraper.yields()
+        description = read_optional_field(
+            field_name="Description",
+            getter=scraper.description,
+            warnings=warnings,
+        )
+        image_url = read_optional_field(
+            field_name="Image Url",
+            getter=scraper.image,
+            warnings=warnings,
+        )
+        author = read_optional_field(
+            field_name="Author",
+            getter=scraper.author,
+            warnings=warnings,
+        )
+        site_name = read_optional_field(
+            field_name="Site Name",
+            getter=scraper.site_name,
+            warnings=warnings,
+        )
+        prep_time_minutes = read_optional_field(
+            field_name="Prep Time Minutes",
+            getter=scraper.prep_time,
+            warnings=warnings,
+        )
+        cook_time_minutes = read_optional_field(
+            field_name="Cook Time Minutes",
+            getter=scraper.cook_time,
+            warnings=warnings,
+        )
+        total_time_minutes = read_optional_field(
+            field_name="Total Time Minutes",
+            getter=scraper.total_time,
+            warnings=warnings,
+        )
+        yields_text = read_optional_field(
+            field_name="Yields Text",
+            getter=scraper.yields,
+            warnings=warnings,
+        )
+        collected_warnings = tuple(warnings)
 
         return ParsedRecipe(
             title=title,
             ingredients=ingredients,
             instructions=instructions,
             source_url=source_url,
+            warnings=collected_warnings,
             description=description,
             image_url=image_url,
             author=author,
@@ -77,3 +122,18 @@ class RecipeParser:
             total_time_minutes=total_time_minutes,
             yields_text=yields_text,
         )
+
+
+def read_optional_field(
+    field_name: str,
+    getter: Callable[[], FieldValue],
+    warnings: list[str],
+) -> FieldValue | None:
+    try:
+        return getter()
+    except (
+        ElementNotFoundInHtml,
+        FieldNotProvidedByWebsiteException,
+    ):
+        warnings.append(f"{field_name} was not provided by the source.")
+        return None

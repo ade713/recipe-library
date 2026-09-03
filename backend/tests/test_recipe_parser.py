@@ -1,6 +1,11 @@
 from typing import cast
 from unittest.mock import Mock
 
+from recipe_scrapers import (
+    ElementNotFoundInHtml,
+    FieldNotProvidedByWebsiteException,
+)
+
 from app.services.recipe_parser import RecipeParser, ScraperFactory
 
 
@@ -49,6 +54,7 @@ def test_recipe_parser_extracts_core_fields_without_fetching_online() -> None:
         "Simmer for 20 minutes.",
     )
     assert result.source_url == "https://example.com/tomato-soup"
+    assert result.warnings == ()
 
 
 def test_recipe_parser_extracts_optional_recipe_metadata() -> None:
@@ -84,3 +90,36 @@ def test_recipe_parser_extracts_optional_recipe_metadata() -> None:
     assert result.cook_time_minutes == 20
     assert result.total_time_minutes == 30
     assert result.yields_text == "4 servings"
+    assert result.warnings == ()
+
+
+def test_recipe_parser_warns_when_optional_metadata_is_missing() -> None:
+    scraper = Mock()
+    scraper.title.return_value = "Tomato Soup"
+    scraper.ingredients.return_value = ["2 cans tomatoes"]
+    scraper.instructions_list.return_value = ["Simmer for 20 minutes."]
+    scraper.description.side_effect = ElementNotFoundInHtml("description")
+    scraper.image.return_value = None
+    scraper.author.side_effect = FieldNotProvidedByWebsiteException(
+        return_value=None
+    )
+    scraper.site_name.return_value = None
+    scraper.prep_time.return_value = None
+    scraper.cook_time.return_value = None
+    scraper.total_time.return_value = None
+    scraper.yields.return_value = None
+    scraper_factory = Mock(return_value=scraper)
+
+    result = RecipeParser(
+        scraper_factory=cast(ScraperFactory, scraper_factory),
+    ).parse(
+        html="<html>recipe data</html>",
+        source_url="https://example.com/tomato-soup",
+    )
+
+    assert result.description is None
+    assert result.author is None
+    assert result.warnings == (
+        "Description was not provided by the source.",
+        "Author was not provided by the source.",
+    )
