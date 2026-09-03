@@ -1,12 +1,17 @@
 from typing import cast
 from unittest.mock import Mock
 
+import pytest
 from recipe_scrapers import (
     ElementNotFoundInHtml,
     FieldNotProvidedByWebsiteException,
 )
 
-from app.services.recipe_parser import RecipeParser, ScraperFactory
+from app.services.recipe_parser import (
+    RecipeParseError,
+    RecipeParser,
+    ScraperFactory,
+)
 
 
 def test_recipe_parser_extracts_core_fields_without_fetching_online() -> None:
@@ -122,4 +127,60 @@ def test_recipe_parser_warns_when_optional_metadata_is_missing() -> None:
     assert result.warnings == (
         "Description was not provided by the source.",
         "Author was not provided by the source.",
+    )
+
+
+def test_recipe_parser_raises_clear_error_when_title_is_missing() -> None:
+    scraper = Mock()
+    missing_title_error = ElementNotFoundInHtml("title")
+    scraper.title.side_effect = missing_title_error
+    parser = RecipeParser(
+        scraper_factory=cast(
+            ScraperFactory,
+            Mock(return_value=scraper),
+        ),
+    )
+
+    with pytest.raises(RecipeParseError) as error_info:
+        parser.parse(
+            html="<html>recipe data</html>",
+            source_url="https://example.com/tomato-soup",
+        )
+
+    assert str(error_info.value) == "Recipe title could not be parsed."
+    assert error_info.value.__cause__ is missing_title_error
+
+
+def test_recipe_parser_warns_when_ingredients_and_steps_are_missing() -> None:
+    scraper = Mock()
+    scraper.title.return_value = "Tomato Soup"
+    scraper.ingredients.side_effect = ElementNotFoundInHtml("ingredients")
+    scraper.instructions_list.side_effect = FieldNotProvidedByWebsiteException(
+        return_value=None
+    )
+    scraper.description.return_value = None
+    scraper.image.return_value = None
+    scraper.author.return_value = None
+    scraper.site_name.return_value = None
+    scraper.prep_time.return_value = None
+    scraper.cook_time.return_value = None
+    scraper.total_time.return_value = None
+    scraper.yields.return_value = None
+    parser = RecipeParser(
+        scraper_factory=cast(
+            ScraperFactory,
+            Mock(return_value=scraper),
+        ),
+    )
+
+    result = parser.parse(
+        html="<html>recipe data</html>",
+        source_url="https://example.com/tomato-soup",
+    )
+
+    assert result.ingredients == ()
+    assert result.instructions == ()
+    assert result.warnings == (
+        "Ingredients were not provided by the source.",
+        "Instructions were not provided by the source.",
     )

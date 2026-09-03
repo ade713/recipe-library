@@ -24,6 +24,11 @@ FieldValue = TypeVar("FieldValue")
 
 ScraperFactory = Callable[..., AbstractScraper]
 
+MISSING_FIELD_ERRORS = (
+    ElementNotFoundInHtml,
+    FieldNotProvidedByWebsiteException,
+)
+
 
 @dataclass(frozen=True)
 class ParsedRecipe:
@@ -40,6 +45,10 @@ class ParsedRecipe:
     cook_time_minutes: int | None
     total_time_minutes: int | None
     yields_text: str | None
+
+
+class RecipeParseError(RuntimeError):
+    """Raised when required recipe data cannot be parsed."""
 
 
 class RecipeParser:
@@ -61,10 +70,36 @@ class RecipeParser:
             supported_only=False,
         )
 
+        try:
+            title = scraper.title()
+        except MISSING_FIELD_ERRORS as error:
+            raise RecipeParseError(
+                "Recipe title could not be parsed."
+            ) from error
+
         warnings: list[str] = []
-        title = scraper.title()
-        ingredients = tuple(scraper.ingredients())
-        instructions = tuple(scraper.instructions_list())
+        ingredient_values = read_optional_field(
+            field_name="Ingredients",
+            getter=scraper.ingredients,
+            warnings=warnings,
+            is_plural=True,
+        )
+        ingredients = (
+            tuple(ingredient_values)
+            if ingredient_values is not None
+            else ()
+        )
+        instruction_values = read_optional_field(
+            field_name="Instructions",
+            getter=scraper.instructions_list,
+            warnings=warnings,
+            is_plural=True,
+        )
+        instructions = (
+            tuple(instruction_values)
+            if instruction_values is not None
+            else ()
+        )
         description = read_optional_field(
             field_name="Description",
             getter=scraper.description,
@@ -128,12 +163,11 @@ def read_optional_field(
     field_name: str,
     getter: Callable[[], FieldValue],
     warnings: list[str],
+    is_plural: bool = False,
 ) -> FieldValue | None:
+    warning_verb = "were" if is_plural else "was"
     try:
         return getter()
-    except (
-        ElementNotFoundInHtml,
-        FieldNotProvidedByWebsiteException,
-    ):
-        warnings.append(f"{field_name} was not provided by the source.")
+    except MISSING_FIELD_ERRORS:
+        warnings.append(f"{field_name} {warning_verb} not provided by the source.")
         return None
