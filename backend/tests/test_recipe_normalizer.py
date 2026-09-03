@@ -1,3 +1,7 @@
+from decimal import Decimal
+
+import pytest
+
 from app.services.recipe_normalizer import normalize_recipe_draft
 from app.services.recipe_parser import ParsedRecipe
 
@@ -96,3 +100,66 @@ def test_normalize_recipe_draft_allows_missing_image_url() -> None:
     result = normalize_recipe_draft(parsed_recipe)
 
     assert result.draft.image_url is None
+
+
+@pytest.mark.parametrize(
+    ("yields_text", "expected_servings", "expected_unit"),
+    [
+        ("4 servings", Decimal("4"), "servings"),
+        ("Serves 6", Decimal("6"), "servings"),
+        ("12 cookies", Decimal("12"), "cookies"),
+    ],
+)
+def test_normalize_recipe_draft_parses_clear_yield_text(
+    yields_text: str,
+    expected_servings: Decimal,
+    expected_unit: str,
+) -> None:
+    parsed_recipe = ParsedRecipe(
+        title="Test Recipe",
+        ingredients=(),
+        instructions=(),
+        source_url="https://example.com/recipe",
+        warnings=(),
+        description=None,
+        image_url=None,
+        author=None,
+        site_name=None,
+        prep_time_minutes=None,
+        cook_time_minutes=None,
+        total_time_minutes=None,
+        yields_text=yields_text,
+    )
+
+    result = normalize_recipe_draft(parsed_recipe)
+
+    assert result.draft.base_servings == expected_servings
+    assert result.draft.servings_unit == expected_unit
+    assert result.warnings == ()
+
+
+def test_normalize_recipe_draft_warns_on_unclear_yield_text() -> None:
+    parsed_recipe = ParsedRecipe(
+        title="Test Recipe",
+        ingredients=(),
+        instructions=(),
+        source_url="https://example.com/recipe",
+        warnings=("Author was not provided by the source.",),
+        description=None,
+        image_url=None,
+        author=None,
+        site_name=None,
+        prep_time_minutes=None,
+        cook_time_minutes=None,
+        total_time_minutes=None,
+        yields_text="about four bowls",
+    )
+
+    result = normalize_recipe_draft(parsed_recipe)
+
+    assert result.draft.base_servings is None
+    assert result.draft.servings_unit is None
+    assert result.warnings == (
+        "Author was not provided by the source.",
+        "Yield information could not be parsed: about four bowls",
+    )
