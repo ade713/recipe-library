@@ -84,7 +84,7 @@ Status: Complete
   - [x] Limit redirects and revalidate every destination
   - [x] Limit response size and require HTML content
 - [x] Parse recipe
-- [ ] Normalize draft
+- [x] Normalize draft
 - [ ] Save import logs
 - [ ] Failed/blocked/manual-entry fallback behavior
 
