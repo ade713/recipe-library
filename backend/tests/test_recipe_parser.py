@@ -5,6 +5,9 @@ import pytest
 from recipe_scrapers import (
     ElementNotFoundInHtml,
     FieldNotProvidedByWebsiteException,
+    NoSchemaFoundInWildMode,
+    RecipeSchemaNotFound,
+    WebsiteNotImplementedError,
 )
 
 from app.services.recipe_parser import (
@@ -184,3 +187,47 @@ def test_recipe_parser_warns_when_ingredients_and_steps_are_missing() -> None:
         "Ingredients were not provided by the source.",
         "Instructions were not provided by the source.",
     )
+
+
+@pytest.mark.parametrize(
+    "parser_error",
+    [
+        NoSchemaFoundInWildMode("https://example.com/recipe"),
+        RecipeSchemaNotFound("https://example.com/recipe"),
+        WebsiteNotImplementedError("example.com"),
+    ],
+)
+def test_recipe_parser_translates_expected_parser_creation_errors(
+    parser_error: Exception,
+) -> None:
+    scraper_factory = Mock(side_effect=parser_error)
+    parser = RecipeParser(
+        scraper_factory=cast(ScraperFactory, scraper_factory),
+    )
+
+    with pytest.raises(RecipeParseError) as error_info:
+        parser.parse(
+            html="<html>not a recipe</html>",
+            source_url="https://example.com/recipe",
+        )
+
+    assert str(error_info.value) == "Recipe data could not be found on the page."
+    assert error_info.value.__cause__ is parser_error
+
+
+def test_recipe_parser_does_not_hide_unexpected_factory_errors() -> None:
+    unexpected_error = RuntimeError("parser bug")
+    parser = RecipeParser(
+        scraper_factory=cast(
+            ScraperFactory,
+            Mock(side_effect=unexpected_error),
+        ),
+    )
+
+    with pytest.raises(RuntimeError) as error_info:
+        parser.parse(
+            html="<html>recipe data</html>",
+            source_url="https://example.com/recipe",
+        )
+
+    assert error_info.value is unexpected_error

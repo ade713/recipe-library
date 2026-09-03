@@ -17,6 +17,9 @@ from recipe_scrapers import (
     AbstractScraper,
     ElementNotFoundInHtml,
     FieldNotProvidedByWebsiteException,
+    NoSchemaFoundInWildMode,
+    RecipeSchemaNotFound,
+    WebsiteNotImplementedError,
     scrape_html,
 )
 
@@ -27,6 +30,12 @@ ScraperFactory = Callable[..., AbstractScraper]
 MISSING_FIELD_ERRORS = (
     ElementNotFoundInHtml,
     FieldNotProvidedByWebsiteException,
+)
+
+PARSER_CREATION_ERRORS = (
+    NoSchemaFoundInWildMode,
+    RecipeSchemaNotFound,
+    WebsiteNotImplementedError,
 )
 
 
@@ -63,12 +72,17 @@ class RecipeParser:
         html: str,
         source_url: str,
     ) -> ParsedRecipe:
-        scraper = self._scraper_factory(
-            html,
-            source_url,
-            online=False,
-            supported_only=False,
-        )
+        try:
+            scraper = self._scraper_factory(
+                html,
+                source_url,
+                online=False,
+                supported_only=False,
+            )
+        except PARSER_CREATION_ERRORS as error:
+            raise RecipeParseError(
+                "Recipe data could not be found on the page."
+            ) from error
 
         try:
             title = scraper.title()
