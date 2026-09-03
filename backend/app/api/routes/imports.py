@@ -1,14 +1,20 @@
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.api.dependencies import get_current_user
+from app.models import User
 from app.schemas.import_recipe import RecipeImportPreviewRequest
 
 router = APIRouter()
 
 
 @router.post("/preview", status_code=status.HTTP_501_NOT_IMPLEMENTED)
-def preview_import(payload: RecipeImportPreviewRequest) -> None:
+def preview_import(
+    current_user: Annotated[User, Depends(get_current_user)],
+    payload: RecipeImportPreviewRequest,
+) -> None:
     raise HTTPException(status_code=501, detail="Recipe import preview is not implemented yet.")
 
 
