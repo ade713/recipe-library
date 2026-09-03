@@ -2,7 +2,7 @@ import re
 from dataclasses import dataclass
 from decimal import Decimal
 
-from pydantic import HttpUrl, TypeAdapter
+from pydantic import HttpUrl, TypeAdapter, ValidationError
 
 from app.schemas.recipe import (
     IngredientDraft,
@@ -22,14 +22,23 @@ class NormalizedRecipeDraft:
 def normalize_recipe_draft(
     parsed_recipe: ParsedRecipe,
 ) -> NormalizedRecipeDraft:
-    image_url = (
-        TypeAdapter(HttpUrl).validate_strings(parsed_recipe.image_url)
-        if parsed_recipe.image_url is not None
-        else None
-    )
+    warnings = list(parsed_recipe.warnings)
+
+    image_url = None
+    if parsed_recipe.image_url is not None:
+        try:
+            image_url = TypeAdapter(HttpUrl).validate_strings(
+                parsed_recipe.image_url
+            )
+        except ValidationError:
+            warnings.append(
+                f"Image URL could not be validated: {parsed_recipe.image_url}"
+            )
+
     source_url = TypeAdapter(HttpUrl).validate_strings(
         parsed_recipe.source_url
     )
+
     ingredients = [
         IngredientDraft(
             position=position,
@@ -52,7 +61,6 @@ def normalize_recipe_draft(
         )
     ]
 
-    warnings = list(parsed_recipe.warnings)
     parsed_yields = parse_yields_text(parsed_recipe.yields_text)
 
     base_servings = None
