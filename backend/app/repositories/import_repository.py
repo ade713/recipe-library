@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import RecipeImport
@@ -29,3 +30,20 @@ def create_import_log(
     session.flush()
 
     return recipe_import
+
+
+def get_import_log(
+    session: Session,
+    *,
+    user_id: UUID,
+    import_id: UUID,
+) -> RecipeImport | None:
+    statement = (
+        select(RecipeImport)
+        .where(
+            RecipeImport.id == import_id,
+            RecipeImport.user_id == user_id,
+        )
+    )
+
+    return session.scalar(statement)
