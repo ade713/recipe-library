@@ -11,7 +11,10 @@ Planned flow:
 """
 
 from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
+from typing import Literal
 
+from app.schemas.recipe import RecipeDraft
 from app.services.recipe_normalizer import NormalizedRecipeDraft, normalize_recipe_draft
 from app.services.recipe_parser import ParsedRecipe, RecipeParseError, RecipeParser
 from app.services.safe_fetcher import (
@@ -37,6 +40,14 @@ class RecipeImportFailedError(RecipeImportError):
     """Raised when an import cannot produce usable recipe data."""
 
 
+@dataclass(frozen=True)
+class RecipeImportResult:
+    status: Literal["success", "partial"]
+    parser_used: str
+    draft: RecipeDraft
+    warnings: tuple[str, ...]
+
+
 class RecipeImporter:
     def __init__(
         self,
@@ -48,7 +59,7 @@ class RecipeImporter:
         self._parser = parser if parser is not None else RecipeParser()
         self._normalizer = normalizer
 
-    async def preview_from_url(self, url: str) -> NormalizedRecipeDraft:
+    async def preview_from_url(self, url: str) -> RecipeImportResult:
         try:
             fetch_result = await self._fetcher(url)
         except UnsafeUrlError as error:
@@ -70,4 +81,17 @@ class RecipeImporter:
                 "Recipe data could not be parsed."
             ) from error
 
-        return self._normalizer(parsed_recipe)
+        normalized_recipe = self._normalizer(parsed_recipe)
+        preview_status: Literal["success", "partial"] = (
+            "partial"
+            if not normalized_recipe.draft.ingredients
+            or not normalized_recipe.draft.steps
+            else "success"
+        )
+
+        return RecipeImportResult(
+            status=preview_status,
+            parser_used="recipe-scrapers",
+            draft=normalized_recipe.draft,
+            warnings=normalized_recipe.warnings,
+        )
