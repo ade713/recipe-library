@@ -38,6 +38,21 @@ def test_import_preview_response_allows_a_blocked_result_without_a_draft() -> No
     assert response.warnings == ["This URL is not safe to fetch."]
 
 
+def test_import_preview_response_identifies_an_existing_duplicate_recipe() -> None:
+    existing_recipe_id = uuid4()
+    response = RecipeImportPreviewResponse(
+        import_id=uuid4(),
+        status="duplicate",
+        draft=None,
+        existing_recipe_id=existing_recipe_id,
+        warnings=["This recipe is already in your library."],
+        next_actions=["open_existing", "import_as_copy"],
+    )
+
+    assert response.existing_recipe_id == existing_recipe_id
+    assert response.next_actions == ["open_existing", "import_as_copy"]
+
+
 def test_import_preview_response_rejects_an_unknown_status() -> None:
     with pytest.raises(ValidationError):
         RecipeImportPreviewResponse(
