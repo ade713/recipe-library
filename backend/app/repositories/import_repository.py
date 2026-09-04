@@ -10,6 +10,7 @@ def create_import_log(
     session: Session,
     *,
     user_id: UUID,
+    recipe_id: UUID | None = None,
     source_url: str,
     source_domain: str | None,
     status: str,
@@ -17,8 +18,11 @@ def create_import_log(
     warnings: list[str],
     error_message: str | None,
 ) -> RecipeImport:
+    """Create and flush a user-owned import log without committing."""
+
     recipe_import = RecipeImport(
         user_id=user_id,
+        recipe_id=recipe_id,
         source_url=source_url,
         source_domain=source_domain,
         status=status,
