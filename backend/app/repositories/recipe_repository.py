@@ -63,6 +63,24 @@ def get_recipe(session: Session, *, user_id: UUID, recipe_id: UUID) -> Recipe | 
     return session.scalar(statement)
 
 
+def get_recipe_by_source_url(
+    session: Session,
+    *,
+    user_id: UUID,
+    source_url: str,
+) -> Recipe | None:
+    """Return a saved recipe matching the user's normalized source URL."""
+
+    statement = (
+        select(Recipe).where(
+            Recipe.user_id == user_id,
+            Recipe.source_url == source_url,
+        )
+    )
+
+    return session.scalar(statement)
+
+
 def list_recipes(
     session: Session,
     *,
