@@ -635,3 +635,34 @@ Next:
 
 - Build the authenticated import-preview endpoint that composes safe fetching, parsing, and draft normalization.
 ```
+
+## Import Preview Orchestration and Logging
+
+```md
+## 2026-09-04
+
+Built:
+
+- Added an injectable import service that composes safe fetching, parsing, and draft normalization without performing database or HTTP response work.
+- Classified usable previews as `success` or `partial`, with missing ingredients or instructions producing a partial draft.
+- Translated unsafe destinations into blocked errors and operational fetch or parsing failures into failed errors.
+- Added repository methods to create import logs and retrieve them by both import ID and authenticated user ID.
+- Connected the authenticated preview endpoint to the importer and persisted successful, partial, blocked, and failed outcomes.
+- Added transaction tests proving expected outcomes commit while unexpected errors roll back and remain visible.
+
+Learned:
+
+- Dependency injection lets tests replace network-facing collaborators with controlled asynchronous mocks.
+- The parser should receive the revalidated final URL because that destination supplied the fetched HTML after redirects.
+- Optional-field warnings do not automatically make an import partial; the MVP treats missing ingredients or instructions as the important boundary.
+- Application-level import errors provide stable blocked and failed categories while exception chaining preserves their original causes for debugging.
+- `flush()` executes pending SQL and assigns generated IDs while leaving the caller in control of commit or rollback.
+- Keyword-only repository arguments reduce positional mistakes when several adjacent fields share similar types.
+- Import-log lookups include user ownership in the SQL query so another user's record is indistinguishable from a missing record.
+- Preparing the validated response before commit allows response-construction failures to roll back the pending import log.
+- Nested exception handling lets expected import failures become committed results while an outer boundary still rolls back unexpected logging or response errors.
+
+Next:
+
+- Add user-scoped duplicate URL detection and explicit manual-entry fallback actions for blocked or failed previews.
+```

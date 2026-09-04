@@ -75,7 +75,7 @@ Status: Complete
 ## Phase 9: Safe recipe import
 
 - [ ] Require authentication and user ownership for import endpoints
-- [ ] Preview endpoint
+- [x] Preview endpoint
 - [ ] Duplicate URL check
 - [x] Safe URL fetcher
   - [x] Validate URL structure and resolved public destinations
@@ -85,7 +85,7 @@ Status: Complete
   - [x] Limit response size and require HTML content
 - [x] Parse recipe
 - [x] Normalize draft
-- [ ] Save import logs
+- [x] Save import logs
 - [ ] Failed/blocked/manual-entry fallback behavior
 
 ## Phase 10: Save imported recipes

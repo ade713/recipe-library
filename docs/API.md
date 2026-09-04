@@ -68,6 +68,10 @@ POST /imports/{import_id}/save
 GET  /imports/{import_id}
 ```
 
+`POST /imports/preview` is implemented and requires bearer authentication. It safely fetches and parses the submitted URL, returns an editable draft with `success` or `partial` status when usable data is found, and records the user-scoped import attempt. Blocked and failed attempts also create import logs and return a safe warning with no draft.
+
+The save and import-detail endpoints remain planned.
+
 Allowed import statuses:
 
 ```text
