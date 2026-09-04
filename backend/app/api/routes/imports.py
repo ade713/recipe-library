@@ -23,6 +23,7 @@ router = APIRouter()
 
 
 def get_recipe_importer() -> RecipeImporter:
+    """Create the importer used to build recipe previews."""
     return RecipeImporter()
 
 
@@ -33,6 +34,11 @@ async def preview_import(
     importer: Annotated[RecipeImporter, Depends(get_recipe_importer)],
     payload: RecipeImportPreviewRequest,
 ) -> RecipeImportPreviewResponse:
+    """Create and log an authenticated recipe-import preview.
+
+    Successful and partial imports return an editable draft. Blocked and
+    failed imports return no draft but are still logged for the current user.
+    """
     try:
         try:
             result = await importer.preview_from_url(str(payload.url))
