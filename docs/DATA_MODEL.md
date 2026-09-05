@@ -25,6 +25,7 @@ recipe_imports
 - Use parsed ingredient fields for portion scaling and search.
 - Keep user notes separate from source-site tips.
 - Keep import logs separate from saved recipes.
+- Preserve import logs when a linked recipe is deleted by setting their nullable `recipe_id` reference to `NULL`.
 - Use JSON/JSONB for warnings, parser metadata, and limited raw structured data.
 - Do not store full raw webpage HTML by default.
 - Scope all recipes, notes, tags, and imports to the current user.

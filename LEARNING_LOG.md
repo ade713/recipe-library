@@ -680,6 +680,7 @@ Built:
 - Added an explicit `import_as_copy` request flag that skips duplicate detection and continues through normal preview creation.
 - Added typed client actions for opening an existing recipe, importing a copy, entering a recipe manually, and opening its source URL.
 - Returned manual-entry and source-link actions with blocked and failed previews.
+- Preserved historical import logs after recipe deletion by applying `ON DELETE SET NULL` to their nullable recipe reference.
 
 Learned:
 
@@ -690,6 +691,7 @@ Learned:
 - An unconfigured mock method returns another truthy mock, so tests must explicitly return `None` when exercising a nonduplicate path.
 - An explicit copy flag keeps duplicate prevention safe by default while allowing the user to intentionally bypass it.
 - Tests that use a real related database record remain valid if stricter foreign-key enforcement is enabled later.
+- A nullable foreign key with `ON DELETE SET NULL` preserves historical records while preventing stale references from blocking parent deletion.
 
 Next:
 
