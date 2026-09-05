@@ -10,7 +10,11 @@ class RecipeImport(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "recipe_imports"
 
     user_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("users.id"), index=True)
-    recipe_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, ForeignKey("recipes.id"), index=True)
+    recipe_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("recipes.id", ondelete="SET NULL"),
+        index=True,
+    )
     source_url: Mapped[str] = mapped_column(Text)
     source_domain: Mapped[str | None] = mapped_column(String(255), index=True)
     parser_used: Mapped[str | None] = mapped_column(String(100))
