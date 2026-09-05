@@ -666,3 +666,32 @@ Next:
 
 - Add user-scoped duplicate URL detection and explicit manual-entry fallback actions for blocked or failed previews.
 ```
+
+## Duplicate Import Detection and Fallback Actions
+
+```md
+## 2026-09-04
+
+Built:
+
+- Added an exact source-URL lookup scoped to the authenticated user's saved recipes.
+- Checked for duplicates before safe fetching and returned the existing recipe ID without making a network request.
+- Linked duplicate import logs to the saved recipe that caused the match.
+- Added an explicit `import_as_copy` request flag that skips duplicate detection and continues through normal preview creation.
+- Added typed client actions for opening an existing recipe, importing a copy, entering a recipe manually, and opening its source URL.
+- Returned manual-entry and source-link actions with blocked and failed previews.
+
+Learned:
+
+- Duplicate checks belong before network work so a known local result avoids unnecessary DNS resolution and HTTP requests.
+- User ID and normalized source URL must both participate in the query so one user's saved recipe does not block another user's import.
+- Linking a duplicate log to the existing recipe preserves which record caused that historical outcome.
+- Optional response fields can default to `None` or an empty list so unrelated response variants do not need to supply them.
+- An unconfigured mock method returns another truthy mock, so tests must explicitly return `None` when exercising a nonduplicate path.
+- An explicit copy flag keeps duplicate prevention safe by default while allowing the user to intentionally bypass it.
+- Tests that use a real related database record remain valid if stricter foreign-key enforcement is enabled later.
+
+Next:
+
+- Begin Week 12 by accepting an edited import draft and saving its recipe data transactionally.
+```
