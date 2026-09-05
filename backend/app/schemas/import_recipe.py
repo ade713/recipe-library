@@ -15,6 +15,7 @@ RecipeImportNextAction = Literal[
 
 class RecipeImportPreviewRequest(BaseModel):
     url: HttpUrl
+    import_as_copy: bool = False
 
 
 class RecipeImportPreviewResponse(BaseModel):
