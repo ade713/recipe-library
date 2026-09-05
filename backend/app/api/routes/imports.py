@@ -15,6 +15,7 @@ from app.schemas.import_recipe import (
     RecipeImportPreviewRequest,
     RecipeImportPreviewResponse,
 )
+from app.schemas.recipe import RecipeCreate
 from app.services.recipe_importer import (
     RecipeImportBlockedError,
     RecipeImporter,
@@ -139,7 +140,12 @@ async def preview_import(
 
 
 @router.post("/{import_id}/save", status_code=status.HTTP_501_NOT_IMPLEMENTED)
-def save_import(import_id: UUID) -> None:
+def save_import(
+    import_id: UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    payload: RecipeCreate,
+) -> None:
+    """Save a user-reviewed import draft as a recipe."""
     raise HTTPException(status_code=501, detail="Saving imported recipes is not implemented yet.")
 
 
