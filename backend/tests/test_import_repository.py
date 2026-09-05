@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
-from app.models import Base, RecipeImport, User
+from app.models import Base, Recipe, RecipeImport, User
 from app.repositories.import_repository import create_import_log, get_import_log
 
 
@@ -17,9 +17,18 @@ def test_create_import_log_stores_user_scoped_preview_metadata() -> None:
         session.add(user)
         session.flush()
 
+        recipe = Recipe(
+            user_id=user.id,
+            title="Tomato Soup",
+            source_url="https://example.com/recipe",
+        )
+        session.add(recipe)
+        session.flush()
+
         import_log = create_import_log(
             session,
             user_id=user.id,
+            recipe_id=recipe.id,
             source_url="https://example.com/recipe",
             source_domain="example.com",
             status="partial",
@@ -33,6 +42,7 @@ def test_create_import_log_stores_user_scoped_preview_metadata() -> None:
         assert import_log.id is not None
         assert stored_log is import_log
         assert import_log.user_id == user.id
+        assert import_log.recipe_id == recipe.id
         assert import_log.source_url == "https://example.com/recipe"
         assert import_log.source_domain == "example.com"
         assert import_log.status == "partial"

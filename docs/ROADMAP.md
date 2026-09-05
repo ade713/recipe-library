@@ -76,7 +76,7 @@ Status: Complete
 
 - [ ] Require authentication and user ownership for import endpoints
 - [x] Preview endpoint
-- [ ] Duplicate URL check
+- [x] Duplicate URL check
 - [x] Safe URL fetcher
   - [x] Validate URL structure and resolved public destinations
   - [x] Define validated limits and operational failure types
@@ -86,7 +86,7 @@ Status: Complete
 - [x] Parse recipe
 - [x] Normalize draft
 - [x] Save import logs
-- [ ] Failed/blocked/manual-entry fallback behavior
+- [x] Failed/blocked/manual-entry fallback behavior
 
 ## Phase 10: Save imported recipes
 

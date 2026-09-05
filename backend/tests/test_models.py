@@ -64,6 +64,21 @@ def test_recipe_owner_references_users_table() -> None:
     )
 
 
+def test_import_recipe_reference_is_cleared_when_recipe_is_deleted() -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:")
+    Base.metadata.create_all(engine)
+
+    import_foreign_keys = inspect(engine).get_foreign_keys("recipe_imports")
+
+    assert any(
+        foreign_key["constrained_columns"] == ["recipe_id"]
+        and foreign_key["referred_table"] == "recipes"
+        and foreign_key["referred_columns"] == ["id"]
+        and foreign_key["options"].get("ondelete") == "SET NULL"
+        for foreign_key in import_foreign_keys
+    )
+
+
 def test_tag_names_are_unique_per_user() -> None:
     engine = create_engine("sqlite+pysqlite:///:memory:")
     Base.metadata.create_all(engine)

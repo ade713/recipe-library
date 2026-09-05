@@ -70,6 +70,19 @@ GET  /imports/{import_id}
 
 `POST /imports/preview` is implemented and requires bearer authentication. It safely fetches and parses the submitted URL, returns an editable draft with `success` or `partial` status when usable data is found, and records the user-scoped import attempt. Blocked and failed attempts also create import logs and return a safe warning with no draft.
 
+The request accepts an optional explicit copy choice:
+
+```json
+{
+  "url": "https://example.com/recipe",
+  "import_as_copy": false
+}
+```
+
+By default, a saved recipe owned by the current user with the same normalized source URL produces a `duplicate` response before any network request. That response includes `existing_recipe_id` and the actions `open_existing` and `import_as_copy`. Retrying with `import_as_copy: true` skips the duplicate lookup and creates a new preview.
+
+Blocked and failed responses include the actions `enter_manually` and `open_source_url`. These action values describe options for the client; they do not automatically save a recipe or open an external page.
+
 The save and import-detail endpoints remain planned.
 
 Allowed import statuses:
@@ -82,7 +95,7 @@ blocked
 duplicate
 ```
 
-Failed or blocked imports should return enough information for the client to show manual-entry and open-source-url fallback actions.
+Failed or blocked imports return enough information for the client to show manual-entry and open-source-url fallback actions.
 
 ## Notes
 
