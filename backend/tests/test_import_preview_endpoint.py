@@ -191,6 +191,84 @@ def test_import_preview_endpoint_returns_duplicate_before_importing(
     session.rollback.assert_not_called()
 
 
+def test_import_preview_endpoint_can_import_duplicate_as_copy(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    session = Mock(spec=Session)
+    current_user = User(
+        id=uuid4(),
+        email="current@example.com",
+        password_hash="test-hash",
+    )
+    existing_recipe = Recipe(
+        id=uuid4(),
+        user_id=current_user.id,
+        title="Existing Tomato Soup",
+        source_url="https://example.com/recipe",
+    )
+    result = RecipeImportResult(
+        status="success",
+        parser_used="recipe-scrapers",
+        draft=RecipeDraft(
+            title="Imported Tomato Soup Copy",
+            source_url="https://example.com/recipe",
+            source_domain="example.com",
+            ingredients=[
+                {"position": 1, "original_text": "2 cups tomatoes"}
+            ],
+            steps=[
+                {"position": 1, "instruction": "Simmer the tomatoes."}
+            ],
+        ),
+        warnings=(),
+    )
+    importer = Mock(spec=RecipeImporter)
+    importer.preview_from_url = AsyncMock(return_value=result)
+    import_log = RecipeImport(
+        id=uuid4(),
+        user_id=current_user.id,
+        source_url="https://example.com/recipe",
+        source_domain="example.com",
+        parser_used="recipe-scrapers",
+        status="success",
+        warnings=[],
+        error_message=None,
+    )
+    find_recipe = Mock(return_value=existing_recipe)
+    create_log = Mock(return_value=import_log)
+    monkeypatch.setattr(
+        import_routes,
+        "get_recipe_by_source_url_record",
+        find_recipe,
+    )
+    monkeypatch.setattr(import_routes, "create_import_log", create_log)
+
+    response = asyncio.run(
+        import_routes.preview_import(
+            session=session,
+            current_user=current_user,
+            importer=importer,
+            payload=RecipeImportPreviewRequest(
+                url="https://example.com/recipe",
+                import_as_copy=True,
+            ),
+        )
+    )
+
+    assert response.status == "success"
+    assert response.draft is not None
+    assert response.draft.title == "Imported Tomato Soup Copy"
+    assert response.existing_recipe_id is None
+    assert response.next_actions == []
+    find_recipe.assert_not_called()
+    importer.preview_from_url.assert_awaited_once_with(
+        "https://example.com/recipe"
+    )
+    create_log.assert_called_once()
+    session.commit.assert_called_once_with()
+    session.rollback.assert_not_called()
+
+
 @pytest.mark.parametrize(
     ("import_error", "expected_status"),
     [

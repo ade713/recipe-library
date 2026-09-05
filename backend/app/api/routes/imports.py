@@ -42,14 +42,18 @@ async def preview_import(
     Successful and partial imports return an editable draft. Blocked and
     failed imports return no draft but are still logged for the current user.
     Duplicates are returned before network fetching.
+    Explicit copy requests bypass duplicate detection.
     """
     try:
         submitted_url = str(payload.url)
-        existing_recipe = get_recipe_by_source_url_record(
-            session,
-            user_id=current_user.id,
-            source_url=submitted_url,
-        )
+
+        existing_recipe = None
+        if not payload.import_as_copy:
+            existing_recipe = get_recipe_by_source_url_record(
+                session,
+                user_id=current_user.id,
+                source_url=submitted_url,
+            )
 
         if existing_recipe is not None:
             log_status: Literal["duplicate"] = "duplicate"
