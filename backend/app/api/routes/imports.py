@@ -109,6 +109,7 @@ async def preview_import(
                 parser_used=None,
                 draft=None,
                 warnings=warnings,
+                next_actions=["enter_manually", "open_source_url"],
             )
         else:
             import_log = create_import_log(

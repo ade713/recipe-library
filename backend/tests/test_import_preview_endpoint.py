@@ -322,7 +322,7 @@ def test_import_preview_endpoint_logs_expected_import_errors(
             current_user=current_user,
             importer=importer,
             payload=RecipeImportPreviewRequest(
-                url="https://example.com/recipe"
+                url="https://example.com/recipe",
             ),
         )
     )
@@ -331,6 +331,11 @@ def test_import_preview_endpoint_logs_expected_import_errors(
     assert response.parser_used is None
     assert response.draft is None
     assert response.warnings == [str(import_error)]
+    assert response.next_actions == [
+        "enter_manually",
+        "open_source_url",
+    ]
+
     create_log.assert_called_once_with(
         session=session,
         user_id=current_user.id,
