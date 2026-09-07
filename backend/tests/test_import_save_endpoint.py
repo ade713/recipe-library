@@ -1,8 +1,20 @@
+from collections.abc import Generator
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
 
+from app.core.database import get_db
+from app.core.security import create_access_token
 from app.main import create_app
+from app.models import Base, User
+from app.repositories.import_repository import create_import_log
+
+RECIPE_TITLE = "Edited Tomato Soup"
+CURRENT_USER_EMAIL = "current@example.com"
+TEST_PASSWORD_HASH = "test-hash"
 
 
 def test_save_import_endpoint_requires_authentication() -> None:
@@ -12,8 +24,108 @@ def test_save_import_endpoint_requires_authentication() -> None:
     with TestClient(app) as client:
         response = client.post(
             f"/api/v1/imports/{import_id}/save",
-            json={"title": "Edited Tomato Soup"},
+            json={"title": RECIPE_TITLE},
         )
 
     assert response.status_code == 401
     assert response.json() == {"detail": "Not authenticated"}
+
+
+def test_save_import_endpoint_returns_404_for_unknown_import() -> None:
+    engine = create_engine(
+        "sqlite+pysqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(engine)
+    testing_session = sessionmaker(bind=engine, autoflush=False)
+
+    with testing_session() as session:
+        current_user = User(
+            email=CURRENT_USER_EMAIL,
+            password_hash=TEST_PASSWORD_HASH,
+        )
+        session.add(current_user)
+        session.commit()
+        current_user_id = current_user.id
+
+    def override_get_db() -> Generator[Session, None, None]:
+        with testing_session() as session:
+            yield session
+
+    app = create_app()
+    app.dependency_overrides[get_db] = override_get_db
+    access_token = create_access_token(str(current_user_id))
+    import_id = uuid4()
+
+    try:
+        with TestClient(app) as client:
+            response = client.post(
+                f"/api/v1/imports/{import_id}/save",
+                json={"title": RECIPE_TITLE},
+                headers={"Authorization": f"Bearer {access_token}"},
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Import not found."}
+
+
+def test_save_import_endpoint_returns_404_for_another_users_import() -> None:
+    engine = create_engine(
+        "sqlite+pysqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(engine)
+    testing_session = sessionmaker(bind=engine, autoflush=False)
+
+    with testing_session() as session:
+        current_user = User(
+            email=CURRENT_USER_EMAIL,
+            password_hash=TEST_PASSWORD_HASH,
+        )
+        other_user = User(
+            email="other@example.com",
+            password_hash="other-test-hash",
+        )
+        session.add_all([current_user, other_user])
+        session.flush()
+        current_user_id = current_user.id
+        other_user_id = other_user.id
+
+        other_import_log = create_import_log(
+            session,
+            user_id=other_user_id,
+            source_url="https://example.com/recipe",
+            source_domain="example.com",
+            status="success",
+            parser_used="recipe-scrapers",
+            warnings=[],
+            error_message=None,
+        )
+        session.commit()
+        other_import_log_id = other_import_log.id
+
+    def override_get_db() -> Generator[Session, None, None]:
+        with testing_session() as session:
+            yield session
+
+    app = create_app()
+    app.dependency_overrides[get_db] = override_get_db
+    access_token = create_access_token(str(current_user_id))
+    headers = {"Authorization": f"Bearer {access_token}"}
+
+    try:
+        with TestClient(app) as client:
+            response = client.post(
+                f"/api/v1/imports/{other_import_log_id}/save",
+                json={"title": RECIPE_TITLE},
+                headers=headers,
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Import not found."}

@@ -7,7 +7,10 @@ from sqlalchemy.orm import Session
 from app.api.dependencies import get_current_user
 from app.core.database import get_db
 from app.models import User
-from app.repositories.import_repository import create_import_log
+from app.repositories.import_repository import (
+    create_import_log,
+    get_import_log,
+)
 from app.repositories.recipe_repository import (
     get_recipe_by_source_url as get_recipe_by_source_url_record,
 )
@@ -142,11 +145,22 @@ async def preview_import(
 @router.post("/{import_id}/save", status_code=status.HTTP_501_NOT_IMPLEMENTED)
 def save_import(
     import_id: UUID,
+    session: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
     payload: RecipeCreate,
 ) -> None:
     """Save a user-reviewed import draft as a recipe."""
-    raise HTTPException(status_code=501, detail="Saving imported recipes is not implemented yet.")
+    import_log = get_import_log(
+        session,
+        user_id=current_user.id,
+        import_id=import_id,
+    )
+
+    if import_log is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Import not found.",
+        )
 
 
 @router.get("/{import_id}", status_code=status.HTTP_501_NOT_IMPLEMENTED)
