@@ -198,7 +198,13 @@ def test_save_import_endpoint_rejects_unsaveable_import_status(
     }
 
 
-def test_save_import_endpoint_creates_saved_recipe() -> None:
+@pytest.mark.parametrize(
+    "import_status",
+    ["success", "partial"],
+)
+def test_save_import_endpoint_creates_saved_recipe(
+    import_status: str,
+) -> None:
     engine = create_engine(
         "sqlite+pysqlite:///:memory:",
         connect_args={"check_same_thread": False},
@@ -222,7 +228,7 @@ def test_save_import_endpoint_creates_saved_recipe() -> None:
             recipe_id=None,
             source_url=SOURCE_URL,
             source_domain=SOURCE_DOMAIN,
-            status="success",
+            status=import_status,
             parser_used=PARSER,
             warnings=[],
             error_message=None,
