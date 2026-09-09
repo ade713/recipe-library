@@ -38,6 +38,8 @@ Friday should emphasize testing, cleanup, documentation, and review.
 
 ## Week 1 — Python and ingredient scaling
 
+Status: Complete
+
 | Day | Work |
 | --- | --- |
 | Monday | Set up the backend, run existing tests, and understand the project structure and type hints. |
@@ -49,6 +51,8 @@ Friday should emphasize testing, cleanup, documentation, and review.
 **Outcome:** Ingredient scaling works conservatively and is tested.
 
 ## Week 2 — URL validation
+
+Status: Complete
 
 | Day | Work |
 | --- | --- |
@@ -62,6 +66,8 @@ Friday should emphasize testing, cleanup, documentation, and review.
 
 ## Week 3 — Schemas and FastAPI fundamentals
 
+Status: Complete
+
 | Day | Work |
 | --- | --- |
 | Monday | Learn Pydantic models, validation, nested models, and optional fields. |
@@ -73,6 +79,8 @@ Friday should emphasize testing, cleanup, documentation, and review.
 **Outcome:** The app has validated recipe shapes and a working learning endpoint.
 
 ## Week 4 — SQLAlchemy and database setup
+
+Status: Complete
 
 | Day | Work |
 | --- | --- |
@@ -86,6 +94,8 @@ Friday should emphasize testing, cleanup, documentation, and review.
 
 ## Week 5 — Manual recipe creation
 
+Status: Complete
+
 | Day | Work |
 | --- | --- |
 | Monday | Build recipe request and response schemas. |
@@ -97,6 +107,8 @@ Friday should emphasize testing, cleanup, documentation, and review.
 **Outcome:** Recipes can be manually saved without URL importing.
 
 ## Week 6 — Recipe CRUD
+
+Status: Complete
 
 | Day | Work |
 | --- | --- |
@@ -110,6 +122,8 @@ Friday should emphasize testing, cleanup, documentation, and review.
 
 ## Week 7 — Notes, tags, and favorites
 
+Status: Complete
+
 | Day | Work |
 | --- | --- |
 | Monday | Implement personal-note creation and listing. |
@@ -121,6 +135,8 @@ Friday should emphasize testing, cleanup, documentation, and review.
 **Outcome:** Recipes can be organized and annotated.
 
 ## Week 8 — Authentication
+
+Status: Complete
 
 | Day | Work |
 | --- | --- |
@@ -134,6 +150,8 @@ Friday should emphasize testing, cleanup, documentation, and review.
 
 ## Week 9 — Ownership and search
 
+Status: Complete
+
 | Day | Work |
 | --- | --- |
 | Monday | Scope every recipe query to the current user. |
@@ -146,6 +164,8 @@ Friday should emphasize testing, cleanup, documentation, and review.
 
 ## Week 10 — Safe URL fetching
 
+Status: Complete
+
 | Day | Work |
 | --- | --- |
 | Monday | Design the safe fetcher and its failure types. |
@@ -157,6 +177,8 @@ Friday should emphasize testing, cleanup, documentation, and review.
 **Outcome:** The backend can fetch permitted HTML without exposing internal services.
 
 ## Week 11 — Import pipeline
+
+Status: Complete
 
 | Day | Work |
 | --- | --- |
