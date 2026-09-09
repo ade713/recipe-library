@@ -1,6 +1,6 @@
 from collections.abc import Generator
-from unittest.mock import Mock
-from uuid import uuid4
+from unittest.mock import AsyncMock, Mock
+from uuid import UUID, uuid4
 
 import pytest
 from fastapi import status
@@ -10,12 +10,14 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.api.routes import imports as import_routes
+from app.api.routes.imports import get_recipe_importer
 from app.core.database import get_db
 from app.core.security import create_access_token
 from app.main import create_app
 from app.models import Base, Recipe, RecipeImport, User
 from app.repositories.import_repository import create_import_log
-from app.schemas.recipe import RecipeCreate
+from app.schemas.recipe import RecipeCreate, RecipeDraft
+from app.services.recipe_importer import RecipeImporter, RecipeImportResult
 
 RECIPE_TITLE = "Edited Tomato Soup"
 CURRENT_USER_EMAIL = "current@example.com"
@@ -24,6 +26,7 @@ SOURCE_URL = "https://example.com/recipe"
 SOURCE_DOMAIN = "example.com"
 PARSER = "recipe-scrapers"
 STATUS_SUCCESS = "success"
+STATUS_IMPORTED = "imported"
 
 
 def test_save_import_endpoint_requires_authentication() -> None:
@@ -284,7 +287,7 @@ def test_save_import_endpoint_creates_saved_recipe(
     assert saved_recipe.user_id == current_user_id
     assert saved_recipe.source_url == SOURCE_URL
     assert saved_recipe.source_domain == SOURCE_DOMAIN
-    assert saved_recipe.import_status == "imported"
+    assert saved_recipe.import_status == STATUS_IMPORTED
     assert saved_import.recipe_id == saved_recipe.id
 
 
@@ -314,7 +317,7 @@ def test_save_import_endpoint_rolls_back_when_linking_fails(
         id=recipe_id,
         user_id=current_user_id,
         title=RECIPE_TITLE,
-        import_status="imported",
+        import_status=STATUS_IMPORTED,
     )
 
     get_import_log_mock = Mock(return_value=import_log)
@@ -421,3 +424,107 @@ def test_save_import_prevents_one_import_log_from_creating_multiple_recipes() ->
             select(func.count()).select_from(Recipe)
         )
         assert recipe_count == 1
+
+
+def test_import_preview_can_be_edited_and_saved() -> None:
+    draft = RecipeDraft.model_validate(
+        {
+            "title": "Original Tomato Soup",
+            "source_url": SOURCE_URL,
+            "source_domain": SOURCE_DOMAIN,
+            "ingredients": [
+                {
+                    "position": 1,
+                    "original_text": "2 cups tomatoes",
+                }
+            ],
+            "steps": [
+                {
+                    "position": 1,
+                    "instruction": "Simmer the tomatoes.",
+                }
+            ],
+        }
+    )
+    importer = Mock(spec=RecipeImporter)
+    importer.preview_from_url = AsyncMock(
+        return_value=RecipeImportResult(
+            status=STATUS_SUCCESS,
+            parser_used=PARSER,
+            draft=draft,
+            warnings=(),
+        )
+    )
+
+    engine = create_engine(
+        "sqlite+pysqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(engine)
+    testing_session = sessionmaker(bind=engine, autoflush=False)
+
+    with testing_session() as session:
+        current_user = User(
+            email=CURRENT_USER_EMAIL,
+            password_hash=TEST_PASSWORD_HASH,
+        )
+        session.add(current_user)
+        session.commit()
+        current_user_id = current_user.id
+
+    def override_get_db() -> Generator[Session, None, None]:
+        with testing_session() as session:
+            yield session
+
+    app = create_app()
+    app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_recipe_importer] = lambda: importer
+    access_token = create_access_token(str(current_user_id))
+    headers = {"Authorization": f"Bearer {access_token}"}
+
+    try:
+        with TestClient(app) as client:
+            preview_response = client.post(
+                "/api/v1/imports/preview",
+                headers=headers,
+                json={"url": SOURCE_URL},
+            )
+            assert preview_response.status_code == status.HTTP_200_OK
+
+            preview_body = preview_response.json()
+
+            import_log_id = UUID(preview_body["import_id"])
+
+            edited_draft = preview_body["draft"]
+            edited_draft["title"] = RECIPE_TITLE
+
+            save_response = client.post(
+                f"/api/v1/imports/{preview_body['import_id']}/save",
+                headers=headers,
+                json=edited_draft,
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert save_response.status_code == status.HTTP_201_CREATED
+    assert save_response.json()["title"] == RECIPE_TITLE
+
+    with testing_session() as session:
+        recipe_count = session.scalar(
+            select(func.count()).select_from(Recipe)
+        )
+        assert recipe_count == 1
+
+        saved_import = session.get(RecipeImport, import_log_id)
+        assert saved_import is not None
+
+        recipe = session.scalar(
+            select(Recipe).where(Recipe.user_id == current_user_id)
+        )
+        assert recipe is not None
+        assert recipe.title == RECIPE_TITLE
+        assert recipe.source_url == SOURCE_URL
+        assert recipe.source_domain == SOURCE_DOMAIN
+        assert recipe.import_status == STATUS_IMPORTED
+        assert recipe.id == saved_import.recipe_id
