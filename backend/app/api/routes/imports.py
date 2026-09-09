@@ -6,10 +6,14 @@ from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_user
 from app.core.database import get_db
-from app.models import User
+from app.models import Recipe, User
 from app.repositories.import_repository import (
     create_import_log,
     get_import_log,
+    link_import_to_recipe,
+)
+from app.repositories.recipe_repository import (
+    create_recipe as create_recipe_record,
 )
 from app.repositories.recipe_repository import (
     get_recipe_by_source_url as get_recipe_by_source_url_record,
@@ -18,7 +22,7 @@ from app.schemas.import_recipe import (
     RecipeImportPreviewRequest,
     RecipeImportPreviewResponse,
 )
-from app.schemas.recipe import RecipeCreate
+from app.schemas.recipe import RecipeCreate, RecipeRead
 from app.services.recipe_importer import (
     RecipeImportBlockedError,
     RecipeImporter,
@@ -144,13 +148,17 @@ async def preview_import(
         raise
 
 
-@router.post("/{import_id}/save", status_code=status.HTTP_501_NOT_IMPLEMENTED)
+@router.post(
+    "/{import_id}/save",
+    response_model=RecipeRead,
+    status_code=status.HTTP_201_CREATED,
+)
 def save_import(
     import_id: UUID,
     session: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
     payload: RecipeCreate,
-) -> None:
+) -> Recipe:
     """Save a user-reviewed import draft as a recipe."""
     import_log = get_import_log(
         session,
@@ -169,6 +177,34 @@ def save_import(
             status_code=status.HTTP_409_CONFLICT,
             detail="Import cannot be saved from its current status.",
         )
+
+    trusted_payload = RecipeCreate.model_validate(
+        {
+            **payload.model_dump(),
+            "source_url": import_log.source_url,
+            "source_domain": import_log.source_domain,
+        }
+    )
+
+    try:
+        recipe = create_recipe_record(
+            session,
+            user_id=current_user.id,
+            import_status="imported",
+            payload=trusted_payload,
+        )
+        link_import_to_recipe(
+            session,
+            import_log=import_log,
+            recipe_id=recipe.id,
+        )
+
+        session.commit()
+        session.refresh(recipe)
+        return recipe
+    except Exception:
+        session.rollback()
+        raise
 
 
 @router.get("/{import_id}", status_code=status.HTTP_501_NOT_IMPLEMENTED)
