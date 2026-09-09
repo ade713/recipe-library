@@ -948,12 +948,16 @@ Done when:
 
 ### Phase 11: Save imported recipe
 
+Status: Complete
+
 Steps:
 
-1. Accept edited draft from client.
-2. Save recipe, ingredients, steps, source tips, tags.
-3. Link saved recipe to import log.
-4. Preserve source URL/domain.
+1. [x] Accept edited draft from client.
+2. [x] Save recipe, ingredients, steps, source tips, tags.
+3. [x] Link saved recipe to import log.
+4. [x] Preserve trusted source URL/domain.
+5. [x] Enforce authentication, ownership, saveable status, and one-save-per-log behavior.
+6. [x] Roll back recipe creation when import-log linkage fails.
 
 Done when:
 

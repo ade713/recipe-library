@@ -83,7 +83,11 @@ By default, a saved recipe owned by the current user with the same normalized so
 
 Blocked and failed responses include the actions `enter_manually` and `open_source_url`. These action values describe options for the client; they do not automatically save a recipe or open an external page.
 
-The save and import-detail endpoints remain planned.
+`POST /imports/{import_id}/save` is implemented and requires bearer authentication. It accepts the user-reviewed `RecipeCreate` draft, saves `success` and `partial` imports as recipes, and returns the saved recipe with `201 Created`. The route always takes the source URL and domain from the user-owned import log rather than trusting those client-supplied fields. Recipe creation and import-log linkage share one transaction.
+
+Missing or unowned imports return `404`. Failed, blocked, and duplicate imports return `409`, as do attempts to save an import log that is already linked to a recipe. If that linked recipe is later deleted, `ON DELETE SET NULL` makes the historical import eligible to be saved again.
+
+The import-detail endpoint remains planned.
 
 Allowed import statuses:
 

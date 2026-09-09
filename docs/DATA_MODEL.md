@@ -26,6 +26,8 @@ recipe_imports
 - Keep user notes separate from source-site tips.
 - Keep import logs separate from saved recipes.
 - Preserve import logs when a linked recipe is deleted by setting their nullable `recipe_id` reference to `NULL`.
+- Mark recipes created from reviewed import drafts with `import_status = imported`.
+- Link a saved imported recipe and its import log in the same transaction.
 - Use JSON/JSONB for warnings, parser metadata, and limited raw structured data.
 - Do not store full raw webpage HTML by default.
 - Scope all recipes, notes, tags, and imports to the current user.

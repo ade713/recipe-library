@@ -74,7 +74,9 @@ Status: Complete
 
 ## Phase 9: Safe recipe import
 
-- [ ] Require authentication and user ownership for import endpoints
+Status: Complete
+
+- [x] Require authentication and user ownership for implemented preview/save endpoints
 - [x] Preview endpoint
 - [x] Duplicate URL check
 - [x] Safe URL fetcher
@@ -90,9 +92,13 @@ Status: Complete
 
 ## Phase 10: Save imported recipes
 
-- Save edited import draft
-- Preserve source URL/domain
-- Link import log to saved recipe
+Status: Complete
+
+- [x] Save edited import draft and related records transactionally
+- [x] Preserve trusted source URL/domain
+- [x] Link import log to saved recipe
+- [x] Reject unsaveable and already-saved import states
+- [x] Test the complete preview-edit-save workflow
 
 ## Phase 11: Mobile MVP
 

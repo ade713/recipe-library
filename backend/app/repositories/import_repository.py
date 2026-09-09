@@ -51,3 +51,14 @@ def get_import_log(
     )
 
     return session.scalar(statement)
+
+
+def link_import_to_recipe(
+    session: Session,
+    *,
+    import_log: RecipeImport,
+    recipe_id: UUID,
+) -> None:
+    """Link an import log to its saved recipe without committing."""
+    import_log.recipe_id = recipe_id
+    session.flush()
