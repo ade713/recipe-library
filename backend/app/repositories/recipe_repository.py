@@ -15,6 +15,7 @@ def create_recipe(
     session: Session,
     *,
     user_id: UUID,
+    import_status: str = "manual",
     payload: RecipeCreate,
 ) -> Recipe:
     recipe_data = payload.model_dump(
@@ -22,7 +23,11 @@ def create_recipe(
         mode="json",
     )
 
-    recipe = Recipe(user_id=user_id, **recipe_data)
+    recipe = Recipe(
+        user_id=user_id,
+        import_status=import_status,
+        **recipe_data,
+    )
 
     recipe_ingredients = [
         RecipeIngredient(**ingredient.model_dump(mode="json")) for ingredient in payload.ingredients
