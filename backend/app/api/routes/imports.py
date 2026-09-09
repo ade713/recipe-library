@@ -178,6 +178,12 @@ def save_import(
             detail="Import cannot be saved from its current status.",
         )
 
+    if import_log.recipe_id is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Import has already been saved.",
+        )
+
     trusted_payload = RecipeCreate.model_validate(
         {
             **payload.model_dump(),
