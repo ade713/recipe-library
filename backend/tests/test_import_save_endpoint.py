@@ -1,9 +1,10 @@
 from collections.abc import Generator
+from dataclasses import dataclass
 from unittest.mock import AsyncMock, Mock
 from uuid import UUID, uuid4
 
 import pytest
-from fastapi import status
+from fastapi import FastAPI, status
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, func, select
 from sqlalchemy.orm import Session, sessionmaker
@@ -29,6 +30,57 @@ STATUS_SUCCESS = "success"
 STATUS_IMPORTED = "imported"
 
 
+@dataclass(frozen=True)
+class AuthenticatedTestContext:
+    app: FastAPI
+    testing_session: sessionmaker[Session]
+    current_user_id: UUID
+    headers: dict[str, str]
+
+
+@pytest.fixture
+def authenticated_context(
+) -> Generator[AuthenticatedTestContext, None, None]:
+    engine = create_engine(
+        "sqlite+pysqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(engine)
+    testing_session = sessionmaker(bind=engine, autoflush=False)
+
+    with testing_session() as session:
+        current_user = User(
+            email=CURRENT_USER_EMAIL,
+            password_hash=TEST_PASSWORD_HASH,
+        )
+        session.add(current_user)
+        session.commit()
+        current_user_id = current_user.id
+
+    def override_get_db() -> Generator[Session, None, None]:
+        with testing_session() as session:
+            yield session
+
+    app = create_app()
+    app.dependency_overrides[get_db] = override_get_db
+    access_token = create_access_token(str(current_user_id))
+    headers = {"Authorization": f"Bearer {access_token}"}
+
+    context = AuthenticatedTestContext(
+        app=app,
+        testing_session=testing_session,
+        current_user_id=current_user_id,
+        headers=headers,
+    )
+
+    try:
+        yield context
+    finally:
+        app.dependency_overrides.clear()
+        engine.dispose()
+
+
 def test_save_import_endpoint_requires_authentication() -> None:
     app = create_app()
     import_id = uuid4()
@@ -43,101 +95,53 @@ def test_save_import_endpoint_requires_authentication() -> None:
     assert response.json() == {"detail": "Not authenticated"}
 
 
-def test_save_import_endpoint_returns_404_for_unknown_import() -> None:
-    engine = create_engine(
-        "sqlite+pysqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    Base.metadata.create_all(engine)
-    testing_session = sessionmaker(bind=engine, autoflush=False)
-
-    with testing_session() as session:
-        current_user = User(
-            email=CURRENT_USER_EMAIL,
-            password_hash=TEST_PASSWORD_HASH,
-        )
-        session.add(current_user)
-        session.commit()
-        current_user_id = current_user.id
-
-    def override_get_db() -> Generator[Session, None, None]:
-        with testing_session() as session:
-            yield session
-
-    app = create_app()
-    app.dependency_overrides[get_db] = override_get_db
-    access_token = create_access_token(str(current_user_id))
+def test_save_import_endpoint_returns_404_for_unknown_import(
+    authenticated_context: AuthenticatedTestContext,
+) -> None:
     import_id = uuid4()
 
-    try:
-        with TestClient(app) as client:
-            response = client.post(
-                f"/api/v1/imports/{import_id}/save",
-                json={"title": RECIPE_TITLE},
-                headers={"Authorization": f"Bearer {access_token}"},
-            )
-    finally:
-        app.dependency_overrides.clear()
+    with TestClient(authenticated_context.app) as client:
+        response = client.post(
+            f"/api/v1/imports/{import_id}/save",
+            json={"title": RECIPE_TITLE},
+            headers=authenticated_context.headers,
+        )
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Import not found."}
 
 
-def test_save_import_endpoint_returns_404_for_another_users_import() -> None:
-    engine = create_engine(
-        "sqlite+pysqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    Base.metadata.create_all(engine)
-    testing_session = sessionmaker(bind=engine, autoflush=False)
-
-    with testing_session() as session:
-        current_user = User(
-            email=CURRENT_USER_EMAIL,
-            password_hash=TEST_PASSWORD_HASH,
-        )
+def test_save_import_endpoint_returns_404_for_another_users_import(
+    authenticated_context: AuthenticatedTestContext,
+) -> None:
+    with authenticated_context.testing_session() as session:
         other_user = User(
             email="other@example.com",
             password_hash="other-test-hash",
         )
-        session.add_all([current_user, other_user])
+        session.add(other_user)
         session.flush()
-        current_user_id = current_user.id
         other_user_id = other_user.id
 
         other_import_log = create_import_log(
             session,
             user_id=other_user_id,
-            source_url="https://example.com/recipe",
-            source_domain="example.com",
-            status="success",
-            parser_used="recipe-scrapers",
+            source_url=SOURCE_URL,
+            source_domain=SOURCE_DOMAIN,
+            status=STATUS_SUCCESS,
+            parser_used=PARSER,
             warnings=[],
             error_message=None,
         )
         session.commit()
         other_import_log_id = other_import_log.id
 
-    def override_get_db() -> Generator[Session, None, None]:
-        with testing_session() as session:
-            yield session
-
-    app = create_app()
-    app.dependency_overrides[get_db] = override_get_db
-    access_token = create_access_token(str(current_user_id))
-    headers = {"Authorization": f"Bearer {access_token}"}
-
-    try:
-        with TestClient(app) as client:
-            response = client.post(
-                f"/api/v1/imports/{other_import_log_id}/save",
-                json={"title": RECIPE_TITLE},
-                headers=headers,
-            )
-    finally:
-        app.dependency_overrides.clear()
+    with TestClient(authenticated_context.app) as client:
+        response = client.post(
+            f"/api/v1/imports/{other_import_log_id}/save",
+            json={"title": RECIPE_TITLE},
+            headers=authenticated_context.headers,
+        )
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Import not found."}
@@ -148,28 +152,13 @@ def test_save_import_endpoint_returns_404_for_another_users_import() -> None:
     ["duplicate", "blocked", "failed"],
 )
 def test_save_import_endpoint_rejects_unsaveable_import_status(
+    authenticated_context: AuthenticatedTestContext,
     import_status: str,
 ) -> None:
-    engine = create_engine(
-        "sqlite+pysqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    Base.metadata.create_all(engine)
-    testing_session = sessionmaker(bind=engine, autoflush=False)
-
-    with testing_session() as session:
-        current_user = User(
-            email=CURRENT_USER_EMAIL,
-            password_hash=TEST_PASSWORD_HASH,
-        )
-        session.add(current_user)
-        session.commit()
-        current_user_id = current_user.id
-
+    with authenticated_context.testing_session() as session:
         import_log = create_import_log(
             session,
-            user_id=current_user_id,
+            user_id=authenticated_context.current_user_id,
             recipe_id=None,
             source_url=SOURCE_URL,
             source_domain=SOURCE_DOMAIN,
@@ -181,24 +170,12 @@ def test_save_import_endpoint_rejects_unsaveable_import_status(
         session.commit()
         import_log_id = import_log.id
 
-    def override_get_db() -> Generator[Session, None, None]:
-        with testing_session() as session:
-            yield session
-
-    app = create_app()
-    app.dependency_overrides[get_db] = override_get_db
-    access_token = create_access_token(str(current_user_id))
-    headers = {"Authorization": f"Bearer {access_token}"}
-
-    try:
-        with TestClient(app) as client:
-            response = client.post(
-                f"/api/v1/imports/{import_log_id}/save",
-                headers=headers,
-                json={"title": RECIPE_TITLE},
-            )
-    finally:
-        app.dependency_overrides.clear()
+    with TestClient(authenticated_context.app) as client:
+        response = client.post(
+            f"/api/v1/imports/{import_log_id}/save",
+            headers=authenticated_context.headers,
+            json={"title": RECIPE_TITLE},
+        )
 
     assert response.status_code == 409
     assert response.json() == {
@@ -211,28 +188,13 @@ def test_save_import_endpoint_rejects_unsaveable_import_status(
     ["success", "partial"],
 )
 def test_save_import_endpoint_creates_saved_recipe(
+    authenticated_context: AuthenticatedTestContext,
     import_status: str,
 ) -> None:
-    engine = create_engine(
-        "sqlite+pysqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    Base.metadata.create_all(engine)
-    testing_session = sessionmaker(bind=engine, autoflush=False)
-
-    with testing_session() as session:
-        current_user = User(
-            email=CURRENT_USER_EMAIL,
-            password_hash=TEST_PASSWORD_HASH,
-        )
-        session.add(current_user)
-        session.commit()
-        current_user_id = current_user.id
-
+    with authenticated_context.testing_session() as session:
         import_log = create_import_log(
             session,
-            user_id=current_user_id,
+            user_id=authenticated_context.current_user_id,
             recipe_id=None,
             source_url=SOURCE_URL,
             source_domain=SOURCE_DOMAIN,
@@ -244,47 +206,37 @@ def test_save_import_endpoint_creates_saved_recipe(
         session.commit()
         import_log_id = import_log.id
 
-    def override_get_db() -> Generator[Session, None, None]:
-        with testing_session() as session:
-            yield session
-
-    app = create_app()
-    app.dependency_overrides[get_db] = override_get_db
-    access_token = create_access_token(str(current_user_id))
-    headers = {"Authorization": f"Bearer {access_token}"}
-
-    try:
-        with TestClient(app) as client:
-            response = client.post(
-                f"/api/v1/imports/{import_log_id}/save",
-                headers=headers,
-                json={
-                    "title": RECIPE_TITLE,
-                    "source_url": "https://untrusted.example/changed",
-                    "source_domain": "untrusted.example",
-                    "ingredients": [
-                        {"position": 1, "original_text": "2 cups tomatoes"},
-                    ],
-                    "steps": [
-                        {"position": 1, "instruction": "Simmer the tomatoes."},
-                    ],
-                },
-            )
-    finally:
-        app.dependency_overrides.clear()
+    with TestClient(authenticated_context.app) as client:
+        response = client.post(
+            f"/api/v1/imports/{import_log_id}/save",
+            headers=authenticated_context.headers,
+            json={
+                "title": RECIPE_TITLE,
+                "source_url": "https://untrusted.example/changed",
+                "source_domain": "untrusted.example",
+                "ingredients": [
+                    {"position": 1, "original_text": "2 cups tomatoes"},
+                ],
+                "steps": [
+                    {"position": 1, "instruction": "Simmer the tomatoes."},
+                ],
+            },
+        )
 
     assert response.status_code == 201
     assert response.json()["title"] == RECIPE_TITLE
 
-    with testing_session() as session:
+    with authenticated_context.testing_session() as session:
         saved_recipe = session.scalar(
-            select(Recipe).where(Recipe.user_id == current_user_id)
+            select(Recipe).where(
+                Recipe.user_id == authenticated_context.current_user_id
+            )
         )
         saved_import = session.get(RecipeImport, import_log_id)
 
     assert saved_recipe is not None
     assert saved_import is not None
-    assert saved_recipe.user_id == current_user_id
+    assert saved_recipe.user_id == authenticated_context.current_user_id
     assert saved_recipe.source_url == SOURCE_URL
     assert saved_recipe.source_domain == SOURCE_DOMAIN
     assert saved_recipe.import_status == STATUS_IMPORTED
@@ -347,27 +299,13 @@ def test_save_import_endpoint_rolls_back_when_linking_fails(
     session.refresh.assert_not_called()
 
 
-def test_save_import_prevents_one_import_log_from_creating_multiple_recipes() -> None:
-    engine = create_engine(
-        "sqlite+pysqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    Base.metadata.create_all(engine)
-    testing_session = sessionmaker(bind=engine, autoflush=False)
-
-    with testing_session() as session:
-        current_user = User(
-            email=CURRENT_USER_EMAIL,
-            password_hash=TEST_PASSWORD_HASH,
-        )
-        session.add(current_user)
-        session.commit()
-        current_user_id = current_user.id
-
+def test_save_import_prevents_one_import_log_from_creating_multiple_recipes(
+    authenticated_context: AuthenticatedTestContext,
+) -> None:
+    with authenticated_context.testing_session() as session:
         import_log = create_import_log(
             session,
-            user_id=current_user_id,
+            user_id=authenticated_context.current_user_id,
             recipe_id=None,
             source_url=SOURCE_URL,
             source_domain=SOURCE_DOMAIN,
@@ -379,39 +317,27 @@ def test_save_import_prevents_one_import_log_from_creating_multiple_recipes() ->
         session.commit()
         import_log_id = import_log.id
 
-    def override_get_db() -> Generator[Session, None, None]:
-        with testing_session() as session:
-            yield session
-
-    app = create_app()
-    app.dependency_overrides[get_db] = override_get_db
-    access_token = create_access_token(str(current_user_id))
-    headers = {"Authorization": f"Bearer {access_token}"}
-
-    try:
-        with TestClient(app) as client:
-            first_response = client.post(
-                f"/api/v1/imports/{import_log_id}/save",
-                headers=headers,
-                json={
-                    "title": RECIPE_TITLE,
-                    "source_url": SOURCE_URL,
-                    "source_domain": SOURCE_DOMAIN,
-                    "ingredients": [
-                        {"position": 1, "original_text": "2 cups tomatoes"},
-                    ],
-                    "steps": [
-                        {"position": 1, "instruction": "Simmer the tomatoes."},
-                    ],
-                },
-            )
-            second_response = client.post(
-                f"/api/v1/imports/{import_log_id}/save",
-                headers=headers,
-                json={"title": RECIPE_TITLE},
-            )
-    finally:
-        app.dependency_overrides.clear()
+    with TestClient(authenticated_context.app) as client:
+        first_response = client.post(
+            f"/api/v1/imports/{import_log_id}/save",
+            headers=authenticated_context.headers,
+            json={
+                "title": RECIPE_TITLE,
+                "source_url": SOURCE_URL,
+                "source_domain": SOURCE_DOMAIN,
+                "ingredients": [
+                    {"position": 1, "original_text": "2 cups tomatoes"},
+                ],
+                "steps": [
+                    {"position": 1, "instruction": "Simmer the tomatoes."},
+                ],
+            },
+        )
+        second_response = client.post(
+            f"/api/v1/imports/{import_log_id}/save",
+            headers=authenticated_context.headers,
+            json={"title": RECIPE_TITLE},
+        )
 
     assert first_response.status_code == status.HTTP_201_CREATED
     assert second_response.status_code == status.HTTP_409_CONFLICT
@@ -419,14 +345,16 @@ def test_save_import_prevents_one_import_log_from_creating_multiple_recipes() ->
         "detail": "Import has already been saved.",
     }
 
-    with testing_session() as session:
+    with authenticated_context.testing_session() as session:
         recipe_count = session.scalar(
             select(func.count()).select_from(Recipe)
         )
         assert recipe_count == 1
 
 
-def test_import_preview_can_be_edited_and_saved() -> None:
+def test_import_preview_can_be_edited_and_saved(
+    authenticated_context: AuthenticatedTestContext,
+) -> None:
     draft = RecipeDraft.model_validate(
         {
             "title": "Original Tomato Soup",
@@ -456,61 +384,33 @@ def test_import_preview_can_be_edited_and_saved() -> None:
         )
     )
 
-    engine = create_engine(
-        "sqlite+pysqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    Base.metadata.create_all(engine)
-    testing_session = sessionmaker(bind=engine, autoflush=False)
+    authenticated_context.app.dependency_overrides[get_recipe_importer] = lambda: importer
 
-    with testing_session() as session:
-        current_user = User(
-            email=CURRENT_USER_EMAIL,
-            password_hash=TEST_PASSWORD_HASH,
+    with TestClient(authenticated_context.app) as client:
+        preview_response = client.post(
+            "/api/v1/imports/preview",
+            headers=authenticated_context.headers,
+            json={"url": SOURCE_URL},
         )
-        session.add(current_user)
-        session.commit()
-        current_user_id = current_user.id
+        assert preview_response.status_code == status.HTTP_200_OK
 
-    def override_get_db() -> Generator[Session, None, None]:
-        with testing_session() as session:
-            yield session
+        preview_body = preview_response.json()
 
-    app = create_app()
-    app.dependency_overrides[get_db] = override_get_db
-    app.dependency_overrides[get_recipe_importer] = lambda: importer
-    access_token = create_access_token(str(current_user_id))
-    headers = {"Authorization": f"Bearer {access_token}"}
+        import_log_id = UUID(preview_body["import_id"])
 
-    try:
-        with TestClient(app) as client:
-            preview_response = client.post(
-                "/api/v1/imports/preview",
-                headers=headers,
-                json={"url": SOURCE_URL},
-            )
-            assert preview_response.status_code == status.HTTP_200_OK
+        edited_draft = preview_body["draft"]
+        edited_draft["title"] = RECIPE_TITLE
 
-            preview_body = preview_response.json()
-
-            import_log_id = UUID(preview_body["import_id"])
-
-            edited_draft = preview_body["draft"]
-            edited_draft["title"] = RECIPE_TITLE
-
-            save_response = client.post(
-                f"/api/v1/imports/{preview_body['import_id']}/save",
-                headers=headers,
-                json=edited_draft,
-            )
-    finally:
-        app.dependency_overrides.clear()
+        save_response = client.post(
+            f"/api/v1/imports/{preview_body['import_id']}/save",
+            headers=authenticated_context.headers,
+            json=edited_draft,
+        )
 
     assert save_response.status_code == status.HTTP_201_CREATED
     assert save_response.json()["title"] == RECIPE_TITLE
 
-    with testing_session() as session:
+    with authenticated_context.testing_session() as session:
         recipe_count = session.scalar(
             select(func.count()).select_from(Recipe)
         )
@@ -520,7 +420,9 @@ def test_import_preview_can_be_edited_and_saved() -> None:
         assert saved_import is not None
 
         recipe = session.scalar(
-            select(Recipe).where(Recipe.user_id == current_user_id)
+            select(Recipe).where(
+                Recipe.user_id == authenticated_context.current_user_id
+            )
         )
         assert recipe is not None
         assert recipe.title == RECIPE_TITLE
