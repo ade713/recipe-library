@@ -35,3 +35,19 @@ Blocked and failed results advertise `enter_manually` and `open_source_url` acti
 ## Draft-first rule
 
 The import pipeline should never directly create the final saved recipe without user review. The client should submit the edited draft to a save endpoint.
+
+## Reviewed-draft save
+
+```text
+Client submits edited draft + import ID
+  -> authenticate user
+  -> load import log by import ID + user ID
+  -> require success or partial status
+  -> reject an already-linked import
+  -> replace client source URL/domain with import-log attribution
+  -> save recipe and related records as imported
+  -> link import log to recipe
+  -> commit both changes together
+```
+
+Any exception during recipe creation or import-log linkage rolls back the transaction. Missing and unowned imports share the same `404` response. Failed, blocked, duplicate, and already-saved states return `409` without creating a recipe.

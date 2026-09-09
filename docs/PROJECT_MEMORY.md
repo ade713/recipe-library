@@ -29,6 +29,13 @@ Users can:
 - Add personal notes.
 - Scale ingredients by 1x, 2x, and 3x.
 
+## Current backend progress
+
+- Manual recipe, note, and tag CRUD are implemented and user-scoped.
+- Authentication, recipe search/filter/sort, safe URL fetching, import parsing, editable previews, duplicate handling, and import logging are implemented.
+- Reviewed `success` and `partial` import drafts can be saved transactionally with trusted source attribution and a link back to their import log.
+- The next scheduled phase is the React Native/Expo mobile MVP foundation.
+
 ## UI exploration
 
 Generated three mobile design/wireframe options based on the planned screens.

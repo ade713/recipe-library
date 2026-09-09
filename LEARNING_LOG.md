@@ -697,3 +697,33 @@ Next:
 
 - Begin Week 12 by accepting an edited import draft and saving its recipe data transactionally.
 ```
+
+## Saving Reviewed Recipe Imports
+
+```md
+## 2026-09-09
+
+Built:
+
+- Added an authenticated, user-scoped endpoint that saves edited `success` and `partial` import drafts as recipes.
+- Reused the existing recipe-creation repository so imported ingredients, steps, tips, and tags follow the same persistence path as manual recipes.
+- Preserved trusted source URL and domain values from the import log instead of accepting client replacements.
+- Marked saved imports as imported recipes and linked each import log to its resulting recipe in the same transaction.
+- Rejected missing, unowned, failed, blocked, duplicate, and already-saved import states without creating recipes.
+- Added rollback coverage and a complete preview-edit-save integration test using an injected importer rather than live network access.
+- Refactored repeated endpoint-test setup into a typed, function-scoped pytest fixture.
+
+Learned:
+
+- A FastAPI response model describes validation, serialization, filtering, and documentation even when the route returns a SQLAlchemy model.
+- Route-level transaction ownership keeps recipe creation and import-log linkage atomic: both commit or both roll back.
+- An allowlist of saveable states rejects unknown future states safely by default.
+- User ownership belongs in the import-log query so missing and unowned IDs produce the same public response.
+- Pydantic `model_validate()` explicitly converts raw test input such as URL strings into schema field types.
+- Dependency overrides must be cleared so later tests cannot inherit a test database or mock accidentally.
+- Function-scoped fixtures reduce repeated setup while keeping each test database isolated.
+
+Next:
+
+- Begin the React Native and Expo mobile MVP foundation.
+```

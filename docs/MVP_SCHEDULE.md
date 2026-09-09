@@ -170,6 +170,8 @@ Friday should emphasize testing, cleanup, documentation, and review.
 
 ## Week 12 — Saving imports
 
+Status: Complete
+
 | Day | Work |
 | --- | --- |
 | Monday | Accept an edited import draft. |
