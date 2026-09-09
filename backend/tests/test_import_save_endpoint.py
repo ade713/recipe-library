@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from unittest.mock import Mock
 from uuid import uuid4
 
 import pytest
@@ -7,11 +8,13 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.api.routes import imports as import_routes
 from app.core.database import get_db
 from app.core.security import create_access_token
 from app.main import create_app
 from app.models import Base, Recipe, RecipeImport, User
 from app.repositories.import_repository import create_import_log
+from app.schemas.recipe import RecipeCreate
 
 RECIPE_TITLE = "Edited Tomato Soup"
 CURRENT_USER_EMAIL = "current@example.com"
@@ -281,3 +284,59 @@ def test_save_import_endpoint_creates_saved_recipe(
     assert saved_recipe.source_domain == SOURCE_DOMAIN
     assert saved_recipe.import_status == "imported"
     assert saved_import.recipe_id == saved_recipe.id
+
+
+def test_save_import_endpoint_rolls_back_when_linking_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    session = Mock(spec=Session)
+    current_user_id = uuid4()
+    import_log_id = uuid4()
+    recipe_id = uuid4()
+
+    current_user = User(
+        id=current_user_id,
+        email=CURRENT_USER_EMAIL,
+        password_hash=TEST_PASSWORD_HASH,
+    )
+    import_log = RecipeImport(
+        id=import_log_id,
+        user_id=current_user_id,
+        source_url=SOURCE_URL,
+        source_domain=SOURCE_DOMAIN,
+        status="success",
+        parser_used=PARSER,
+        warnings=[],
+    )
+    recipe = Recipe(
+        id=recipe_id,
+        user_id=current_user_id,
+        title=RECIPE_TITLE,
+        import_status="imported",
+    )
+
+    get_import_log_mock = Mock(return_value=import_log)
+    create_recipe_mock = Mock(return_value=recipe)
+
+    def fail_to_link_import(*_args: object, **_kwargs: object) -> None:
+        raise RuntimeError("database link failed")
+
+    monkeypatch.setattr(import_routes, "get_import_log", get_import_log_mock)
+    monkeypatch.setattr(import_routes, "create_recipe_record", create_recipe_mock)
+    monkeypatch.setattr(
+        import_routes,
+        "link_import_to_recipe",
+        fail_to_link_import,
+    )
+
+    with pytest.raises(RuntimeError, match="database link failed"):
+        import_routes.save_import(
+            import_id=import_log_id,
+            session=session,
+            current_user=current_user,
+            payload=RecipeCreate(title=RECIPE_TITLE),
+        )
+
+    session.rollback.assert_called_once_with()
+    session.commit.assert_not_called()
+    session.refresh.assert_not_called()
