@@ -28,6 +28,8 @@ from app.services.url_validator import extract_domain
 
 router = APIRouter()
 
+SAVEABLE_IMPORT_STATUSES = frozenset({"success", "partial"})
+
 
 def get_recipe_importer() -> RecipeImporter:
     """Create the importer used to build recipe previews."""
@@ -160,6 +162,12 @@ def save_import(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Import not found.",
+        )
+
+    if import_log.status not in SAVEABLE_IMPORT_STATUSES:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Import cannot be saved from its current status.",
         )
 
 
