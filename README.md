@@ -60,9 +60,8 @@ Use this project in small loops:
 From the `backend/` folder:
 
 ```bash
-python -m venv .venv
+uv sync --locked --extra dev
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
-pip install -e ".[dev]"
 cp .env.example .env
 uvicorn app.main:app --reload
 ```
