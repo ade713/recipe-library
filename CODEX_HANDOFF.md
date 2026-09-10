@@ -174,7 +174,7 @@ recipes
 - total_time_minutes integer nullable
 - base_servings numeric nullable
 - servings_unit string nullable          # servings, cookies, loaf, etc.
-- difficulty string nullable
+- difficulty string nullable             # reserved; not exposed in MVP API schemas
 - is_favorite boolean default false
 - import_status string                   # manual, imported, edited
 - created_at datetime
@@ -338,8 +338,9 @@ sort=recent
 ```http
 POST /imports/preview
 POST /imports/{import_id}/save
-GET  /imports/{import_id}
 ```
+
+`GET /imports/{import_id}` is deferred and is not registered. It will require authentication and import ownership checks when scheduled.
 
 `POST /imports/preview` accepts:
 
@@ -639,9 +640,10 @@ Build these before the database or full API:
 
 ```text
 app/services/scaling.py
-app/services/ingredient_parser.py
 app/services/url_validator.py
 ```
+
+Structured ingredient parsing is deferred until before private MVP release; see `docs/ROADMAP.md`. The unused `ingredient_parser.py` stub was removed during cleanup. Imports currently preserve original ingredient text with `unparsed` status. The existing scaling utility parses basic leading quantities when called, but does not populate stored ingredient fields. Connecting confident structured parsing to import normalization and cooking-view scaling remains planned functionality.
 
 Concepts:
 

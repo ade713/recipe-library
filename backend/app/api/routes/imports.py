@@ -159,7 +159,13 @@ def save_import(
     current_user: Annotated[User, Depends(get_current_user)],
     payload: RecipeCreate,
 ) -> Recipe:
-    """Save a user-reviewed import draft as a recipe."""
+    """Save a reviewed draft for the current user's import.
+
+    Preserve the source URL and domain from the import log.
+    Link the saved recipe to that log.
+    Return 404 when the import is missing or belongs to another user.
+    Return 409 when its status is not saveable or it is already linked to a recipe.
+    """
     import_log = get_import_log(
         session,
         user_id=current_user.id,
@@ -211,8 +217,3 @@ def save_import(
     except Exception:
         session.rollback()
         raise
-
-
-@router.get("/{import_id}", status_code=status.HTTP_501_NOT_IMPLEMENTED)
-def get_import(import_id: UUID) -> None:
-    raise HTTPException(status_code=501, detail="Import lookup is not implemented yet.")

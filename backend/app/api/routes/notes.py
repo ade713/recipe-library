@@ -22,6 +22,10 @@ def list_notes(
     recipe_id: UUID,
     session: Annotated[Session, Depends(get_db)],
 ) -> list[RecipeNote]:
+    """List notes for recipe owned by current user.
+
+    Return an empty list when there are no notes. Return 404 if recipe is unavailable.
+    """
     notes = list_note_records(
         session,
         user_id=current_user.id,
@@ -48,6 +52,10 @@ def create_note(
     recipe_id: UUID,
     session: Annotated[Session, Depends(get_db)],
 ) -> RecipeNote:
+    """Add a note to a recipe owned by the current user.
+
+    Return 404 if recipe is unavailable.
+    """
     try:
         note = create_note_record(
             session,
@@ -78,6 +86,10 @@ def update_note(
     recipe_id: UUID,
     session: Annotated[Session, Depends(get_db)],
 ) -> RecipeNote:
+    """Update a note scoped to current user and specified recipe.
+
+    Return 404 if note is unavailable.
+    """
     try:
         note = update_note_record(
             session,
@@ -108,6 +120,10 @@ def delete_note(
     recipe_id: UUID,
     session: Annotated[Session, Depends(get_db)],
 ) -> None:
+    """Delete a note scoped to the current user and specified recipe.
+
+    Return no content on success, or 404 if note is not available.
+    """
     try:
         is_note_deleted = delete_note_record(
             session,

@@ -13,6 +13,10 @@ def authenticate_user(
     *,
     payload: LoginRequest,
 ) -> User | None:
+    """Return the user when credentials match, None if no match.
+
+    Unknown emails trigger verification using a dummy hash.
+    """
     user = get_user_by_email(
         session,
         email=str(payload.email),

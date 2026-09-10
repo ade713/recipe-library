@@ -29,6 +29,10 @@ def register_user(
     payload: RegisterRequest,
     session: Annotated[Session, Depends(get_db)],
 ) -> User:
+    """Create a new account using email and password.
+
+    Emails already registered are rejected.
+    """
     try:
         user = create_user_record(
             session,
@@ -60,6 +64,10 @@ def login(
     payload: LoginRequest,
     session: Annotated[Session, Depends(get_db)],
 ) -> TokenResponse:
+    """Verify email and password, and issue access token.
+
+    Reject invalid credentials with the same authentication error.
+    """
     user = authenticate_user(session, payload=payload)
 
     if user is None:
@@ -78,6 +86,10 @@ def login(
 def logout(
     _current_user: Annotated[User, Depends(get_session_current_user)],
 ) -> None:
+    """Acknowledge logout.
+
+    Client must discard its token, which remains valid.
+    """
     return None
 
 
@@ -85,4 +97,5 @@ def logout(
 def get_me(
     current_user: Annotated[User, Depends(get_session_current_user)]
 ) -> User:
+    """Return the authenticated user's profile."""
     return current_user

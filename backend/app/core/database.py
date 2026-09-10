@@ -12,6 +12,10 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 def get_db() -> Generator[Session, None, None]:
+    """Yield a request-scoped session and always close it.
+
+    The caller is responsible for committing changes.
+    """
     db = SessionLocal()
     try:
         yield db

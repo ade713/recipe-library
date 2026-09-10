@@ -22,6 +22,7 @@ def list_tags(
     current_user: Annotated[User, Depends(get_current_user)],
     session: Annotated[Session, Depends(get_db)],
 ) -> TagListResponse:
+    """List current user's tags."""
     tags = list_tag_records(session, user_id=current_user.id)
     return TagListResponse.model_validate({"items": tags})
 
@@ -36,6 +37,10 @@ def create_tag(
     payload: TagCreate,
     session: Annotated[Session, Depends(get_db)],
 ) -> Tag:
+    """Create a tag for the current user.
+
+    Return 409 if the tag name already exists for the current user.
+    """
     try:
         tag = create_tag_record(
             session,
@@ -64,6 +69,10 @@ def update_tag(
     payload: TagUpdate,
     session: Annotated[Session, Depends(get_db)],
 ) -> Tag:
+    """Update a tag owned by the current user.
+
+    Return 404 if the tag is unavailable or 409 if the tag name conflicts.
+    """
     try:
         tag = update_tag_record(
             session,
@@ -98,6 +107,11 @@ def delete_tag(
     tag_id: UUID,
     session: Annotated[Session, Depends(get_db)],
 ) -> None:
+    """Delete a tag owned by the current user.
+
+    Does not delete associated recipes.
+    Return no content on success or 404 if tag is unavailable.
+    """
     try:
         is_tag_deleted = delete_tag_record(
             session,

@@ -28,6 +28,10 @@ def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
     session: Annotated[Session, Depends(get_db)],
 ) -> User:
+    """Validate the bearer token and load user.
+
+    Return 401 if credentials are invalid or user does not exist.
+    """
     try:
         decoded_token = decode_access_token(token)
         stored_user_id = UUID(decoded_token)
