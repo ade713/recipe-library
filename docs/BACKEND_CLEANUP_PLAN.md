@@ -1,6 +1,6 @@
 # Backend Cleanup Plan
 
-The backend feature work through Week 12 is complete. Before and alongside the mobile MVP, cleanup should remain split into focused pull requests so mechanical, architectural, and behavioral changes are easy to review and revert.
+The backend feature work through Week 12 is complete. Before the mobile MVP begins, cleanup should remain split into focused pull requests so mechanical, architectural, and behavioral changes are easy to review and revert.
 
 ## Before Week 13
 
@@ -25,7 +25,7 @@ The backend feature work through Week 12 is complete. Before and alongside the m
 - Add `ruff format --check .` to CI after establishing the baseline.
 - Avoid mixing behavior changes into the formatting PR.
 
-## Later maintenance
+## Also before Week 13
 
 ### PR 4: Centralize backend status types
 
@@ -38,6 +38,7 @@ The backend feature work through Week 12 is complete. Before and alongside the m
 - Add narrowly scoped shared fixtures for SQLite sessions, authenticated users, FastAPI dependency overrides, and authorization headers.
 - Convert endpoint test modules incrementally.
 - Keep special-purpose mocks and failure setup local to the tests that need them.
+- Keep the PR focused on reusable setup; do not rewrite test behavior.
 
 ### PR 6: Refactor import orchestration
 
