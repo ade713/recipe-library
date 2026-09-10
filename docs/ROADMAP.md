@@ -102,7 +102,7 @@ Status: Complete
 
 ## Phase 11: Mobile MVP
 
-Before beginning this phase, complete PRs 1–6 in the [Backend Cleanup Plan](BACKEND_CLEANUP_PLAN.md). The hardening work in PR 7 is required before public deployment.
+Before beginning this phase, complete the six pre-mobile PRs in the [Backend Cleanup Plan](BACKEND_CLEANUP_PLAN.md). The remaining validation, database-parity, dependency-upgrade, and deployment-hardening items are scheduled separately so they do not delay mobile MVP work.
 
 - Expo setup
 - Library screen
