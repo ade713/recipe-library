@@ -39,6 +39,8 @@ Their core pain point is that recipe pages are often long and inconvenient while
 
 These decisions should guide implementation. See `docs/APP_CONSIDERATIONS.md` for the full considerations tracker:
 
+The backend work through Week 12 is complete. Follow `docs/BACKEND_CLEANUP_PLAN.md` for the focused pre-mobile cleanup sequence and later hardening work.
+
 1. **Manual recipe creation is part of the MVP.** Build manual create/edit before URL import so the app is useful even before scraping works.
 2. **Recipe imports are editable drafts.** The backend should never blindly save scraped content as final. The user reviews and owns the final saved version.
 3. **URL fetching must be safe and responsible.** The import service must include safe-fetch protections, including SSRF prevention, timeouts, redirect limits, response-size limits, and respectful handling of blocked/disallowed sites.

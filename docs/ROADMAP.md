@@ -102,6 +102,8 @@ Status: Complete
 
 ## Phase 11: Mobile MVP
 
+Before beginning this phase, complete PRs 1–3 in the [Backend Cleanup Plan](BACKEND_CLEANUP_PLAN.md). PRs 4–6 may be scheduled as later maintenance, and the hardening work in PR 7 is required before public deployment.
+
 - Expo setup
 - Library screen
 - Manual create/edit screen
