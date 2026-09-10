@@ -47,9 +47,7 @@ def test_create_import_log_stores_user_scoped_preview_metadata() -> None:
         assert import_log.source_domain == "example.com"
         assert import_log.status == "partial"
         assert import_log.parser_used == "recipe-scrapers"
-        assert import_log.warnings == [
-            "Instructions were not provided by the source."
-        ]
+        assert import_log.warnings == ["Instructions were not provided by the source."]
         assert import_log.error_message is None
 
 

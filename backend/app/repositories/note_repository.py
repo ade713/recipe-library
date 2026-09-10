@@ -45,9 +45,8 @@ def list_notes(
     if recipe is None:
         return None
 
-    statement = (
-        select(RecipeNote)
-        .where(RecipeNote.user_id == recipe.user_id, RecipeNote.recipe_id == recipe.id)
+    statement = select(RecipeNote).where(
+        RecipeNote.user_id == recipe.user_id, RecipeNote.recipe_id == recipe.id
     )
 
     return list(session.scalars(statement))

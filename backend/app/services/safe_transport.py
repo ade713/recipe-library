@@ -57,11 +57,7 @@ class PinnedAsyncNetworkBackend(httpcore.AsyncNetworkBackend):
         first_address = self._target.addresses[0]
 
         policy_timeout = self._policy.connect_timeout_seconds
-        effective_timeout = (
-            policy_timeout
-            if timeout is None
-            else min(timeout, policy_timeout)
-        )
+        effective_timeout = policy_timeout if timeout is None else min(timeout, policy_timeout)
 
         try:
             raw_stream = await self._backend.connect_tcp(
@@ -134,9 +130,7 @@ class PinnedSafeRequester:
                 "read": self._policy.read_timeout_seconds,
             },
         }
-        headers: dict[bytes | str, bytes | str] = {
-            "User-Agent": "RecipeLibrary/0.1"
-        }
+        headers: dict[bytes | str, bytes | str] = {"User-Agent": "RecipeLibrary/0.1"}
         response = await self._exit_stack.enter_async_context(
             pool.stream(
                 "GET",

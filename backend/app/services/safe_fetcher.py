@@ -166,9 +166,7 @@ def resolve_safe_target(
         try:
             address = ip_address(resolved_address)
         except ValueError as error:
-            raise HostResolutionError(
-                "Hostname resolved to an invalid IP address."
-            ) from error
+            raise HostResolutionError("Hostname resolved to an invalid IP address.") from error
 
         if not address.is_global:
             raise UnsafeUrlError("Hostname resolves to an unsafe address.")
@@ -240,17 +238,11 @@ async def read_limited_html_body(
         content_type: str | None = None
         for name, value in response.headers:
             if name.lower() == b"content-type":
-                content_type = (
-                    value.decode("ascii")
-                    .split(";", 1)[0]
-                    .strip()
-                    .casefold()
-                )
+                content_type = value.decode("ascii").split(";", 1)[0].strip().casefold()
                 break
 
         allowed_content_types = {
-            allowed_type.strip().casefold()
-            for allowed_type in policy.allowed_content_types
+            allowed_type.strip().casefold() for allowed_type in policy.allowed_content_types
         }
         if content_type is None or content_type not in allowed_content_types:
             raise UnsupportedContentTypeError("Content-Type is not allowed.")

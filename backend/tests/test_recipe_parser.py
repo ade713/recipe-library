@@ -108,9 +108,7 @@ def test_recipe_parser_warns_when_optional_metadata_is_missing() -> None:
     scraper.instructions_list.return_value = ["Simmer for 20 minutes."]
     scraper.description.side_effect = ElementNotFoundInHtml("description")
     scraper.image.return_value = None
-    scraper.author.side_effect = FieldNotProvidedByWebsiteException(
-        return_value=None
-    )
+    scraper.author.side_effect = FieldNotProvidedByWebsiteException(return_value=None)
     scraper.site_name.return_value = None
     scraper.prep_time.return_value = None
     scraper.cook_time.return_value = None
@@ -158,9 +156,7 @@ def test_recipe_parser_warns_when_ingredients_and_steps_are_missing() -> None:
     scraper = Mock()
     scraper.title.return_value = "Tomato Soup"
     scraper.ingredients.side_effect = ElementNotFoundInHtml("ingredients")
-    scraper.instructions_list.side_effect = FieldNotProvidedByWebsiteException(
-        return_value=None
-    )
+    scraper.instructions_list.side_effect = FieldNotProvidedByWebsiteException(return_value=None)
     scraper.description.return_value = None
     scraper.image.return_value = None
     scraper.author.return_value = None

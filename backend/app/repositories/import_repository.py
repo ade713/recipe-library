@@ -42,12 +42,9 @@ def get_import_log(
     user_id: UUID,
     import_id: UUID,
 ) -> RecipeImport | None:
-    statement = (
-        select(RecipeImport)
-        .where(
-            RecipeImport.id == import_id,
-            RecipeImport.user_id == user_id,
-        )
+    statement = select(RecipeImport).where(
+        RecipeImport.id == import_id,
+        RecipeImport.user_id == user_id,
     )
 
     return session.scalar(statement)

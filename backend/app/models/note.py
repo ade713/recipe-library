@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from app.models.recipe import Recipe
     from app.models.user import User
 
+
 class RecipeNote(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "recipe_notes"
 

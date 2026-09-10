@@ -76,11 +76,9 @@ def get_recipe_by_source_url(
 ) -> Recipe | None:
     """Return a saved recipe matching the user's normalized source URL."""
 
-    statement = (
-        select(Recipe).where(
-            Recipe.user_id == user_id,
-            Recipe.source_url == source_url,
-        )
+    statement = select(Recipe).where(
+        Recipe.user_id == user_id,
+        Recipe.source_url == source_url,
     )
 
     return session.scalar(statement)
@@ -97,36 +95,24 @@ def list_recipes(
     sort: RecipeSort = RecipeSort.RECENT,
     tag: str | None = None,
 ) -> list[Recipe]:
-    statement = (
-        select(Recipe)
-        .where(Recipe.user_id == user_id)
-        .options(selectinload(Recipe.tags))
-    )
+    statement = select(Recipe).where(Recipe.user_id == user_id).options(selectinload(Recipe.tags))
 
     if q is not None:
         statement = statement.where(Recipe.title.ilike(f"%{q}%"))
 
     if ingredient is not None:
         statement = statement.where(
-            Recipe.ingredients.any(
-                RecipeIngredient.original_text.ilike(f"%{ingredient}%")
-            )
+            Recipe.ingredients.any(RecipeIngredient.original_text.ilike(f"%{ingredient}%"))
         )
 
     if tag is not None:
-        statement = statement.where(
-            Recipe.tags.any(Tag.name.ilike(tag))
-        )
+        statement = statement.where(Recipe.tags.any(Tag.name.ilike(tag)))
 
     if favorite is not None:
-        statement = statement.where(
-            Recipe.is_favorite.is_(favorite)
-        )
+        statement = statement.where(Recipe.is_favorite.is_(favorite))
 
     if max_total_time is not None:
-        statement = statement.where(
-            Recipe.total_time_minutes <= max_total_time
-        )
+        statement = statement.where(Recipe.total_time_minutes <= max_total_time)
 
     if sort == RecipeSort.TITLE:
         statement = statement.order_by(
@@ -179,22 +165,14 @@ def update_recipe(
 
     if "steps" in supplied_fields:
         recipe.steps = [
-            RecipeStep(**step.model_dump(mode="json"))
-            for step in (payload.steps or [])
+            RecipeStep(**step.model_dump(mode="json")) for step in (payload.steps or [])
         ]
 
     if "tips" in supplied_fields:
-        recipe.tips = [
-            RecipeTip(**tip.model_dump(mode="json"))
-            for tip in (payload.tips or [])
-        ]
+        recipe.tips = [RecipeTip(**tip.model_dump(mode="json")) for tip in (payload.tips or [])]
 
     if "tags" in supplied_fields:
-        recipe.tags = _resolve_tags(
-            session,
-            user_id=user_id,
-            tag_names=payload.tags or []
-        )
+        recipe.tags = _resolve_tags(session, user_id=user_id, tag_names=payload.tags or [])
 
     session.flush()
 

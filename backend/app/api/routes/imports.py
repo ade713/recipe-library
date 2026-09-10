@@ -97,9 +97,7 @@ async def preview_import(
             result = await importer.preview_from_url(submitted_url)
         except (RecipeImportBlockedError, RecipeImportFailedError) as error:
             failure_status: Literal["blocked", "failed"] = (
-                "blocked"
-                if isinstance(error, RecipeImportBlockedError)
-                else "failed"
+                "blocked" if isinstance(error, RecipeImportBlockedError) else "failed"
             )
             warnings = [str(error)]
 

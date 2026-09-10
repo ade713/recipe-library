@@ -79,16 +79,12 @@ class RecipeParser:
                 supported_only=False,
             )
         except PARSER_CREATION_ERRORS as error:
-            raise RecipeParseError(
-                "Recipe data could not be found on the page."
-            ) from error
+            raise RecipeParseError("Recipe data could not be found on the page.") from error
 
         try:
             title = scraper.title()
         except MISSING_FIELD_ERRORS as error:
-            raise RecipeParseError(
-                "Recipe title could not be parsed."
-            ) from error
+            raise RecipeParseError("Recipe title could not be parsed.") from error
 
         warnings: list[str] = []
         ingredient_values = read_optional_field(
@@ -97,22 +93,14 @@ class RecipeParser:
             warnings=warnings,
             is_plural=True,
         )
-        ingredients = (
-            tuple(ingredient_values)
-            if ingredient_values is not None
-            else ()
-        )
+        ingredients = tuple(ingredient_values) if ingredient_values is not None else ()
         instruction_values = read_optional_field(
             field_name="Instructions",
             getter=scraper.instructions_list,
             warnings=warnings,
             is_plural=True,
         )
-        instructions = (
-            tuple(instruction_values)
-            if instruction_values is not None
-            else ()
-        )
+        instructions = tuple(instruction_values) if instruction_values is not None else ()
         description = read_optional_field(
             field_name="Description",
             getter=scraper.description,

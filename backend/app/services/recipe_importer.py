@@ -63,13 +63,9 @@ class RecipeImporter:
         try:
             fetch_result = await self._fetcher(url)
         except UnsafeUrlError as error:
-            raise RecipeImportBlockedError(
-                "Recipe URL was blocked by safety checks."
-            ) from error
+            raise RecipeImportBlockedError("Recipe URL was blocked by safety checks.") from error
         except SafeFetchError as error:
-            raise RecipeImportFailedError(
-                "Recipe page could not be fetched."
-            ) from error
+            raise RecipeImportFailedError("Recipe page could not be fetched.") from error
 
         try:
             parsed_recipe = self._parser.parse(
@@ -77,15 +73,12 @@ class RecipeImporter:
                 fetch_result.final_url,
             )
         except RecipeParseError as error:
-            raise RecipeImportFailedError(
-                "Recipe data could not be parsed."
-            ) from error
+            raise RecipeImportFailedError("Recipe data could not be parsed.") from error
 
         normalized_recipe = self._normalizer(parsed_recipe)
         preview_status: Literal["success", "partial"] = (
             "partial"
-            if not normalized_recipe.draft.ingredients
-            or not normalized_recipe.draft.steps
+            if not normalized_recipe.draft.ingredients or not normalized_recipe.draft.steps
             else "success"
         )
 

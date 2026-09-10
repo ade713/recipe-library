@@ -89,9 +89,7 @@ def test_pinned_backend_rejects_unvalidated_hostname_and_unix_socket() -> None:
 
 def test_pinned_backend_translates_connect_timeout() -> None:
     underlying_backend = AsyncMock(spec=httpcore.AsyncNetworkBackend)
-    underlying_backend.connect_tcp.side_effect = httpcore.ConnectTimeout(
-        "connection timed out"
-    )
+    underlying_backend.connect_tcp.side_effect = httpcore.ConnectTimeout("connection timed out")
     backend = PinnedAsyncNetworkBackend(
         target=SafeTarget(
             url="https://example.com/recipe",
@@ -136,9 +134,7 @@ def test_timeout_stream_reads_with_policy_timeout(
 
 def test_timeout_stream_translates_read_timeout() -> None:
     underlying_stream = AsyncMock(spec=httpcore.AsyncNetworkStream)
-    underlying_stream.read.side_effect = httpcore.ReadTimeout(
-        "reading timed out"
-    )
+    underlying_stream.read.side_effect = httpcore.ReadTimeout("reading timed out")
     stream = TimeoutAsyncNetworkStream(
         stream=cast(httpcore.AsyncNetworkStream, underlying_stream),
         read_timeout_seconds=10.0,

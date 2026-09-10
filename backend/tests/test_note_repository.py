@@ -68,9 +68,10 @@ def test_create_and_list_notes_are_scoped_to_owned_recipe() -> None:
         assert {note.user_id for note in notes} == {owner.id}
         assert empty_notes == []
         assert hidden_notes is None
-        assert session.scalar(
-            select(RecipeNote).where(RecipeNote.note == "This must not be saved.")
-        ) is None
+        assert (
+            session.scalar(select(RecipeNote).where(RecipeNote.note == "This must not be saved."))
+            is None
+        )
 
 
 def test_update_and_delete_notes_are_scoped_to_owner_and_recipe() -> None:

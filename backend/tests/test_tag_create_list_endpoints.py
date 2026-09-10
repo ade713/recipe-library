@@ -75,8 +75,6 @@ def test_tag_create_and_list_endpoints_are_scoped_to_current_user() -> None:
 
     with testing_session() as session:
         tags = list(
-            session.scalars(
-                select(Tag).join(User).where(User.email == "current@example.com")
-            )
+            session.scalars(select(Tag).join(User).where(User.email == "current@example.com"))
         )
         assert {tag.name for tag in tags} == {"Dinner", "Quick"}

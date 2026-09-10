@@ -17,13 +17,13 @@ def scale_ingredient_line(line: str, multiplier: float) -> str:
     if not parts or len(parts) <= 1:
         return line
 
-    if '/' in parts[0]:
+    if "/" in parts[0]:
         number = Fraction(parts[0])
         quantity = number * Fraction(multiplier)
         quantity_str = format_quantity(quantity)
 
         return f"{quantity_str} {' '.join(parts[1:])}"
-    elif '/' in parts[1] and parts[0].isdigit():
+    elif "/" in parts[1] and parts[0].isdigit():
         number = Fraction(parts[0])
         fraction = Fraction(parts[1])
         number += fraction

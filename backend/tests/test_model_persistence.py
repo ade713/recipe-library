@@ -44,9 +44,7 @@ def test_session_can_continue_after_rollback() -> None:
 
         session.rollback()
 
-        saved_user = session.scalar(
-            select(User).where(User.email == "cook@example.com")
-        )
+        saved_user = session.scalar(select(User).where(User.email == "cook@example.com"))
 
         assert saved_user is not None
         assert saved_user.password_hash == "first-hash"

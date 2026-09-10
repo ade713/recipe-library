@@ -45,12 +45,8 @@ def test_preview_from_url_fetches_parses_and_normalizes_recipe() -> None:
     normalized_recipe = NormalizedRecipeDraft(
         draft=RecipeDraft(
             title="Tomato Soup",
-            ingredients=[
-                {"position": 1, "original_text": "2 cups tomatoes"}
-            ],
-            steps=[
-                {"position": 1, "instruction": "Simmer the tomatoes."}
-            ],
+            ingredients=[{"position": 1, "original_text": "2 cups tomatoes"}],
+            steps=[{"position": 1, "instruction": "Simmer the tomatoes."}],
         ),
         warnings=("Image was not provided by the source.",),
     )

@@ -37,9 +37,7 @@ def test_is_valid_http_url_rejects_unsupported_or_incomplete_urls(url: str) -> N
         ("/recipe", None),
     ],
 )
-def test_extract_domain_returns_hostname_without_port(
-    url: str, expected: str | None
-) -> None:
+def test_extract_domain_returns_hostname_without_port(url: str, expected: str | None) -> None:
     assert extract_domain(url) == expected
 
 

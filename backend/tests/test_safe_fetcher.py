@@ -248,9 +248,7 @@ def test_request_with_safe_redirects_never_requests_unsafe_location() -> None:
                 requester=requester,
                 policy=SafeFetchPolicy(),
                 resolver=lambda hostname: (
-                    ["127.0.0.1"]
-                    if hostname == "internal.example"
-                    else ["93.184.216.34"]
+                    ["127.0.0.1"] if hostname == "internal.example" else ["93.184.216.34"]
                 ),
             )
         )
@@ -309,13 +307,11 @@ def test_read_limited_html_body_rejects_unsupported_content_type() -> None:
     response = httpcore.Response(
         200,
         headers={"Content-Type": "application/json"},
-        content=stream_chunks(b'{}'),
+        content=stream_chunks(b"{}"),
     )
 
     with pytest.raises(UnsupportedContentTypeError):
-        asyncio.run(
-            read_limited_html_body(response, policy=SafeFetchPolicy())
-        )
+        asyncio.run(read_limited_html_body(response, policy=SafeFetchPolicy()))
 
 
 def test_read_limited_html_body_rejects_actual_streamed_size_over_limit() -> None:

@@ -26,9 +26,7 @@ def test_recipe_table_preserves_source_attribution() -> None:
     engine = create_engine("sqlite+pysqlite:///:memory:")
     Base.metadata.create_all(engine)
 
-    recipe_columns = {
-        column["name"] for column in inspect(engine).get_columns("recipes")
-    }
+    recipe_columns = {column["name"] for column in inspect(engine).get_columns("recipes")}
 
     assert {
         "source_url",
@@ -42,9 +40,7 @@ def test_recipe_requires_an_owner_and_title() -> None:
     engine = create_engine("sqlite+pysqlite:///:memory:")
     Base.metadata.create_all(engine)
 
-    recipe_columns = {
-        column["name"]: column for column in inspect(engine).get_columns("recipes")
-    }
+    recipe_columns = {column["name"]: column for column in inspect(engine).get_columns("recipes")}
 
     assert recipe_columns["user_id"]["nullable"] is False
     assert recipe_columns["title"]["nullable"] is False
@@ -85,7 +81,4 @@ def test_tag_names_are_unique_per_user() -> None:
 
     tag_constraints = inspect(engine).get_unique_constraints("tags")
 
-    assert any(
-        constraint["column_names"] == ["user_id", "name"]
-        for constraint in tag_constraints
-    )
+    assert any(constraint["column_names"] == ["user_id", "name"] for constraint in tag_constraints)

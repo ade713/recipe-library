@@ -38,11 +38,7 @@ def list_tags(
     *,
     user_id: UUID,
 ) -> list[Tag]:
-    statement = (
-        select(Tag)
-        .where(Tag.user_id == user_id)
-        .order_by(Tag.name.asc())
-    )
+    statement = select(Tag).where(Tag.user_id == user_id).order_by(Tag.name.asc())
 
     return list(session.scalars(statement))
 
