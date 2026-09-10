@@ -38,29 +38,7 @@ jobs:
         run: python -m pytest tests -q
 
       - name: Run Ruff
-        run: |
-          python -m ruff check \
-            alembic \
-            app/api/router.py \
-            app/api/routes/health.py \
-            app/api/routes/ingredients.py \
-            app/api/routes/recipes.py \
-            app/core/config.py \
-            app/models \
-            app/repositories \
-            app/schemas \
-            app/services/scaling.py \
-            app/services/url_validator.py \
-            tests
+        run: python -m ruff check .
 
       - name: Run mypy
-        run: |
-          python -m mypy \
-            app/api/routes/ingredients.py \
-            app/api/routes/recipes.py \
-            app/core/config.py \
-            app/models \
-            app/repositories \
-            app/schemas \
-            app/services/scaling.py \
-            app/services/url_validator.py
+        run: python -m mypy app
