@@ -27,6 +27,8 @@ Registration, login, JWT bearer authentication, and current-user lookup are impl
 
 Manual recipe CRUD should be implemented before URL import.
 
+The database-only `difficulty` column is reserved for future use. It is not exposed in recipe request/response schemas and is not an MVP feature. Cleanup retains the existing column; adding API support or removing the column requires a separately scoped change.
+
 ```http
 GET    /recipes
 POST   /recipes

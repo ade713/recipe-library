@@ -174,7 +174,7 @@ recipes
 - total_time_minutes integer nullable
 - base_servings numeric nullable
 - servings_unit string nullable          # servings, cookies, loaf, etc.
-- difficulty string nullable
+- difficulty string nullable             # reserved; not exposed in MVP API schemas
 - is_favorite boolean default false
 - import_status string                   # manual, imported, edited
 - created_at datetime
