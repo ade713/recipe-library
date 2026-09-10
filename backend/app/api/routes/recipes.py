@@ -37,6 +37,7 @@ def list_recipes(
     sort: RecipeSort = RecipeSort.RECENT,
     tag: str | None = None,
 ) -> RecipeListResponse:
+    """Return the current user's recipes with search, filters, and sorting."""
     recipes = list_recipe_records(
         session,
         user_id=current_user.id,
@@ -61,6 +62,7 @@ def create_recipe(
     payload: RecipeCreate,
     session: Annotated[Session, Depends(get_db)],
 ) -> Recipe:
+    """Save a manually entered recipe for the current user."""
     try:
         recipe = create_recipe_record(
             session,
@@ -81,6 +83,10 @@ def get_recipe(
     recipe_id: UUID,
     session: Annotated[Session, Depends(get_db)],
 ) -> Recipe:
+    """Return a recipe owned by the current user.
+
+    Return 404 when the recipe is missing or belongs to another user.
+    """
     recipe = get_recipe_record(
         session,
         user_id=current_user.id,
@@ -103,6 +109,10 @@ def update_recipe(
     recipe_id: UUID,
     session: Annotated[Session, Depends(get_db)],
 ) -> Recipe:
+    """Update a recipe owned by the current user using supplied fields.
+
+    Return 404 if recipe is unavailable.
+    """
     try:
         recipe = update_recipe_record(
             session,
@@ -131,6 +141,10 @@ def delete_recipe(
     recipe_id: UUID,
     session: Annotated[Session, Depends(get_db)],
 ) -> None:
+    """Delete a recipe owned by the current user.
+
+    Return no content on success, or 404 if recipe unavailable.
+    """
     try:
         is_recipe_deleted = delete_recipe_record(
             session,
