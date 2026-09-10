@@ -15,6 +15,8 @@ The backend feature work through Week 12 is complete. Before and alongside the m
 - Remove the exposed, unimplemented import-detail route until that endpoint is scheduled.
 - Remove the completed TODO from `scale_ingredient_line()`.
 - Remove or clearly defer the unused ingredient-parser stub.
+- Add concise docstrings to remaining undocumented public API route handlers and other meaningful API-level orchestration or error boundaries.
+- Avoid docstrings that merely repeat an obvious function name, especially on small private helpers.
 - Align API and roadmap documentation with those decisions.
 
 ### PR 3: Establish backend formatting
