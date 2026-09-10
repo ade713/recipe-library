@@ -204,6 +204,10 @@ Status: Complete
 
 **Outcome:** User-approved imported drafts can become saved recipes.
 
+## Backend cleanup checkpoint
+
+Before Week 13 begins, complete the six focused pre-mobile PRs in the [Backend Cleanup Plan](BACKEND_CLEANUP_PLAN.md). Validation, PostgreSQL parity, dependency upgrades, and public-deployment hardening remain separately scheduled so they do not expand these cleanup PRs or delay mobile work unnecessarily.
+
 ## Week 13 — Mobile MVP foundations
 
 | Day | Work |
