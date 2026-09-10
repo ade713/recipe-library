@@ -338,8 +338,9 @@ sort=recent
 ```http
 POST /imports/preview
 POST /imports/{import_id}/save
-GET  /imports/{import_id}
 ```
+
+`GET /imports/{import_id}` is deferred and is not registered. It will require authentication and import ownership checks when scheduled.
 
 `POST /imports/preview` accepts:
 

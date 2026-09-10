@@ -65,7 +65,6 @@ Imports create editable drafts; they do not blindly save scraped content.
 ```http
 POST /imports/preview
 POST /imports/{import_id}/save
-GET  /imports/{import_id}
 ```
 
 `POST /imports/preview` is implemented and requires bearer authentication. It safely fetches and parses the submitted URL, returns an editable draft with `success` or `partial` status when usable data is found, and records the user-scoped import attempt. Blocked and failed attempts also create import logs and return a safe warning with no draft.
@@ -87,7 +86,7 @@ Blocked and failed responses include the actions `enter_manually` and `open_sour
 
 Missing or unowned imports return `404`. Failed, blocked, and duplicate imports return `409`, as do attempts to save an import log that is already linked to a recipe. If that linked recipe is later deleted, `ON DELETE SET NULL` makes the historical import eligible to be saved again.
 
-The import-detail endpoint remains planned.
+`GET /imports/{import_id}` is deferred and is not registered in the API. Any future implementation must require authentication and enforce import ownership.
 
 Allowed import statuses:
 

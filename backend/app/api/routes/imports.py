@@ -211,8 +211,3 @@ def save_import(
     except Exception:
         session.rollback()
         raise
-
-
-@router.get("/{import_id}", status_code=status.HTTP_501_NOT_IMPLEMENTED)
-def get_import(import_id: UUID) -> None:
-    raise HTTPException(status_code=501, detail="Import lookup is not implemented yet.")
