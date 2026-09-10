@@ -4,10 +4,11 @@ FastAPI backend for Recipe Library.
 
 ## Setup
 
+Install `uv`, then run:
+
 ```bash
-python -m venv .venv
+uv sync --locked --extra dev
 source .venv/bin/activate
-pip install -e ".[dev]"
 cp .env.example .env
 uvicorn app.main:app --reload
 ```
@@ -16,9 +17,9 @@ uvicorn app.main:app --reload
 
 ```bash
 python -m pytest tests -q
-python -m ruff check app tests alembic
-python -m ruff format app tests alembic
-python -m mypy app/api/routes/recipes.py app/repositories app/schemas
+python -m ruff check .
+python -m ruff format .
+python -m mypy app
 ```
 
 ## Database migrations
