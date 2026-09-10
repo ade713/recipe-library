@@ -6,6 +6,8 @@ The backend feature work through Week 12 is complete. Before the mobile MVP begi
 
 ### PR 1: Strengthen backend quality gates
 
+Status: Complete and merged in [PR #29](https://github.com/ade713/recipe-library/pull/29). CI runs whole-backend Ruff and mypy checks and installs dependencies from `uv.lock` with `uv sync --locked --extra dev`. Setup documentation uses the same locked workflow.
+
 - Replace manually enumerated Ruff targets with `ruff check .`.
 - Replace manually enumerated mypy targets with `mypy app`.
 - Confirm CI checks authentication, imports, parsing, safe fetching, and transport code.
@@ -13,6 +15,19 @@ The backend feature work through Week 12 is complete. Before the mobile MVP begi
 - Keep dependency changes limited to reproducibility; handle behavior-changing upgrades separately.
 
 ### PR 2: Clean backend code and documentation
+
+Status: Implemented; [PR #30](https://github.com/ade713/recipe-library/pull/30) is open for review.
+
+Completed outcomes:
+
+- Removed the unimplemented import-detail route, unused ingredient-parser stub, and unused `MessageResponse` schema.
+- Removed stale scaling learning instructions and the completed TODO.
+- Documented API handlers, authentication dependencies, session lifecycle, and import-save behavior.
+- Retained `difficulty` as a reserved database-only field outside the MVP API.
+- Updated API, handoff, roadmap, and project memory documentation. Structured ingredient parsing and reliable cooking-view scaling remain required before private MVP release.
+- Verified 198 tests, Ruff, and mypy pass; the known TestClient deprecation warning remains deferred.
+
+Scope covered:
 
 - Remove the exposed, unimplemented import-detail route until that endpoint is scheduled.
 - Remove the completed TODO from `scale_ingredient_line()`.
@@ -25,11 +40,15 @@ The backend feature work through Week 12 is complete. Before the mobile MVP begi
 
 ### PR 3: Establish backend formatting
 
+Status: Next, after PR #30 is merged.
+
 - Apply `ruff format` as a standalone mechanical change.
 - Add `ruff format --check .` to CI after establishing the baseline.
 - Avoid mixing behavior changes into the formatting PR.
 
 ### PR 4: Centralize backend vocabulary and API types
+
+Status: Planned.
 
 - Introduce shared typed values for import status, recipe origin/import status, and ingredient parse status.
 - Replace duplicated literals in schemas, routes, models, services, and tests.
@@ -40,12 +59,16 @@ The backend feature work through Week 12 is complete. Before the mobile MVP begi
 
 ### PR 5: Consolidate backend test setup
 
+Status: Planned.
+
 - Add narrowly scoped shared fixtures for SQLite sessions, authenticated users, FastAPI dependency overrides, and authorization headers.
 - Convert endpoint test modules incrementally.
 - Keep special-purpose mocks and failure setup local to the tests that need them.
 - Keep the PR focused on reusable setup; do not rewrite test behavior.
 
 ### PR 6: Refactor import orchestration
+
+Status: Planned.
 
 - Move import-preview and import-save workflow decisions out of the route module into focused services.
 - Keep HTTP concerns in routes, business orchestration in services, and persistence in repositories.
