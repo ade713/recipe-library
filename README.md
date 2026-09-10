@@ -39,6 +39,7 @@ recipe-library-starter/
 
 See `docs/APP_CONSIDERATIONS.md` for the full product, security, data, scraping, and UX checklist.
 See `docs/MVP_SCHEDULE.md` for the estimated 14-week, five-days-per-week MVP plan.
+See `docs/BACKEND_CLEANUP_PLAN.md` for the focused cleanup and hardening PR sequence before and alongside mobile development.
 
 ## Recommended workflow
 

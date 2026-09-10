@@ -34,7 +34,7 @@ Users can:
 - Manual recipe, note, and tag CRUD are implemented and user-scoped.
 - Authentication, recipe search/filter/sort, safe URL fetching, import parsing, editable previews, duplicate handling, and import logging are implemented.
 - Reviewed `success` and `partial` import drafts can be saved transactionally with trusted source attribution and a link back to their import log.
-- The next scheduled phase is the React Native/Expo mobile MVP foundation.
+- The next work is the pre-mobile backend cleanup sequence in `docs/BACKEND_CLEANUP_PLAN.md`, followed by the React Native/Expo mobile MVP foundation.
 
 ## UI exploration
 
