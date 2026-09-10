@@ -8,6 +8,7 @@ router = APIRouter()
 
 @router.post("/scale-preview", response_model=IngredientScalePreviewResponse)
 def scale_preview(payload: IngredientScalePreviewRequest) -> IngredientScalePreviewResponse:
+    """Preview ingredient scaling, leaving unrecognized quantities unchanged."""
     original_line = payload.line
     multiplier = payload.multiplier
     scaled_line = scale_ingredient_line(original_line, multiplier)
