@@ -55,6 +55,7 @@ The backend feature work through Week 12 is complete. Before the mobile MVP begi
 
 These items should be planned as focused PRs, but they do not block the start of Week 13:
 
+- Implement conservative structured ingredient parsing and connect it to import normalization and portion scaling. This remains important app functionality, deferred from cleanup rather than dropped. Preserve original text, populate quantity/unit/name/preparation only when confident, and leave uncertain lines unchanged. The existing text-scaling utility does not populate stored parsed fields; review the end-to-end cooking-view scaling flow before declaring it complete.
 - Add nonblank/whitespace normalization for titles, tags, notes, ingredients, and instructions.
 - Decide whether tag uniqueness should be case-insensitive.
 - Add a small PostgreSQL CI job that applies Alembic migrations and exercises important persistence flows.

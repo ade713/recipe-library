@@ -10,7 +10,7 @@
 ## Phase 1: Pure Python learning utilities
 
 - Ingredient scaling
-- Ingredient quantity parsing
+- Basic leading-quantity parsing within the scaling utility
 - URL validation
 - Domain extraction
 
@@ -111,6 +111,15 @@ Before beginning this phase, complete the six pre-mobile PRs in the [Backend Cle
 - Preview/edit screen
 - Recipe detail screen
 - Notes UI
+
+## Deferred ingredient parsing: before private MVP release
+
+Structured ingredient parsing remains planned functionality and does not block starting mobile development. Imports currently preserve ingredient text and default to `unparsed`; the unused standalone parser stub was removed during cleanup.
+
+- Parse quantity, unit, name, and preparation conservatively during import normalization.
+- Preserve original ingredient text and mark parsing confidence.
+- Connect confidently parsed quantities to 1x/2x/3x cooking-view scaling.
+- Leave unclear ingredients unchanged and test the complete import-to-scaling flow.
 
 ## Phase 12: Portfolio polish
 

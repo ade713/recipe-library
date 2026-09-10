@@ -640,9 +640,10 @@ Build these before the database or full API:
 
 ```text
 app/services/scaling.py
-app/services/ingredient_parser.py
 app/services/url_validator.py
 ```
+
+Structured ingredient parsing is deferred until before private MVP release; see `docs/ROADMAP.md`. The unused `ingredient_parser.py` stub was removed during cleanup. Imports currently preserve original ingredient text with `unparsed` status. The existing scaling utility parses basic leading quantities when called, but does not populate stored ingredient fields. Connecting confident structured parsing to import normalization and cooking-view scaling remains planned functionality.
 
 Concepts:
 
