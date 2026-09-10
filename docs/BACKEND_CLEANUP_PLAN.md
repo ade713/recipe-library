@@ -16,7 +16,7 @@ Status: Complete and merged in [PR #29](https://github.com/ade713/recipe-library
 
 ### PR 2: Clean backend code and documentation
 
-Status: Implemented; [PR #30](https://github.com/ade713/recipe-library/pull/30) is open for review.
+Status: Complete and merged in [PR #30](https://github.com/ade713/recipe-library/pull/30).
 
 Completed outcomes:
 
@@ -40,7 +40,15 @@ Scope covered:
 
 ### PR 3: Establish backend formatting
 
-Status: Next, after PR #30 is merged.
+Status: Implemented on `chore/backend-formatting`; ready to create the pull request.
+
+Completed outcomes:
+
+- Applied the Ruff formatting baseline across 36 changed Python files in a dedicated commit.
+- Added `.venv/bin/ruff format --check .` to CI in a separate commit.
+- All 95 Python files pass the formatting check. Tests, Ruff lint, and mypy passed after formatting; the existing test warning remains deferred.
+
+Scope covered:
 
 - Apply `ruff format` as a standalone mechanical change.
 - Add `ruff format --check .` to CI after establishing the baseline.
@@ -48,7 +56,7 @@ Status: Next, after PR #30 is merged.
 
 ### PR 4: Centralize backend vocabulary and API types
 
-Status: Planned.
+Status: Next, after the formatting PR is merged.
 
 - Introduce shared typed values for import status, recipe origin/import status, and ingredient parse status.
 - Replace duplicated literals in schemas, routes, models, services, and tests.

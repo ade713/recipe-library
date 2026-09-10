@@ -65,12 +65,8 @@ def test_import_preview_endpoint_returns_and_logs_successful_draft() -> None:
                 title="Tomato Soup",
                 source_url="https://www.example.com/recipe",
                 source_domain="www.example.com",
-                ingredients=[
-                    {"position": 1, "original_text": "2 cups tomatoes"}
-                ],
-                steps=[
-                    {"position": 1, "instruction": "Simmer the tomatoes."}
-                ],
+                ingredients=[{"position": 1, "original_text": "2 cups tomatoes"}],
+                steps=[{"position": 1, "instruction": "Simmer the tomatoes."}],
             ),
             warnings=("Image was not provided by the source.",),
         )
@@ -102,9 +98,7 @@ def test_import_preview_endpoint_returns_and_logs_successful_draft() -> None:
     assert body["draft"]["title"] == "Tomato Soup"
     assert body["warnings"] == ["Image was not provided by the source."]
     assert body["import_id"] is not None
-    importer.preview_from_url.assert_awaited_once_with(
-        "https://example.com/recipe"
-    )
+    importer.preview_from_url.assert_awaited_once_with("https://example.com/recipe")
 
     with testing_session() as session:
         import_log = session.scalar(select(RecipeImport))
@@ -113,9 +107,7 @@ def test_import_preview_endpoint_returns_and_logs_successful_draft() -> None:
         assert import_log.user_id == current_user_id
         assert import_log.source_url == "https://www.example.com/recipe"
         assert import_log.status == "success"
-        assert import_log.warnings == [
-            "Image was not provided by the source."
-        ]
+        assert import_log.warnings == ["Image was not provided by the source."]
 
 
 def test_import_preview_endpoint_returns_duplicate_before_importing(
@@ -160,9 +152,7 @@ def test_import_preview_endpoint_returns_duplicate_before_importing(
             session=session,
             current_user=current_user,
             importer=importer,
-            payload=RecipeImportPreviewRequest(
-                url="https://example.com/recipe"
-            ),
+            payload=RecipeImportPreviewRequest(url="https://example.com/recipe"),
         )
     )
 
@@ -213,12 +203,8 @@ def test_import_preview_endpoint_can_import_duplicate_as_copy(
             title="Imported Tomato Soup Copy",
             source_url="https://example.com/recipe",
             source_domain="example.com",
-            ingredients=[
-                {"position": 1, "original_text": "2 cups tomatoes"}
-            ],
-            steps=[
-                {"position": 1, "instruction": "Simmer the tomatoes."}
-            ],
+            ingredients=[{"position": 1, "original_text": "2 cups tomatoes"}],
+            steps=[{"position": 1, "instruction": "Simmer the tomatoes."}],
         ),
         warnings=(),
     )
@@ -261,9 +247,7 @@ def test_import_preview_endpoint_can_import_duplicate_as_copy(
     assert response.existing_recipe_id is None
     assert response.next_actions == []
     find_recipe.assert_not_called()
-    importer.preview_from_url.assert_awaited_once_with(
-        "https://example.com/recipe"
-    )
+    importer.preview_from_url.assert_awaited_once_with("https://example.com/recipe")
     create_log.assert_called_once()
     session.commit.assert_called_once_with()
     session.rollback.assert_not_called()
@@ -273,9 +257,7 @@ def test_import_preview_endpoint_can_import_duplicate_as_copy(
     ("import_error", "expected_status"),
     [
         (
-            RecipeImportBlockedError(
-                "Recipe URL was blocked by safety checks."
-            ),
+            RecipeImportBlockedError("Recipe URL was blocked by safety checks."),
             "blocked",
         ),
         (
@@ -366,9 +348,7 @@ def test_import_preview_endpoint_rolls_back_unexpected_errors(
         find_recipe,
     )
     importer = Mock(spec=RecipeImporter)
-    importer.preview_from_url = AsyncMock(
-        side_effect=RuntimeError("unexpected import failure")
-    )
+    importer.preview_from_url = AsyncMock(side_effect=RuntimeError("unexpected import failure"))
     create_log = Mock()
     monkeypatch.setattr(import_routes, "create_import_log", create_log)
 
@@ -378,9 +358,7 @@ def test_import_preview_endpoint_rolls_back_unexpected_errors(
                 session=session,
                 current_user=current_user,
                 importer=importer,
-                payload=RecipeImportPreviewRequest(
-                    url="https://example.com/recipe"
-                ),
+                payload=RecipeImportPreviewRequest(url="https://example.com/recipe"),
             )
         )
 

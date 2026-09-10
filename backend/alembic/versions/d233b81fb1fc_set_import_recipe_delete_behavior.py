@@ -5,13 +5,14 @@ Revises: b9ea7919c36f
 Create Date: 2026-09-04 21:12:23.948562
 
 """
+
 from collections.abc import Sequence
 
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = 'd233b81fb1fc'
-down_revision: str | Sequence[str] | None = 'b9ea7919c36f'
+revision: str = "d233b81fb1fc"
+down_revision: str | Sequence[str] | None = "b9ea7919c36f"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

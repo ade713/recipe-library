@@ -22,11 +22,7 @@ def authenticate_user(
         email=str(payload.email),
     )
 
-    stored_hash = (
-        user.password_hash
-        if user is not None
-        else DUMMY_PASSWORD_HASH
-    )
+    stored_hash = user.password_hash if user is not None else DUMMY_PASSWORD_HASH
     password_matches = verify_password(
         payload.password,
         stored_hash,

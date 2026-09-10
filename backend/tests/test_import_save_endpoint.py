@@ -39,8 +39,7 @@ class AuthenticatedTestContext:
 
 
 @pytest.fixture
-def authenticated_context(
-) -> Generator[AuthenticatedTestContext, None, None]:
+def authenticated_context() -> Generator[AuthenticatedTestContext, None, None]:
     engine = create_engine(
         "sqlite+pysqlite:///:memory:",
         connect_args={"check_same_thread": False},
@@ -228,9 +227,7 @@ def test_save_import_endpoint_creates_saved_recipe(
 
     with authenticated_context.testing_session() as session:
         saved_recipe = session.scalar(
-            select(Recipe).where(
-                Recipe.user_id == authenticated_context.current_user_id
-            )
+            select(Recipe).where(Recipe.user_id == authenticated_context.current_user_id)
         )
         saved_import = session.get(RecipeImport, import_log_id)
 
@@ -346,9 +343,7 @@ def test_save_import_prevents_one_import_log_from_creating_multiple_recipes(
     }
 
     with authenticated_context.testing_session() as session:
-        recipe_count = session.scalar(
-            select(func.count()).select_from(Recipe)
-        )
+        recipe_count = session.scalar(select(func.count()).select_from(Recipe))
         assert recipe_count == 1
 
 
@@ -411,18 +406,14 @@ def test_import_preview_can_be_edited_and_saved(
     assert save_response.json()["title"] == RECIPE_TITLE
 
     with authenticated_context.testing_session() as session:
-        recipe_count = session.scalar(
-            select(func.count()).select_from(Recipe)
-        )
+        recipe_count = session.scalar(select(func.count()).select_from(Recipe))
         assert recipe_count == 1
 
         saved_import = session.get(RecipeImport, import_log_id)
         assert saved_import is not None
 
         recipe = session.scalar(
-            select(Recipe).where(
-                Recipe.user_id == authenticated_context.current_user_id
-            )
+            select(Recipe).where(Recipe.user_id == authenticated_context.current_user_id)
         )
         assert recipe is not None
         assert recipe.title == RECIPE_TITLE

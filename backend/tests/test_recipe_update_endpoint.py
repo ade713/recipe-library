@@ -29,9 +29,7 @@ def test_update_recipe_endpoint_applies_only_supplied_fields() -> None:
             user=current_user,
             title="Tomato Soup",
             description="Original description",
-            ingredients=[
-                RecipeIngredient(position=1, original_text="2 cups tomatoes")
-            ],
+            ingredients=[RecipeIngredient(position=1, original_text="2 cups tomatoes")],
             tips=[RecipeTip(position=1, tip="Keep this tip.")],
         )
         session.add_all([current_user, recipe])
@@ -55,9 +53,7 @@ def test_update_recipe_endpoint_applies_only_supplied_fields() -> None:
                 headers=headers,
                 json={
                     "description": None,
-                    "ingredients": [
-                        {"position": 1, "original_text": "3 cups tomatoes"}
-                    ],
+                    "ingredients": [{"position": 1, "original_text": "3 cups tomatoes"}],
                 },
             )
     finally:

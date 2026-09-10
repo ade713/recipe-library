@@ -196,9 +196,7 @@ def test_update_recipe_applies_supplied_fields_only_for_owner() -> None:
         assert updated_recipe is not None
         assert updated_recipe.title == "Tomato Soup"
         assert updated_recipe.description is None
-        assert [item.original_text for item in updated_recipe.ingredients] == [
-            "3 cups tomatoes"
-        ]
+        assert [item.original_text for item in updated_recipe.ingredients] == ["3 cups tomatoes"]
         assert updated_recipe.steps == []
         assert [tip.tip for tip in updated_recipe.tips] == ["Keep this tip."]
         assert [tag.name for tag in updated_recipe.tags] == ["Quick"]

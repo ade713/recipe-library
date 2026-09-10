@@ -10,6 +10,7 @@ from app.models.base import Base, UUIDPrimaryKeyMixin
 if TYPE_CHECKING:
     from app.models.recipe import Recipe
 
+
 class RecipeIngredient(UUIDPrimaryKeyMixin, Base):
     __tablename__ = "recipe_ingredients"
 

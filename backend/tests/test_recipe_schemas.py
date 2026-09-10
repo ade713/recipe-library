@@ -66,9 +66,7 @@ def test_recipe_step_draft_accepts_an_instruction() -> None:
         (1, ""),
     ],
 )
-def test_recipe_step_draft_rejects_invalid_required_fields(
-    position: int, instruction: str
-) -> None:
+def test_recipe_step_draft_rejects_invalid_required_fields(position: int, instruction: str) -> None:
     with pytest.raises(ValidationError):
         RecipeStepDraft(position=position, instruction=instruction)
 
@@ -129,9 +127,7 @@ def test_recipe_tip_draft_accepts_a_source_tip() -> None:
         (1, ""),
     ],
 )
-def test_recipe_tip_draft_rejects_invalid_required_fields(
-    position: int, tip: str
-) -> None:
+def test_recipe_tip_draft_rejects_invalid_required_fields(position: int, tip: str) -> None:
     with pytest.raises(ValidationError):
         RecipeTipDraft(position=position, tip=tip)
 
@@ -141,12 +137,8 @@ def test_recipe_read_builds_from_orm_attributes() -> None:
     recipe_record = SimpleNamespace(
         id=recipe_id,
         title="Tomato Soup",
-        ingredients=[
-            SimpleNamespace(position=1, original_text="2 cups tomatoes")
-        ],
-        steps=[
-            SimpleNamespace(position=1, instruction="Simmer the tomatoes.")
-        ],
+        ingredients=[SimpleNamespace(position=1, original_text="2 cups tomatoes")],
+        steps=[SimpleNamespace(position=1, instruction="Simmer the tomatoes.")],
         tips=[SimpleNamespace(position=1, tip="Finish with fresh basil.")],
         tags=[SimpleNamespace(name="Dinner")],
     )

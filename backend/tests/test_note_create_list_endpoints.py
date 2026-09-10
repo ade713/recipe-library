@@ -65,9 +65,7 @@ def test_note_create_and_list_endpoints_use_owned_recipe() -> None:
 
     with testing_session() as session:
         saved_notes = list(
-            session.scalars(
-                select(RecipeNote).where(RecipeNote.recipe_id == recipe_id)
-            )
+            session.scalars(select(RecipeNote).where(RecipeNote.recipe_id == recipe_id))
         )
         assert {note.note for note in saved_notes} == {
             "Use less salt.",
@@ -123,6 +121,7 @@ def test_note_create_and_list_endpoints_hide_another_users_recipe() -> None:
     assert list_response.json() == {"detail": "Recipe not found."}
 
     with testing_session() as session:
-        assert session.scalar(
-            select(RecipeNote).where(RecipeNote.note == "This must not be saved.")
-        ) is None
+        assert (
+            session.scalar(select(RecipeNote).where(RecipeNote.note == "This must not be saved."))
+            is None
+        )

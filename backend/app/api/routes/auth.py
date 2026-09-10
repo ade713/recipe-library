@@ -94,8 +94,6 @@ def logout(
 
 
 @router.get("/me", response_model=UserResponse)
-def get_me(
-    current_user: Annotated[User, Depends(get_session_current_user)]
-) -> User:
+def get_me(current_user: Annotated[User, Depends(get_session_current_user)]) -> User:
     """Return the authenticated user's profile."""
     return current_user

@@ -27,17 +27,11 @@ def normalize_recipe_draft(
     image_url = None
     if parsed_recipe.image_url is not None:
         try:
-            image_url = TypeAdapter(HttpUrl).validate_strings(
-                parsed_recipe.image_url
-            )
+            image_url = TypeAdapter(HttpUrl).validate_strings(parsed_recipe.image_url)
         except ValidationError:
-            warnings.append(
-                f"Image URL could not be validated: {parsed_recipe.image_url}"
-            )
+            warnings.append(f"Image URL could not be validated: {parsed_recipe.image_url}")
 
-    source_url = TypeAdapter(HttpUrl).validate_strings(
-        parsed_recipe.source_url
-    )
+    source_url = TypeAdapter(HttpUrl).validate_strings(parsed_recipe.source_url)
 
     ingredients = [
         IngredientDraft(
@@ -69,9 +63,7 @@ def normalize_recipe_draft(
     if parsed_yields is not None:
         base_servings, servings_unit = parsed_yields
     elif parsed_recipe.yields_text is not None:
-        warnings.append(
-            f"Yield information could not be parsed: {parsed_recipe.yields_text}"
-        )
+        warnings.append(f"Yield information could not be parsed: {parsed_recipe.yields_text}")
 
     collected_warnings = tuple(warnings)
     recipe_draft = RecipeDraft(

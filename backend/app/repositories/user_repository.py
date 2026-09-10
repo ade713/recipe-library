@@ -1,5 +1,4 @@
-"""Database access for users.
-"""
+"""Database access for users."""
 
 from uuid import UUID
 
@@ -18,9 +17,7 @@ def create_user(
 ) -> User | None:
     normalized_email = str(payload.email).strip().lower()
 
-    existing_user = session.scalar(
-        select(User).where(User.email == normalized_email)
-    )
+    existing_user = session.scalar(select(User).where(User.email == normalized_email))
 
     if existing_user is not None:
         return None
@@ -41,9 +38,7 @@ def get_user_by_email(
 ) -> User | None:
     normalized_email = email.strip().lower()
 
-    return session.scalar(
-        select(User).where(User.email == normalized_email)
-    )
+    return session.scalar(select(User).where(User.email == normalized_email))
 
 
 def get_user_by_id(
