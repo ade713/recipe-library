@@ -1,67 +1,44 @@
-from collections.abc import Generator
+from uuid import UUID
 
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.pool import StaticPool
 
-from app.core.database import get_db
-from app.core.security import create_access_token
-from app.main import create_app
-from app.models import Base, Tag, User
+from app.models import Tag, User
 
 
-def test_tag_create_and_list_endpoints_are_scoped_to_current_user() -> None:
-    engine = create_engine(
-        "sqlite+pysqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    Base.metadata.create_all(engine)
-    testing_session = sessionmaker(bind=engine, autoflush=False)
-
+def test_tag_create_and_list_endpoints_are_scoped_to_current_user(
+    app: FastAPI,
+    auth_headers: dict[str, str],
+    current_user_id: UUID,
+    testing_session: sessionmaker[Session],
+) -> None:
     with testing_session() as session:
-        current_user = User(
-            email="current@example.com",
-            password_hash="test-hash",
-            tags=[Tag(name="Dinner")],
-        )
+        current_tag = Tag(user_id=current_user_id, name="Dinner")
         other_user = User(
             email="other@example.com",
             password_hash="other-password-hash",
             tags=[Tag(name="Quick")],
         )
-        session.add_all([current_user, other_user])
+        session.add_all([current_tag, other_user])
         session.commit()
-        current_user_id = current_user.id
 
-    def override_get_db() -> Generator[Session, None, None]:
-        with testing_session() as session:
-            yield session
-
-    app = create_app()
-    app.dependency_overrides[get_db] = override_get_db
-    access_token = create_access_token(str(current_user_id))
-    headers = {"Authorization": f"Bearer {access_token}"}
-
-    try:
-        with TestClient(app) as client:
-            create_response = client.post(
-                "/api/v1/tags",
-                headers=headers,
-                json={"name": "Quick"},
-            )
-            duplicate_response = client.post(
-                "/api/v1/tags",
-                headers=headers,
-                json={"name": "Dinner"},
-            )
-            list_response = client.get(
-                "/api/v1/tags",
-                headers=headers,
-            )
-    finally:
-        app.dependency_overrides.clear()
+    with TestClient(app) as client:
+        create_response = client.post(
+            "/api/v1/tags",
+            headers=auth_headers,
+            json={"name": "Quick"},
+        )
+        duplicate_response = client.post(
+            "/api/v1/tags",
+            headers=auth_headers,
+            json={"name": "Dinner"},
+        )
+        list_response = client.get(
+            "/api/v1/tags",
+            headers=auth_headers,
+        )
 
     assert create_response.status_code == 201
     assert create_response.json()["name"] == "Quick"
