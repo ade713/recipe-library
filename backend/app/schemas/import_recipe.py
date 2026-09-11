@@ -1,16 +1,9 @@
-from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field, HttpUrl
 
 from app.schemas.recipe import RecipeDraft
-
-RecipeImportNextAction = Literal[
-    "open_existing",
-    "import_as_copy",
-    "enter_manually",
-    "open_source_url",
-]
+from app.types import RecipeImportNextAction, RecipeImportStatus
 
 
 class RecipeImportPreviewRequest(BaseModel):
@@ -20,7 +13,7 @@ class RecipeImportPreviewRequest(BaseModel):
 
 class RecipeImportPreviewResponse(BaseModel):
     import_id: UUID
-    status: Literal["success", "partial", "failed", "blocked", "duplicate"]
+    status: RecipeImportStatus
     parser_used: str | None = None
     draft: RecipeDraft | None
     warnings: list[str] = Field(default_factory=list)

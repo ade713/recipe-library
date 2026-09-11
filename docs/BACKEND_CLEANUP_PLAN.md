@@ -40,7 +40,7 @@ Scope covered:
 
 ### PR 3: Establish backend formatting
 
-Status: Implemented on `chore/backend-formatting`; ready to create the pull request.
+Status: Complete and merged in [PR #31](https://github.com/ade713/recipe-library/pull/31).
 
 Completed outcomes:
 
@@ -56,18 +56,37 @@ Scope covered:
 
 ### PR 4: Centralize backend vocabulary and API types
 
-Status: Next, after the formatting PR is merged.
+Status: Implemented on `chore/backend-shared-vocabulary`; awaiting final branch verification and pull request creation.
+
+Completed outcomes:
+
+- Added shared import-status, saveable-status, failure-status, next-action, recipe-origin, and ingredient-parse-status aliases in `app/types.py`.
+- Reused aliases in preview schemas, import orchestration, and repository inputs while retaining narrower status subsets where appropriate.
+- Centralized the saveable-status set, default recipe origin, and default ingredient parse status.
+- Preserved database string columns, existing request validation, serialized values, and independent expected values in tests.
+- Completed the naming and error-response review below. Targeted tests, Ruff lint/format checks, and mypy passed at each implementation checkpoint.
+
+Scope covered:
 
 - Introduce shared typed values for import status, recipe origin/import status, and ingredient parse status.
-- Replace duplicated literals in schemas, routes, models, services, and tests.
+- Consolidate repeated type definitions and defaults across schemas, routes, models, and services; retain test literals where they independently verify public values.
 - Review naming consistency for import logs, source tips, parser results, and response types.
 - Reuse framework HTTP status constants and existing response schemas where they improve clarity.
 - Inventory inconsistent error responses, but defer any client-visible contract changes to a behavioral PR.
 - Preserve existing API and database behavior.
 
+Review decisions for PR 4:
+
+- Keep `RecipeImport` for the persisted import log, `ParsedRecipe` for scraper output, `NormalizedRecipeDraft` for normalized data plus warnings, and `RecipeImportResult` for a successful preview result. These names distinguish stages of the workflow.
+- Keep source tips separate from personal notes. Retain existing `RecipeRead` and `*Response` schema names to avoid unnecessary OpenAPI component-name changes.
+- Route HTTP status codes already use FastAPI's named constants. Existing response schemas are reused where appropriate; no additional wrapper is needed.
+- Preserve expected string literals in tests as independent checks of public values. Keep database status columns as strings and ingredient `parse_status` validation unchanged; stricter validation requires a separate behavioral change.
+- Error-response inventory: HTTP exceptions return a string `detail`, request validation uses a list of errors under `detail`, and expected blocked/failed/duplicate import previews return structured outcomes with HTTP 200. Clients must inspect preview status as well as HTTP status. Preserve these contracts; any unified error shape or machine-readable error codes require a separate behavioral PR.
+- List responses also differ: notes return a bare list, while recipes and tags use an `items` wrapper. Consider alignment alongside future pagination, rather than changing response shapes during cleanup.
+
 ### PR 5: Consolidate backend test setup
 
-Status: Planned.
+Status: Next, after the shared-vocabulary PR is merged.
 
 - Add narrowly scoped shared fixtures for SQLite sessions, authenticated users, FastAPI dependency overrides, and authorization headers.
 - Convert endpoint test modules incrementally.

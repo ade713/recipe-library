@@ -5,6 +5,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
+from app.types import DEFAULT_INGREDIENT_PARSE_STATUS
+
 
 class NamedTag(Protocol):
     name: str
@@ -22,7 +24,7 @@ class IngredientDraft(BaseModel):
     preparation_note: str | None = None
     is_optional: bool = False
     scale_locked: bool = False
-    parse_status: str = "unparsed"
+    parse_status: str = DEFAULT_INGREDIENT_PARSE_STATUS
 
 
 class RecipeStepDraft(BaseModel):

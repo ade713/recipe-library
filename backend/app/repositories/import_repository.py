@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import RecipeImport
+from app.types import RecipeImportStatus
 
 
 def create_import_log(
@@ -13,7 +14,7 @@ def create_import_log(
     recipe_id: UUID | None = None,
     source_url: str,
     source_domain: str | None,
-    status: str,
+    status: RecipeImportStatus,
     parser_used: str | None,
     warnings: list[str],
     error_message: str | None,

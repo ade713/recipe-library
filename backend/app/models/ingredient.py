@@ -6,6 +6,7 @@ from sqlalchemy import Boolean, ForeignKey, Integer, Numeric, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, UUIDPrimaryKeyMixin
+from app.types import DEFAULT_INGREDIENT_PARSE_STATUS
 
 if TYPE_CHECKING:
     from app.models.recipe import Recipe
@@ -24,6 +25,6 @@ class RecipeIngredient(UUIDPrimaryKeyMixin, Base):
     preparation_note: Mapped[str | None] = mapped_column(String(255))
     is_optional: Mapped[bool] = mapped_column(Boolean, default=False)
     scale_locked: Mapped[bool] = mapped_column(Boolean, default=False)
-    parse_status: Mapped[str] = mapped_column(String(50), default="unparsed")
+    parse_status: Mapped[str] = mapped_column(String(50), default=DEFAULT_INGREDIENT_PARSE_STATUS)
 
     recipe: Mapped["Recipe"] = relationship(back_populates="ingredients")
