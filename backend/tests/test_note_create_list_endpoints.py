@@ -1,5 +1,7 @@
 from collections.abc import Generator
+from uuid import UUID
 
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, sessionmaker
@@ -11,49 +13,32 @@ from app.main import create_app
 from app.models import Base, Recipe, RecipeNote, User
 
 
-def test_note_create_and_list_endpoints_use_owned_recipe() -> None:
-    engine = create_engine(
-        "sqlite+pysqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    Base.metadata.create_all(engine)
-    testing_session = sessionmaker(bind=engine, autoflush=False)
-
+def test_note_create_and_list_endpoints_use_owned_recipe(
+    app: FastAPI,
+    auth_headers: dict[str, str],
+    current_user_id: UUID,
+    testing_session: sessionmaker[Session],
+) -> None:
     with testing_session() as session:
-        current_user = User(email="current@example.com", password_hash="test-hash")
         recipe = Recipe(
-            user=current_user,
+            user_id=current_user_id,
             title="Tomato Soup",
-            notes=[RecipeNote(user=current_user, note="Use less salt.")],
+            notes=[RecipeNote(user_id=current_user_id, note="Use less salt.")],
         )
-        session.add_all([current_user, recipe])
+        session.add(recipe)
         session.commit()
-        current_user_id = current_user.id
         recipe_id = recipe.id
 
-    def override_get_db() -> Generator[Session, None, None]:
-        with testing_session() as session:
-            yield session
-
-    app = create_app()
-    app.dependency_overrides[get_db] = override_get_db
-    access_token = create_access_token(str(current_user_id))
-    headers = {"Authorization": f"Bearer {access_token}"}
-
-    try:
-        with TestClient(app) as client:
-            create_response = client.post(
-                f"/api/v1/recipes/{recipe_id}/notes",
-                headers=headers,
-                json={"note": "Add more basil."},
-            )
-            list_response = client.get(
-                f"/api/v1/recipes/{recipe_id}/notes",
-                headers=headers,
-            )
-    finally:
-        app.dependency_overrides.clear()
+    with TestClient(app) as client:
+        create_response = client.post(
+            f"/api/v1/recipes/{recipe_id}/notes",
+            headers=auth_headers,
+            json={"note": "Add more basil."},
+        )
+        list_response = client.get(
+            f"/api/v1/recipes/{recipe_id}/notes",
+            headers=auth_headers,
+        )
 
     assert create_response.status_code == 201
     assert create_response.json()["note"] == "Add more basil."
