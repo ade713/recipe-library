@@ -9,13 +9,14 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.models import Recipe, RecipeIngredient, RecipeStep, RecipeTip, Tag
 from app.schemas.recipe import RecipeCreate, RecipeSort, RecipeUpdate
+from app.types import RecipeOrigin
 
 
 def create_recipe(
     session: Session,
     *,
     user_id: UUID,
-    import_status: str = "manual",
+    import_status: RecipeOrigin = "manual",
     payload: RecipeCreate,
 ) -> Recipe:
     recipe_data = payload.model_dump(

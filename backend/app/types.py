@@ -9,6 +9,8 @@ RecipeImportNextAction = Literal[
     "open_source_url",
 ]
 
+RecipeOrigin = Literal["manual", "imported", "edited"]
+
 RecipeImportStatus = Literal["success", "partial", "failed", "blocked", "duplicate"]
 
 SaveableImportStatus = Literal["success", "partial"]
