@@ -12,7 +12,6 @@ Planned flow:
 
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Literal
 
 from app.schemas.recipe import RecipeDraft
 from app.services.recipe_normalizer import NormalizedRecipeDraft, normalize_recipe_draft
@@ -23,6 +22,7 @@ from app.services.safe_fetcher import (
     UnsafeUrlError,
     fetch_html_safely,
 )
+from app.types import SaveableImportStatus
 
 Fetcher = Callable[[str], Awaitable[SafeFetchResult]]
 Normalizer = Callable[[ParsedRecipe], NormalizedRecipeDraft]
@@ -42,7 +42,7 @@ class RecipeImportFailedError(RecipeImportError):
 
 @dataclass(frozen=True)
 class RecipeImportResult:
-    status: Literal["success", "partial"]
+    status: SaveableImportStatus
     parser_used: str
     draft: RecipeDraft
     warnings: tuple[str, ...]
@@ -76,7 +76,7 @@ class RecipeImporter:
             raise RecipeImportFailedError("Recipe data could not be parsed.") from error
 
         normalized_recipe = self._normalizer(parsed_recipe)
-        preview_status: Literal["success", "partial"] = (
+        preview_status: SaveableImportStatus = (
             "partial"
             if not normalized_recipe.draft.ingredients or not normalized_recipe.draft.steps
             else "success"

@@ -4,6 +4,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field, HttpUrl
 
 from app.schemas.recipe import RecipeDraft
+from app.types import RecipeImportStatus
 
 RecipeImportNextAction = Literal[
     "open_existing",
@@ -20,7 +21,7 @@ class RecipeImportPreviewRequest(BaseModel):
 
 class RecipeImportPreviewResponse(BaseModel):
     import_id: UUID
-    status: Literal["success", "partial", "failed", "blocked", "duplicate"]
+    status: RecipeImportStatus
     parser_used: str | None = None
     draft: RecipeDraft | None
     warnings: list[str] = Field(default_factory=list)
