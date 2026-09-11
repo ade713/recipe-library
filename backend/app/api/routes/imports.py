@@ -29,10 +29,9 @@ from app.services.recipe_importer import (
     RecipeImportFailedError,
 )
 from app.services.url_validator import extract_domain
+from app.types import SAVEABLE_IMPORT_STATUSES
 
 router = APIRouter()
-
-SAVEABLE_IMPORT_STATUSES = frozenset({"success", "partial"})
 
 
 def get_recipe_importer() -> RecipeImporter:
