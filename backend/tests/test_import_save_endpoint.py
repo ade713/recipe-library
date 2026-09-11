@@ -10,7 +10,6 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.api.routes import imports as import_routes
 from app.api.routes.imports import get_recipe_importer
-from app.core.security import create_access_token
 from app.main import create_app
 from app.models import Recipe, RecipeImport, User
 from app.repositories.import_repository import create_import_log
@@ -38,25 +37,15 @@ class AuthenticatedTestContext:
 @pytest.fixture
 def authenticated_context(
     app: FastAPI,
+    auth_headers: dict[str, str],
+    current_user_id: UUID,
     testing_session: sessionmaker[Session],
 ) -> AuthenticatedTestContext:
-    with testing_session() as session:
-        current_user = User(
-            email=CURRENT_USER_EMAIL,
-            password_hash=TEST_PASSWORD_HASH,
-        )
-        session.add(current_user)
-        session.commit()
-        current_user_id = current_user.id
-
-    access_token = create_access_token(str(current_user_id))
-    headers = {"Authorization": f"Bearer {access_token}"}
-
     context = AuthenticatedTestContext(
         app=app,
         testing_session=testing_session,
         current_user_id=current_user_id,
-        headers=headers,
+        headers=auth_headers,
     )
     return context
 
