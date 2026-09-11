@@ -7,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 from app.models.tag import recipe_tags
+from app.types import DEFAULT_RECIPE_ORIGIN
 
 if TYPE_CHECKING:
     from app.models.ingredient import RecipeIngredient
@@ -34,7 +35,7 @@ class Recipe(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     servings_unit: Mapped[str | None] = mapped_column(String(50))
     difficulty: Mapped[str | None] = mapped_column(String(50))
     is_favorite: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
-    import_status: Mapped[str] = mapped_column(String(50), default="manual")
+    import_status: Mapped[str] = mapped_column(String(50), default=DEFAULT_RECIPE_ORIGIN)
 
     user: Mapped["User"] = relationship(back_populates="recipes")
     ingredients: Mapped[list["RecipeIngredient"]] = relationship(

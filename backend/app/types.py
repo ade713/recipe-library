@@ -15,6 +15,8 @@ RecipeImportNextAction = Literal[
 
 RecipeOrigin = Literal["manual", "imported", "edited"]
 
+DEFAULT_RECIPE_ORIGIN: RecipeOrigin = "manual"
+
 RecipeImportStatus = Literal["success", "partial", "failed", "blocked", "duplicate"]
 
 SaveableImportStatus = Literal["success", "partial"]
