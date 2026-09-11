@@ -1,4 +1,3 @@
-from collections.abc import Generator
 from dataclasses import dataclass
 from unittest.mock import AsyncMock, Mock
 from uuid import UUID, uuid4
@@ -11,7 +10,6 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.api.routes import imports as import_routes
 from app.api.routes.imports import get_recipe_importer
-from app.core.database import get_db
 from app.core.security import create_access_token
 from app.main import create_app
 from app.models import Recipe, RecipeImport, User
@@ -39,8 +37,9 @@ class AuthenticatedTestContext:
 
 @pytest.fixture
 def authenticated_context(
+    app: FastAPI,
     testing_session: sessionmaker[Session],
-) -> Generator[AuthenticatedTestContext, None, None]:
+) -> AuthenticatedTestContext:
     with testing_session() as session:
         current_user = User(
             email=CURRENT_USER_EMAIL,
@@ -50,12 +49,6 @@ def authenticated_context(
         session.commit()
         current_user_id = current_user.id
 
-    def override_get_db() -> Generator[Session, None, None]:
-        with testing_session() as session:
-            yield session
-
-    app = create_app()
-    app.dependency_overrides[get_db] = override_get_db
     access_token = create_access_token(str(current_user_id))
     headers = {"Authorization": f"Bearer {access_token}"}
 
@@ -65,11 +58,7 @@ def authenticated_context(
         current_user_id=current_user_id,
         headers=headers,
     )
-
-    try:
-        yield context
-    finally:
-        app.dependency_overrides.clear()
+    return context
 
 
 def test_save_import_endpoint_requires_authentication() -> None:
