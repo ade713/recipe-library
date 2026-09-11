@@ -6,16 +6,15 @@ from uuid import UUID, uuid4
 import pytest
 from fastapi import FastAPI, status
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, func, select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.pool import StaticPool
 
 from app.api.routes import imports as import_routes
 from app.api.routes.imports import get_recipe_importer
 from app.core.database import get_db
 from app.core.security import create_access_token
 from app.main import create_app
-from app.models import Base, Recipe, RecipeImport, User
+from app.models import Recipe, RecipeImport, User
 from app.repositories.import_repository import create_import_log
 from app.schemas.recipe import RecipeCreate, RecipeDraft
 from app.services.recipe_importer import RecipeImporter, RecipeImportResult
@@ -39,15 +38,9 @@ class AuthenticatedTestContext:
 
 
 @pytest.fixture
-def authenticated_context() -> Generator[AuthenticatedTestContext, None, None]:
-    engine = create_engine(
-        "sqlite+pysqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    Base.metadata.create_all(engine)
-    testing_session = sessionmaker(bind=engine, autoflush=False)
-
+def authenticated_context(
+    testing_session: sessionmaker[Session],
+) -> Generator[AuthenticatedTestContext, None, None]:
     with testing_session() as session:
         current_user = User(
             email=CURRENT_USER_EMAIL,
@@ -77,7 +70,6 @@ def authenticated_context() -> Generator[AuthenticatedTestContext, None, None]:
         yield context
     finally:
         app.dependency_overrides.clear()
-        engine.dispose()
 
 
 def test_save_import_endpoint_requires_authentication() -> None:
