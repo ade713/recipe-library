@@ -1,17 +1,9 @@
-from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field, HttpUrl
 
 from app.schemas.recipe import RecipeDraft
-from app.types import RecipeImportStatus
-
-RecipeImportNextAction = Literal[
-    "open_existing",
-    "import_as_copy",
-    "enter_manually",
-    "open_source_url",
-]
+from app.types import RecipeImportNextAction, RecipeImportStatus
 
 
 class RecipeImportPreviewRequest(BaseModel):

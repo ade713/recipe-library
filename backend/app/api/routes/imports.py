@@ -29,7 +29,7 @@ from app.services.recipe_importer import (
     RecipeImportFailedError,
 )
 from app.services.url_validator import extract_domain
-from app.types import SAVEABLE_IMPORT_STATUSES
+from app.types import SAVEABLE_IMPORT_STATUSES, FailedImportStatus
 
 router = APIRouter()
 
@@ -95,7 +95,7 @@ async def preview_import(
         try:
             result = await importer.preview_from_url(submitted_url)
         except (RecipeImportBlockedError, RecipeImportFailedError) as error:
-            failure_status: Literal["blocked", "failed"] = (
+            failure_status: FailedImportStatus = (
                 "blocked" if isinstance(error, RecipeImportBlockedError) else "failed"
             )
             warnings = [str(error)]
