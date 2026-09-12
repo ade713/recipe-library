@@ -391,3 +391,41 @@ def test_import_preview_can_be_edited_and_saved(
         assert recipe.source_domain == SOURCE_DOMAIN
         assert recipe.import_status == STATUS_IMPORTED
         assert recipe.id == saved_import.recipe_id
+
+
+def test_save_import_checks_status_before_existing_recipe_link(
+    authenticated_context: AuthenticatedTestContext,
+) -> None:
+    with authenticated_context.testing_session() as session:
+        recipe = Recipe(
+            user_id=authenticated_context.current_user_id,
+            title=RECIPE_TITLE,
+        )
+
+        session.add(recipe)
+        session.flush()
+        recipe_id = recipe.id
+
+        duplicate_import_log = create_import_log(
+            session,
+            user_id=authenticated_context.current_user_id,
+            recipe_id=recipe_id,
+            source_url=SOURCE_URL,
+            source_domain=SOURCE_DOMAIN,
+            status="duplicate",
+            parser_used=PARSER,
+            warnings=[],
+            error_message=None,
+        )
+        session.commit()
+        duplicate_import_log_id = duplicate_import_log.id
+
+    with TestClient(authenticated_context.app) as client:
+        save_response = client.post(
+            f"/api/v1/imports/{duplicate_import_log_id}/save",
+            headers=authenticated_context.headers,
+            json={"title": RECIPE_TITLE},
+        )
+
+    assert save_response.status_code == 409
+    assert save_response.json() == {"detail": "Import cannot be saved from its current status."}
