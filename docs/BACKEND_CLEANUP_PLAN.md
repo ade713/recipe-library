@@ -56,7 +56,7 @@ Scope covered:
 
 ### PR 4: Centralize backend vocabulary and API types
 
-Status: Implemented on `chore/backend-shared-vocabulary`; awaiting final branch verification and pull request creation.
+Status: Complete and merged in [PR #32](https://github.com/ade713/recipe-library/pull/32).
 
 Completed outcomes:
 
@@ -86,7 +86,22 @@ Review decisions for PR 4:
 
 ### PR 5: Consolidate backend test setup
 
-Status: Next, after the shared-vocabulary PR is merged.
+Status: Agreed initial scope implemented on `chore/backend-test-fixtures`; verified and ready for pull request creation.
+
+Completed outcomes:
+
+- Added function-scoped session-factory, app, current-user ID, and authorization-header fixtures in `tests/conftest.py`.
+- Each test receives a fresh SQLite engine. Request sessions share that test's database; app overrides are cleared before engine disposal.
+- Converted import-save setup and all note/tag create/list/update/delete endpoint modules while preserving their assertions and local scenario-specific records and mocks.
+- Verified all 198 tests, Ruff lint, formatting, and mypy pass. The known TestClient warning remains deferred.
+
+PR boundary and follow-up:
+
+- Keep this PR focused on the shared fixtures and the five converted endpoint modules for manageable review.
+- Recipe, authentication, and import-preview endpoint conversions remain incremental follow-up work. Inspect specialized authentication and failure setup before converting it; do not change database or transaction behavior as part of extraction.
+- Full conversion of every test module is not required to finish this initial fixture PR or proceed to PR 6.
+
+Scope covered:
 
 - Add narrowly scoped shared fixtures for SQLite sessions, authenticated users, FastAPI dependency overrides, and authorization headers.
 - Convert endpoint test modules incrementally.
@@ -95,7 +110,7 @@ Status: Next, after the shared-vocabulary PR is merged.
 
 ### PR 6: Refactor import orchestration
 
-Status: Planned.
+Status: Next, after the initial shared-fixture PR is merged.
 
 - Move import-preview and import-save workflow decisions out of the route module into focused services.
 - Keep HTTP concerns in routes, business orchestration in services, and persistence in repositories.

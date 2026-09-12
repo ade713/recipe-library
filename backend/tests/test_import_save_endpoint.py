@@ -1,4 +1,3 @@
-from collections.abc import Generator
 from dataclasses import dataclass
 from unittest.mock import AsyncMock, Mock
 from uuid import UUID, uuid4
@@ -6,16 +5,13 @@ from uuid import UUID, uuid4
 import pytest
 from fastapi import FastAPI, status
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, func, select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.pool import StaticPool
 
 from app.api.routes import imports as import_routes
 from app.api.routes.imports import get_recipe_importer
-from app.core.database import get_db
-from app.core.security import create_access_token
 from app.main import create_app
-from app.models import Base, Recipe, RecipeImport, User
+from app.models import Recipe, RecipeImport, User
 from app.repositories.import_repository import create_import_log
 from app.schemas.recipe import RecipeCreate, RecipeDraft
 from app.services.recipe_importer import RecipeImporter, RecipeImportResult
@@ -39,45 +35,19 @@ class AuthenticatedTestContext:
 
 
 @pytest.fixture
-def authenticated_context() -> Generator[AuthenticatedTestContext, None, None]:
-    engine = create_engine(
-        "sqlite+pysqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    Base.metadata.create_all(engine)
-    testing_session = sessionmaker(bind=engine, autoflush=False)
-
-    with testing_session() as session:
-        current_user = User(
-            email=CURRENT_USER_EMAIL,
-            password_hash=TEST_PASSWORD_HASH,
-        )
-        session.add(current_user)
-        session.commit()
-        current_user_id = current_user.id
-
-    def override_get_db() -> Generator[Session, None, None]:
-        with testing_session() as session:
-            yield session
-
-    app = create_app()
-    app.dependency_overrides[get_db] = override_get_db
-    access_token = create_access_token(str(current_user_id))
-    headers = {"Authorization": f"Bearer {access_token}"}
-
+def authenticated_context(
+    app: FastAPI,
+    auth_headers: dict[str, str],
+    current_user_id: UUID,
+    testing_session: sessionmaker[Session],
+) -> AuthenticatedTestContext:
     context = AuthenticatedTestContext(
         app=app,
         testing_session=testing_session,
         current_user_id=current_user_id,
-        headers=headers,
+        headers=auth_headers,
     )
-
-    try:
-        yield context
-    finally:
-        app.dependency_overrides.clear()
-        engine.dispose()
+    return context
 
 
 def test_save_import_endpoint_requires_authentication() -> None:
