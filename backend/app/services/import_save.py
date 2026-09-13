@@ -5,7 +5,8 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from app.models import Recipe
-from app.repositories.import_repository import get_import_log
+from app.repositories.import_repository import get_import_log, link_import_to_recipe
+from app.repositories.recipe_repository import create_recipe as create_recipe_record
 from app.schemas.recipe import RecipeCreate
 from app.types import SAVEABLE_IMPORT_STATUSES
 
@@ -46,4 +47,24 @@ def save_reviewed_import(
     if import_log.recipe_id is not None:
         raise ImportAlreadySavedError
 
-    raise NotImplementedError
+    trusted_payload = RecipeCreate.model_validate(
+        {
+            **payload.model_dump(),
+            "source_url": import_log.source_url,
+            "source_domain": import_log.source_domain,
+        }
+    )
+
+    recipe = create_recipe_record(
+        session,
+        user_id=user_id,
+        import_status="imported",
+        payload=trusted_payload,
+    )
+    link_import_to_recipe(
+        session,
+        import_log=import_log,
+        recipe_id=recipe.id,
+    )
+
+    return recipe
