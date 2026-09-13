@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.models import Recipe
 from app.repositories.import_repository import get_import_log
 from app.schemas.recipe import RecipeCreate
+from app.types import SAVEABLE_IMPORT_STATUSES
 
 
 class ImportNotFoundError(Exception):
@@ -38,5 +39,8 @@ def save_reviewed_import(
 
     if import_log is None:
         raise ImportNotFoundError
+
+    if import_log.status not in SAVEABLE_IMPORT_STATUSES:
+        raise ImportNotSaveableError
 
     raise NotImplementedError
