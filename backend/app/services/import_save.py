@@ -43,4 +43,7 @@ def save_reviewed_import(
     if import_log.status not in SAVEABLE_IMPORT_STATUSES:
         raise ImportNotSaveableError
 
+    if import_log.recipe_id is not None:
+        raise ImportAlreadySavedError
+
     raise NotImplementedError
