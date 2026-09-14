@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, Mock
 from uuid import UUID, uuid4
 
 import pytest
-from fastapi import FastAPI, status
+from fastapi import FastAPI, HTTPException, status
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, sessionmaker
@@ -15,6 +15,11 @@ from app.models import Recipe, RecipeImport, User
 from app.repositories.import_repository import create_import_log
 from app.schemas.recipe import RecipeCreate, RecipeDraft
 from app.services import import_save as import_save_service
+from app.services.import_save import (
+    ImportAlreadySavedError,
+    ImportNotFoundError,
+    ImportNotSaveableError,
+)
 from app.services.recipe_importer import RecipeImporter, RecipeImportResult
 
 RECIPE_TITLE = "Edited Tomato Soup"
@@ -430,3 +435,46 @@ def test_save_import_checks_status_before_existing_recipe_link(
 
     assert save_response.status_code == 409
     assert save_response.json() == {"detail": "Import cannot be saved from its current status."}
+
+
+@pytest.mark.parametrize(
+    ("service_error", "expected_status", "expected_detail"),
+    [
+        (ImportNotFoundError(), 404, "Import not found."),
+        (ImportNotSaveableError(), 409, "Import cannot be saved from its current status."),
+        (ImportAlreadySavedError(), 409, "Import has already been saved."),
+    ],
+)
+def test_save_import_maps_service_errors_and_rolls_back(
+    monkeypatch: pytest.MonkeyPatch,
+    expected_detail: str,
+    expected_status: int,
+    service_error: Exception,
+) -> None:
+    session = Mock(spec=Session)
+    import_log_id = uuid4()
+    current_user_id = uuid4()
+    current_user = User(
+        id=current_user_id,
+        email=CURRENT_USER_EMAIL,
+        password_hash=TEST_PASSWORD_HASH,
+    )
+
+    save_mock = Mock(side_effect=service_error)
+    monkeypatch.setattr(import_routes, "save_reviewed_import", save_mock)
+
+    with pytest.raises(HTTPException) as caught:
+        import_routes.save_import(
+            import_id=import_log_id,
+            session=session,
+            current_user=current_user,
+            payload=RecipeCreate(title=RECIPE_TITLE),
+        )
+
+    assert caught.value.status_code == expected_status
+    assert caught.value.detail == expected_detail
+    assert caught.value.__cause__ is service_error
+
+    session.rollback.assert_called_once_with()
+    session.commit.assert_not_called()
+    session.refresh.assert_not_called()
