@@ -4,6 +4,8 @@ The backend feature work through Week 12 is complete. Before the mobile MVP begi
 
 ## Required before Week 13
 
+Current status: PRs 1–5 are merged. PR 6A is implemented and verified, ready for pull request creation. PR 6B remains next and must be completed before Week 13 begins.
+
 ### PR 1: Strengthen backend quality gates
 
 Status: Complete and merged in [PR #29](https://github.com/ade713/recipe-library/pull/29). CI runs whole-backend Ruff and mypy checks and installs dependencies from `uv.lock` with `uv sync --locked --extra dev`. Setup documentation uses the same locked workflow.
@@ -86,7 +88,7 @@ Review decisions for PR 4:
 
 ### PR 5: Consolidate backend test setup
 
-Status: Agreed initial scope implemented on `chore/backend-test-fixtures`; verified and ready for pull request creation.
+Status: Agreed initial scope complete and merged in [PR #33](https://github.com/ade713/recipe-library/pull/33).
 
 Completed outcomes:
 
@@ -108,13 +110,27 @@ Scope covered:
 - Keep special-purpose mocks and failure setup local to the tests that need them.
 - Keep the PR focused on reusable setup; do not rewrite test behavior.
 
-### PR 6: Refactor import orchestration
+### PR 6A: Refactor import-save orchestration
 
-Status: Next, after the initial shared-fixture PR is merged.
+Status: Implemented and verified on `refactor/import-orchestration`; ready for pull request creation.
 
-- Move import-preview and import-save workflow decisions out of the route module into focused services.
-- Keep HTTP concerns in routes, business orchestration in services, and persistence in repositories.
-- Preserve current endpoint behavior with characterization tests.
+Verification: 210 tests pass, Ruff lint and formatting pass (99 Python files), and mypy passes (50 app files). The known TestClient deprecation warning remains deferred.
+
+- Extract ownership lookup, saveability checks, trusted source attribution, recipe creation, and import-log linkage into `save_reviewed_import()`.
+- Keep authentication, HTTP error mapping, commit/rollback, and refresh in the route.
+- Cover rejection order, successful saves, unchanged client payloads, and domain-error mapping and rollback with tests.
+- Keep import-preview orchestration unchanged in this PR.
+
+### PR 6B: Refactor import-preview orchestration
+
+Status: Next, after PR 6A is merged; still required before Week 13.
+
+- Extract duplicate detection, preview execution, import logging, and preview outcome construction into a focused service.
+- Preserve user scoping, duplicate-before-fetch behavior, explicit copy requests, and success/partial/blocked/failed outcomes.
+- Keep HTTP concerns and transaction ownership in the route, business orchestration in the service, and persistence in repositories.
+- Preserve endpoint behavior with characterization tests, including rollback on unexpected failures.
+
+PR 6 is split into save and preview changes to keep reviews manageable. Both parts remain in the pre-mobile cleanup scope; this split changes PR boundaries, not the release plan.
 
 ## After mobile work begins, before private MVP release
 

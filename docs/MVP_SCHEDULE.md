@@ -206,7 +206,7 @@ Status: Complete
 
 ## Backend cleanup checkpoint
 
-Before Week 13 begins, complete the six focused pre-mobile PRs in the [Backend Cleanup Plan](BACKEND_CLEANUP_PLAN.md). Validation, PostgreSQL parity, dependency upgrades, and public-deployment hardening remain separately scheduled so they do not expand these cleanup PRs or delay mobile work unnecessarily.
+Before Week 13 begins, complete cleanup PRs 1–5, 6A, and 6B in the [Backend Cleanup Plan](BACKEND_CLEANUP_PLAN.md). Import-save and import-preview orchestration are split for manageable review; both remain required before mobile work. Validation, PostgreSQL parity, dependency upgrades, and public-deployment hardening remain separately scheduled so they do not expand these cleanup PRs or delay mobile work unnecessarily.
 
 ## Week 13 — Mobile MVP foundations
 

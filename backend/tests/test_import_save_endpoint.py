@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, Mock
 from uuid import UUID, uuid4
 
 import pytest
-from fastapi import FastAPI, status
+from fastapi import FastAPI, HTTPException, status
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, sessionmaker
@@ -14,6 +14,12 @@ from app.main import create_app
 from app.models import Recipe, RecipeImport, User
 from app.repositories.import_repository import create_import_log
 from app.schemas.recipe import RecipeCreate, RecipeDraft
+from app.services import import_save as import_save_service
+from app.services.import_save import (
+    ImportAlreadySavedError,
+    ImportNotFoundError,
+    ImportNotSaveableError,
+)
 from app.services.recipe_importer import RecipeImporter, RecipeImportResult
 
 RECIPE_TITLE = "Edited Tomato Soup"
@@ -245,10 +251,10 @@ def test_save_import_endpoint_rolls_back_when_linking_fails(
     def fail_to_link_import(*_args: object, **_kwargs: object) -> None:
         raise RuntimeError("database link failed")
 
-    monkeypatch.setattr(import_routes, "get_import_log", get_import_log_mock)
-    monkeypatch.setattr(import_routes, "create_recipe_record", create_recipe_mock)
+    monkeypatch.setattr(import_save_service, "get_import_log", get_import_log_mock)
+    monkeypatch.setattr(import_save_service, "create_recipe_record", create_recipe_mock)
     monkeypatch.setattr(
-        import_routes,
+        import_save_service,
         "link_import_to_recipe",
         fail_to_link_import,
     )
@@ -391,3 +397,84 @@ def test_import_preview_can_be_edited_and_saved(
         assert recipe.source_domain == SOURCE_DOMAIN
         assert recipe.import_status == STATUS_IMPORTED
         assert recipe.id == saved_import.recipe_id
+
+
+def test_save_import_checks_status_before_existing_recipe_link(
+    authenticated_context: AuthenticatedTestContext,
+) -> None:
+    with authenticated_context.testing_session() as session:
+        recipe = Recipe(
+            user_id=authenticated_context.current_user_id,
+            title=RECIPE_TITLE,
+        )
+
+        session.add(recipe)
+        session.flush()
+        recipe_id = recipe.id
+
+        duplicate_import_log = create_import_log(
+            session,
+            user_id=authenticated_context.current_user_id,
+            recipe_id=recipe_id,
+            source_url=SOURCE_URL,
+            source_domain=SOURCE_DOMAIN,
+            status="duplicate",
+            parser_used=PARSER,
+            warnings=[],
+            error_message=None,
+        )
+        session.commit()
+        duplicate_import_log_id = duplicate_import_log.id
+
+    with TestClient(authenticated_context.app) as client:
+        save_response = client.post(
+            f"/api/v1/imports/{duplicate_import_log_id}/save",
+            headers=authenticated_context.headers,
+            json={"title": RECIPE_TITLE},
+        )
+
+    assert save_response.status_code == 409
+    assert save_response.json() == {"detail": "Import cannot be saved from its current status."}
+
+
+@pytest.mark.parametrize(
+    ("service_error", "expected_status", "expected_detail"),
+    [
+        (ImportNotFoundError(), 404, "Import not found."),
+        (ImportNotSaveableError(), 409, "Import cannot be saved from its current status."),
+        (ImportAlreadySavedError(), 409, "Import has already been saved."),
+    ],
+)
+def test_save_import_maps_service_errors_and_rolls_back(
+    monkeypatch: pytest.MonkeyPatch,
+    expected_detail: str,
+    expected_status: int,
+    service_error: Exception,
+) -> None:
+    session = Mock(spec=Session)
+    import_log_id = uuid4()
+    current_user_id = uuid4()
+    current_user = User(
+        id=current_user_id,
+        email=CURRENT_USER_EMAIL,
+        password_hash=TEST_PASSWORD_HASH,
+    )
+
+    save_mock = Mock(side_effect=service_error)
+    monkeypatch.setattr(import_routes, "save_reviewed_import", save_mock)
+
+    with pytest.raises(HTTPException) as caught:
+        import_routes.save_import(
+            import_id=import_log_id,
+            session=session,
+            current_user=current_user,
+            payload=RecipeCreate(title=RECIPE_TITLE),
+        )
+
+    assert caught.value.status_code == expected_status
+    assert caught.value.detail == expected_detail
+    assert caught.value.__cause__ is service_error
+
+    session.rollback.assert_called_once_with()
+    session.commit.assert_not_called()
+    session.refresh.assert_not_called()
