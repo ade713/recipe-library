@@ -5,6 +5,7 @@ from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
+from pydantic import HttpUrl
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -23,6 +24,10 @@ from app.services.recipe_importer import (
     RecipeImportFailedError,
     RecipeImportResult,
 )
+
+CURRENT_USER_EMAIL = "current@example.com"
+TEST_PASSWORD_HASH = "test-hash"
+SOURCE_URL = "https://example.com/recipe"
 
 
 def test_import_preview_endpoint_requires_authentication() -> None:
@@ -362,6 +367,41 @@ def test_import_preview_endpoint_rolls_back_unexpected_errors(
             )
         )
 
+    create_log.assert_not_called()
+    session.commit.assert_not_called()
+    session.rollback.assert_called_once_with()
+
+
+def test_import_preview_endpoint_rolls_back_duplicate_lookup_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    session = Mock(spec=Session)
+    current_user = User(
+        id=uuid4(),
+        email=CURRENT_USER_EMAIL,
+        password_hash=TEST_PASSWORD_HASH,
+    )
+
+    find_recipe = Mock(side_effect=RuntimeError("duplicate lookup failed"))
+    monkeypatch.setattr(import_routes, "get_recipe_by_source_url_record", find_recipe)
+
+    importer = Mock(spec=RecipeImporter)
+    importer.preview_from_url = AsyncMock()
+
+    create_log = Mock()
+    monkeypatch.setattr(import_routes, "create_import_log", create_log)
+
+    with pytest.raises(RuntimeError, match="duplicate lookup failed"):
+        asyncio.run(
+            import_routes.preview_import(
+                session=session,
+                current_user=current_user,
+                importer=importer,
+                payload=RecipeImportPreviewRequest(url=HttpUrl(SOURCE_URL)),
+            )
+        )
+
+    importer.preview_from_url.assert_not_awaited()
     create_log.assert_not_called()
     session.commit.assert_not_called()
     session.rollback.assert_called_once_with()
