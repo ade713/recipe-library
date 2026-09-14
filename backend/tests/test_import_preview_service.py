@@ -13,6 +13,7 @@ from app.services.recipe_importer import RecipeImporter
 
 RECIPE_TITLE = "Tomato Soup"
 SOURCE_URL = "https://example.com/recipe"
+SOURCE_DOMAIN = "example.com"
 STATUS_DUPLICATE = "duplicate"
 
 
@@ -37,7 +38,7 @@ def test_import_preview_service_creates_duplicate(
         user_id=current_user_id,
         recipe_id=recipe.id,
         source_url=SOURCE_URL,
-        source_domain="example.com",
+        source_domain=SOURCE_DOMAIN,
         parser_used=None,
         status=STATUS_DUPLICATE,
         warnings=[],
@@ -55,6 +56,17 @@ def test_import_preview_service_creates_duplicate(
         )
     )
 
+    create_log.assert_called_once_with(
+        session=session,
+        user_id=current_user_id,
+        recipe_id=recipe.id,
+        source_url=SOURCE_URL,
+        source_domain=SOURCE_DOMAIN,
+        parser_used=None,
+        status=STATUS_DUPLICATE,
+        warnings=["This recipe is already in your library."],
+        error_message=None,
+    )
     assert response.import_id == import_log.id
     lookup.assert_called_once_with(
         session,
@@ -64,6 +76,7 @@ def test_import_preview_service_creates_duplicate(
     assert response.status == STATUS_DUPLICATE
     assert response.draft is None
     assert response.existing_recipe_id == recipe.id
+    assert response.warnings == ["This recipe is already in your library."]
     assert response.next_actions == ["open_existing", "import_as_copy"]
     importer.preview_from_url.assert_not_awaited()
     session.commit.assert_not_called()
