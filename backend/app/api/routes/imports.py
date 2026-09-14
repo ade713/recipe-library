@@ -9,11 +9,6 @@ from app.core.database import get_db
 from app.models import Recipe, User
 from app.repositories.import_repository import (
     create_import_log,
-    get_import_log,
-    link_import_to_recipe,
-)
-from app.repositories.recipe_repository import (
-    create_recipe as create_recipe_record,
 )
 from app.repositories.recipe_repository import (
     get_recipe_by_source_url as get_recipe_by_source_url_record,
@@ -23,13 +18,19 @@ from app.schemas.import_recipe import (
     RecipeImportPreviewResponse,
 )
 from app.schemas.recipe import RecipeCreate, RecipeRead
+from app.services.import_save import (
+    ImportAlreadySavedError,
+    ImportNotFoundError,
+    ImportNotSaveableError,
+    save_reviewed_import,
+)
 from app.services.recipe_importer import (
     RecipeImportBlockedError,
     RecipeImporter,
     RecipeImportFailedError,
 )
 from app.services.url_validator import extract_domain
-from app.types import SAVEABLE_IMPORT_STATUSES, FailedImportStatus
+from app.types import FailedImportStatus
 
 router = APIRouter()
 
@@ -163,54 +164,35 @@ def save_import(
     Return 404 when the import is missing or belongs to another user.
     Return 409 when its status is not saveable or it is already linked to a recipe.
     """
-    import_log = get_import_log(
-        session,
-        user_id=current_user.id,
-        import_id=import_id,
-    )
-
-    if import_log is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Import not found.",
-        )
-
-    if import_log.status not in SAVEABLE_IMPORT_STATUSES:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Import cannot be saved from its current status.",
-        )
-
-    if import_log.recipe_id is not None:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Import has already been saved.",
-        )
-
-    trusted_payload = RecipeCreate.model_validate(
-        {
-            **payload.model_dump(),
-            "source_url": import_log.source_url,
-            "source_domain": import_log.source_domain,
-        }
-    )
 
     try:
-        recipe = create_recipe_record(
+        recipe = save_reviewed_import(
             session,
             user_id=current_user.id,
-            import_status="imported",
-            payload=trusted_payload,
+            import_id=import_id,
+            payload=payload,
         )
-        link_import_to_recipe(
-            session,
-            import_log=import_log,
-            recipe_id=recipe.id,
-        )
-
         session.commit()
         session.refresh(recipe)
         return recipe
+    except ImportNotFoundError as error:
+        session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Import not found.",
+        ) from error
+    except ImportNotSaveableError as error:
+        session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Import cannot be saved from its current status.",
+        ) from error
+    except ImportAlreadySavedError as error:
+        session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Import has already been saved.",
+        ) from error
     except Exception:
         session.rollback()
         raise

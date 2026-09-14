@@ -14,6 +14,7 @@ from app.main import create_app
 from app.models import Recipe, RecipeImport, User
 from app.repositories.import_repository import create_import_log
 from app.schemas.recipe import RecipeCreate, RecipeDraft
+from app.services import import_save as import_save_service
 from app.services.recipe_importer import RecipeImporter, RecipeImportResult
 
 RECIPE_TITLE = "Edited Tomato Soup"
@@ -245,10 +246,10 @@ def test_save_import_endpoint_rolls_back_when_linking_fails(
     def fail_to_link_import(*_args: object, **_kwargs: object) -> None:
         raise RuntimeError("database link failed")
 
-    monkeypatch.setattr(import_routes, "get_import_log", get_import_log_mock)
-    monkeypatch.setattr(import_routes, "create_recipe_record", create_recipe_mock)
+    monkeypatch.setattr(import_save_service, "get_import_log", get_import_log_mock)
+    monkeypatch.setattr(import_save_service, "create_recipe_record", create_recipe_mock)
     monkeypatch.setattr(
-        import_routes,
+        import_save_service,
         "link_import_to_recipe",
         fail_to_link_import,
     )
