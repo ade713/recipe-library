@@ -11,8 +11,13 @@ from app.schemas.import_recipe import (
     RecipeImportPreviewRequest,
     RecipeImportPreviewResponse,
 )
-from app.services.recipe_importer import RecipeImporter
+from app.services.recipe_importer import (
+    RecipeImportBlockedError,
+    RecipeImporter,
+    RecipeImportFailedError,
+)
 from app.services.url_validator import extract_domain
+from app.types import FailedImportStatus
 
 
 async def preview_recipe_import(
@@ -60,23 +65,51 @@ async def preview_recipe_import(
 
         return response
 
-    result = await importer.preview_from_url(submitted_url)
-    import_log = create_import_log(
-        session=session,
-        user_id=user_id,
-        source_url=str(result.draft.source_url or payload.url),
-        source_domain=result.draft.source_domain,
-        status=result.status,
-        parser_used=result.parser_used,
-        warnings=list(result.warnings),
-        error_message=None,
-    )
-    response = RecipeImportPreviewResponse(
-        import_id=import_log.id,
-        status=result.status,
-        parser_used=result.parser_used,
-        draft=result.draft,
-        warnings=list(result.warnings),
-    )
+    try:
+        result = await importer.preview_from_url(submitted_url)
+    except (RecipeImportBlockedError, RecipeImportFailedError) as error:
+        failure_status: FailedImportStatus = (
+            "blocked" if isinstance(error, RecipeImportBlockedError) else "failed"
+        )
+        warnings = [str(error)]
+
+        import_failure_log = create_import_log(
+            session=session,
+            user_id=user_id,
+            source_url=submitted_url,
+            source_domain=extract_domain(submitted_url),
+            status=failure_status,
+            parser_used=None,
+            warnings=warnings,
+            error_message=str(error),
+        )
+        response = RecipeImportPreviewResponse(
+            import_id=import_failure_log.id,
+            status=failure_status,
+            parser_used=None,
+            draft=None,
+            warnings=warnings,
+            next_actions=["enter_manually", "open_source_url"],
+        )
+
+        return response
+    else:
+        import_log = create_import_log(
+            session=session,
+            user_id=user_id,
+            source_url=str(result.draft.source_url or payload.url),
+            source_domain=result.draft.source_domain,
+            status=result.status,
+            parser_used=result.parser_used,
+            warnings=list(result.warnings),
+            error_message=None,
+        )
+        response = RecipeImportPreviewResponse(
+            import_id=import_log.id,
+            status=result.status,
+            parser_used=result.parser_used,
+            draft=result.draft,
+            warnings=list(result.warnings),
+        )
 
     return response
