@@ -53,7 +53,7 @@ async def preview_recipe_import(
             warnings=warnings,
             error_message=None,
         )
-        response = RecipeImportPreviewResponse(
+        return RecipeImportPreviewResponse(
             import_id=duplicate_import_log.id,
             status=log_status,
             parser_used=None,
@@ -62,8 +62,6 @@ async def preview_recipe_import(
             existing_recipe_id=existing_recipe.id,
             next_actions=["open_existing", "import_as_copy"],
         )
-
-        return response
 
     try:
         result = await importer.preview_from_url(submitted_url)
@@ -83,7 +81,7 @@ async def preview_recipe_import(
             warnings=warnings,
             error_message=str(error),
         )
-        response = RecipeImportPreviewResponse(
+        return RecipeImportPreviewResponse(
             import_id=import_failure_log.id,
             status=failure_status,
             parser_used=None,
@@ -92,24 +90,20 @@ async def preview_recipe_import(
             next_actions=["enter_manually", "open_source_url"],
         )
 
-        return response
-    else:
-        import_log = create_import_log(
-            session=session,
-            user_id=user_id,
-            source_url=str(result.draft.source_url or payload.url),
-            source_domain=result.draft.source_domain,
-            status=result.status,
-            parser_used=result.parser_used,
-            warnings=list(result.warnings),
-            error_message=None,
-        )
-        response = RecipeImportPreviewResponse(
-            import_id=import_log.id,
-            status=result.status,
-            parser_used=result.parser_used,
-            draft=result.draft,
-            warnings=list(result.warnings),
-        )
-
-    return response
+    import_log = create_import_log(
+        session=session,
+        user_id=user_id,
+        source_url=str(result.draft.source_url or payload.url),
+        source_domain=result.draft.source_domain,
+        status=result.status,
+        parser_used=result.parser_used,
+        warnings=list(result.warnings),
+        error_message=None,
+    )
+    return RecipeImportPreviewResponse(
+        import_id=import_log.id,
+        status=result.status,
+        parser_used=result.parser_used,
+        draft=result.draft,
+        warnings=list(result.warnings),
+    )
