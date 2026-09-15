@@ -17,7 +17,7 @@ from app.core.security import create_access_token
 from app.main import create_app
 from app.models import Base, Recipe, RecipeImport, User
 from app.schemas.import_recipe import RecipeImportPreviewRequest
-from app.schemas.recipe import RecipeDraft
+from app.schemas.recipe import IngredientDraft, RecipeDraft, RecipeStepDraft
 from app.services import import_preview as import_preview_service
 from app.services.recipe_importer import (
     RecipeImportBlockedError,
@@ -28,7 +28,15 @@ from app.services.recipe_importer import (
 
 CURRENT_USER_EMAIL = "current@example.com"
 TEST_PASSWORD_HASH = "test-hash"
+RECIPE_TITLE = "Tomato Soup"
 SOURCE_URL = "https://example.com/recipe"
+SOURCE_DOMAIN = "example.com"
+STATUS_SUCCESS = "success"
+PARSER = "recipe-scrapers"
+PREVIEW_ENDPOINT = "/api/v1/imports/preview"
+INGREDIENT_TEXT = "2 cups tomatoes"
+STEP_INSTRUCTION = "Simmer the tomatoes."
+MISSING_IMAGE_WARNING = "Image was not provided by the source."
 
 
 def test_import_preview_endpoint_requires_authentication() -> None:
@@ -36,8 +44,8 @@ def test_import_preview_endpoint_requires_authentication() -> None:
 
     with TestClient(app) as client:
         response = client.post(
-            "/api/v1/imports/preview",
-            json={"url": "https://example.com/recipe"},
+            PREVIEW_ENDPOINT,
+            json={"url": SOURCE_URL},
         )
 
     assert response.status_code == 401
@@ -55,8 +63,8 @@ def test_import_preview_endpoint_returns_and_logs_successful_draft() -> None:
 
     with testing_session() as session:
         current_user = User(
-            email="current@example.com",
-            password_hash="test-hash",
+            email=CURRENT_USER_EMAIL,
+            password_hash=TEST_PASSWORD_HASH,
         )
         session.add(current_user)
         session.commit()
@@ -65,16 +73,16 @@ def test_import_preview_endpoint_returns_and_logs_successful_draft() -> None:
     importer = Mock(spec=RecipeImporter)
     importer.preview_from_url = AsyncMock(
         return_value=RecipeImportResult(
-            status="success",
-            parser_used="recipe-scrapers",
+            status=STATUS_SUCCESS,
+            parser_used=PARSER,
             draft=RecipeDraft(
-                title="Tomato Soup",
-                source_url="https://www.example.com/recipe",
+                title=RECIPE_TITLE,
+                source_url=HttpUrl("https://www.example.com/recipe"),
                 source_domain="www.example.com",
-                ingredients=[{"position": 1, "original_text": "2 cups tomatoes"}],
-                steps=[{"position": 1, "instruction": "Simmer the tomatoes."}],
+                ingredients=[IngredientDraft(position=1, original_text=INGREDIENT_TEXT)],
+                steps=[RecipeStepDraft(position=1, instruction=STEP_INSTRUCTION)],
             ),
-            warnings=("Image was not provided by the source.",),
+            warnings=(MISSING_IMAGE_WARNING,),
         )
     )
 
@@ -90,9 +98,9 @@ def test_import_preview_endpoint_returns_and_logs_successful_draft() -> None:
     try:
         with TestClient(app) as client:
             response = client.post(
-                "/api/v1/imports/preview",
+                PREVIEW_ENDPOINT,
                 headers={"Authorization": f"Bearer {access_token}"},
-                json={"url": "https://example.com/recipe"},
+                json={"url": SOURCE_URL},
             )
     finally:
         app.dependency_overrides.clear()
@@ -100,11 +108,11 @@ def test_import_preview_endpoint_returns_and_logs_successful_draft() -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["status"] == "success"
-    assert body["parser_used"] == "recipe-scrapers"
-    assert body["draft"]["title"] == "Tomato Soup"
-    assert body["warnings"] == ["Image was not provided by the source."]
+    assert body["parser_used"] == PARSER
+    assert body["draft"]["title"] == RECIPE_TITLE
+    assert body["warnings"] == [MISSING_IMAGE_WARNING]
     assert body["import_id"] is not None
-    importer.preview_from_url.assert_awaited_once_with("https://example.com/recipe")
+    importer.preview_from_url.assert_awaited_once_with(SOURCE_URL)
 
     with testing_session() as session:
         import_log = session.scalar(select(RecipeImport))
@@ -113,7 +121,7 @@ def test_import_preview_endpoint_returns_and_logs_successful_draft() -> None:
         assert import_log.user_id == current_user_id
         assert import_log.source_url == "https://www.example.com/recipe"
         assert import_log.status == "success"
-        assert import_log.warnings == ["Image was not provided by the source."]
+        assert import_log.warnings == [MISSING_IMAGE_WARNING]
 
 
 def test_import_preview_endpoint_returns_duplicate_before_importing(
@@ -122,14 +130,14 @@ def test_import_preview_endpoint_returns_duplicate_before_importing(
     session = Mock(spec=Session)
     current_user = User(
         id=uuid4(),
-        email="current@example.com",
-        password_hash="test-hash",
+        email=CURRENT_USER_EMAIL,
+        password_hash=TEST_PASSWORD_HASH,
     )
     existing_recipe = Recipe(
         id=uuid4(),
         user_id=current_user.id,
-        title="Tomato Soup",
-        source_url="https://example.com/recipe",
+        title=RECIPE_TITLE,
+        source_url=SOURCE_URL,
     )
     importer = Mock(spec=RecipeImporter)
     importer.preview_from_url = AsyncMock()
@@ -137,8 +145,8 @@ def test_import_preview_endpoint_returns_duplicate_before_importing(
         id=uuid4(),
         user_id=current_user.id,
         recipe_id=existing_recipe.id,
-        source_url="https://example.com/recipe",
-        source_domain="example.com",
+        source_url=SOURCE_URL,
+        source_domain=SOURCE_DOMAIN,
         parser_used=None,
         status="duplicate",
         warnings=["This recipe is already in your library."],
@@ -158,7 +166,7 @@ def test_import_preview_endpoint_returns_duplicate_before_importing(
             session=session,
             current_user=current_user,
             importer=importer,
-            payload=RecipeImportPreviewRequest(url="https://example.com/recipe"),
+            payload=RecipeImportPreviewRequest(url=HttpUrl(SOURCE_URL)),
         )
     )
 
@@ -169,14 +177,14 @@ def test_import_preview_endpoint_returns_duplicate_before_importing(
     find_recipe.assert_called_once_with(
         session,
         user_id=current_user.id,
-        source_url="https://example.com/recipe",
+        source_url=SOURCE_URL,
     )
     create_log.assert_called_once_with(
         session=session,
         user_id=current_user.id,
         recipe_id=existing_recipe.id,
-        source_url="https://example.com/recipe",
-        source_domain="example.com",
+        source_url=SOURCE_URL,
+        source_domain=SOURCE_DOMAIN,
         status="duplicate",
         parser_used=None,
         warnings=["This recipe is already in your library."],
@@ -193,24 +201,24 @@ def test_import_preview_endpoint_can_import_duplicate_as_copy(
     session = Mock(spec=Session)
     current_user = User(
         id=uuid4(),
-        email="current@example.com",
-        password_hash="test-hash",
+        email=CURRENT_USER_EMAIL,
+        password_hash=TEST_PASSWORD_HASH,
     )
     existing_recipe = Recipe(
         id=uuid4(),
         user_id=current_user.id,
         title="Existing Tomato Soup",
-        source_url="https://example.com/recipe",
+        source_url=SOURCE_URL,
     )
     result = RecipeImportResult(
-        status="success",
-        parser_used="recipe-scrapers",
+        status=STATUS_SUCCESS,
+        parser_used=PARSER,
         draft=RecipeDraft(
             title="Imported Tomato Soup Copy",
-            source_url="https://example.com/recipe",
-            source_domain="example.com",
-            ingredients=[{"position": 1, "original_text": "2 cups tomatoes"}],
-            steps=[{"position": 1, "instruction": "Simmer the tomatoes."}],
+            source_url=HttpUrl(SOURCE_URL),
+            source_domain=SOURCE_DOMAIN,
+            ingredients=[IngredientDraft(position=1, original_text=INGREDIENT_TEXT)],
+            steps=[RecipeStepDraft(position=1, instruction=STEP_INSTRUCTION)],
         ),
         warnings=(),
     )
@@ -219,10 +227,10 @@ def test_import_preview_endpoint_can_import_duplicate_as_copy(
     import_log = RecipeImport(
         id=uuid4(),
         user_id=current_user.id,
-        source_url="https://example.com/recipe",
-        source_domain="example.com",
-        parser_used="recipe-scrapers",
-        status="success",
+        source_url=SOURCE_URL,
+        source_domain=SOURCE_DOMAIN,
+        parser_used=PARSER,
+        status=STATUS_SUCCESS,
         warnings=[],
         error_message=None,
     )
@@ -241,7 +249,7 @@ def test_import_preview_endpoint_can_import_duplicate_as_copy(
             current_user=current_user,
             importer=importer,
             payload=RecipeImportPreviewRequest(
-                url="https://example.com/recipe",
+                url=HttpUrl(SOURCE_URL),
                 import_as_copy=True,
             ),
         )
@@ -253,7 +261,7 @@ def test_import_preview_endpoint_can_import_duplicate_as_copy(
     assert response.existing_recipe_id is None
     assert response.next_actions == []
     find_recipe.assert_not_called()
-    importer.preview_from_url.assert_awaited_once_with("https://example.com/recipe")
+    importer.preview_from_url.assert_awaited_once_with(SOURCE_URL)
     create_log.assert_called_once()
     session.commit.assert_called_once_with()
     session.rollback.assert_not_called()
@@ -280,8 +288,8 @@ def test_import_preview_endpoint_logs_expected_import_errors(
     session = Mock(spec=Session)
     current_user = User(
         id=uuid4(),
-        email="current@example.com",
-        password_hash="test-hash",
+        email=CURRENT_USER_EMAIL,
+        password_hash=TEST_PASSWORD_HASH,
     )
     find_recipe = Mock(return_value=None)
     monkeypatch.setattr(
@@ -294,8 +302,8 @@ def test_import_preview_endpoint_logs_expected_import_errors(
     import_log = RecipeImport(
         id=uuid4(),
         user_id=current_user.id,
-        source_url="https://example.com/recipe",
-        source_domain="example.com",
+        source_url=SOURCE_URL,
+        source_domain=SOURCE_DOMAIN,
         parser_used=None,
         status=expected_status,
         warnings=[str(import_error)],
@@ -310,7 +318,7 @@ def test_import_preview_endpoint_logs_expected_import_errors(
             current_user=current_user,
             importer=importer,
             payload=RecipeImportPreviewRequest(
-                url="https://example.com/recipe",
+                url=HttpUrl(SOURCE_URL),
             ),
         )
     )
@@ -327,8 +335,8 @@ def test_import_preview_endpoint_logs_expected_import_errors(
     create_log.assert_called_once_with(
         session=session,
         user_id=current_user.id,
-        source_url="https://example.com/recipe",
-        source_domain="example.com",
+        source_url=SOURCE_URL,
+        source_domain=SOURCE_DOMAIN,
         status=expected_status,
         parser_used=None,
         warnings=[str(import_error)],
@@ -344,8 +352,8 @@ def test_import_preview_endpoint_rolls_back_unexpected_errors(
     session = Mock(spec=Session)
     current_user = User(
         id=uuid4(),
-        email="current@example.com",
-        password_hash="test-hash",
+        email=CURRENT_USER_EMAIL,
+        password_hash=TEST_PASSWORD_HASH,
     )
     find_recipe = Mock(return_value=None)
     monkeypatch.setattr(
@@ -364,7 +372,7 @@ def test_import_preview_endpoint_rolls_back_unexpected_errors(
                 session=session,
                 current_user=current_user,
                 importer=importer,
-                payload=RecipeImportPreviewRequest(url="https://example.com/recipe"),
+                payload=RecipeImportPreviewRequest(url=HttpUrl(SOURCE_URL)),
             )
         )
 
