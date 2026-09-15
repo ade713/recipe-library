@@ -60,4 +60,23 @@ async def preview_recipe_import(
 
         return response
 
-    raise NotImplementedError
+    result = await importer.preview_from_url(submitted_url)
+    import_log = create_import_log(
+        session=session,
+        user_id=user_id,
+        source_url=str(result.draft.source_url or payload.url),
+        source_domain=result.draft.source_domain,
+        status=result.status,
+        parser_used=result.parser_used,
+        warnings=list(result.warnings),
+        error_message=None,
+    )
+    response = RecipeImportPreviewResponse(
+        import_id=import_log.id,
+        status=result.status,
+        parser_used=result.parser_used,
+        draft=result.draft,
+        warnings=list(result.warnings),
+    )
+
+    return response
