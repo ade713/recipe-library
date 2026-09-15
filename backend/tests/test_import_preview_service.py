@@ -290,3 +290,35 @@ def test_import_preview_service_logs_response_with_import_errors(
     importer.preview_from_url.assert_awaited_once_with(SOURCE_URL)
     session.commit.assert_not_called()
     session.rollback.assert_not_called()
+
+
+def test_import_preview_service_propagates_unexpected_errors(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    session = Mock(spec=Session)
+    current_user_id = uuid4()
+    lookup = Mock(return_value=None)
+    monkeypatch.setattr(import_preview_service, "get_recipe_by_source_url_record", lookup)
+
+    create_log = Mock(return_value=None)
+    monkeypatch.setattr(import_preview_service, "create_import_log", create_log)
+
+    importer = Mock(spec=RecipeImporter)
+    unexpected_error = RuntimeError("unexpected import failure")
+    importer.preview_from_url = AsyncMock(side_effect=unexpected_error)
+
+    with pytest.raises(RuntimeError) as caught:
+        asyncio.run(
+            import_preview_service.preview_recipe_import(
+                session,
+                user_id=current_user_id,
+                importer=importer,
+                payload=RecipeImportPreviewRequest(url=HttpUrl(SOURCE_URL)),
+            )
+        )
+
+    assert caught.value is unexpected_error
+    importer.preview_from_url.assert_awaited_once_with(SOURCE_URL)
+    create_log.assert_not_called()
+    session.commit.assert_not_called()
+    session.rollback.assert_not_called()
