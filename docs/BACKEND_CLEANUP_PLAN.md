@@ -4,7 +4,7 @@ The backend feature work through Week 12 is complete. Before the mobile MVP begi
 
 ## Required before Week 13
 
-Current status: PRs 1–5 are merged. PR 6A is implemented and verified, ready for pull request creation. PR 6B remains next and must be completed before Week 13 begins.
+Current status: PRs 1–5 and 6A are merged. PR 6B is implemented and verified, ready for pull request creation. Its review and merge are the remaining pre-mobile cleanup checkpoint before Week 13 begins.
 
 ### PR 1: Strengthen backend quality gates
 
@@ -112,7 +112,7 @@ Scope covered:
 
 ### PR 6A: Refactor import-save orchestration
 
-Status: Implemented and verified on `refactor/import-orchestration`; ready for pull request creation.
+Status: Complete and merged in [PR #34](https://github.com/ade713/recipe-library/pull/34).
 
 Verification: 210 tests pass, Ruff lint and formatting pass (99 Python files), and mypy passes (50 app files). The known TestClient deprecation warning remains deferred.
 
@@ -123,7 +123,16 @@ Verification: 210 tests pass, Ruff lint and formatting pass (99 Python files), a
 
 ### PR 6B: Refactor import-preview orchestration
 
-Status: Next, after PR 6A is merged; still required before Week 13.
+Status: Implemented and verified on `refactor/import-preview-orchestration`; ready for pull request creation.
+
+Completed outcomes:
+
+- Extracted `preview_recipe_import()` into `app/services/import_preview.py`; the route retains authentication, commit, and rollback.
+- Added service tests for duplicate logging, successful/partial previews with redirected source attribution, explicit copies, blocked/failed outcomes, and unexpected-error propagation.
+- Preserved endpoint tests and updated repository mock targets to the service. Added characterization coverage for duplicate-lookup failure and route rollback.
+- Verified all 218 tests, Ruff lint, formatting (101 Python files), and mypy (51 app files) pass. The known TestClient deprecation warning remains deferred.
+
+Scope covered:
 
 - Extract duplicate detection, preview execution, import logging, and preview outcome construction into a focused service.
 - Preserve user scoping, duplicate-before-fetch behavior, explicit copy requests, and success/partial/blocked/failed outcomes.
