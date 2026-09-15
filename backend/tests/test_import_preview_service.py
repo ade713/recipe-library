@@ -16,7 +16,10 @@ from app.types import SaveableImportStatus
 RECIPE_TITLE = "Tomato Soup"
 SOURCE_URL = "https://example.com/recipe"
 SOURCE_DOMAIN = "example.com"
+DRAFT_SOURCE_URL = "https://draft-example.com/recipe"
+DRAFT_SOURCE_DOMAIN = "draft-example.com"
 STATUS_DUPLICATE = "duplicate"
+STATUS_SUCCESS = "success"
 PARSER = "recipe-scrapers"
 
 
@@ -98,8 +101,8 @@ def test_import_preview_service_returns_successful_preview(
     monkeypatch.setattr(import_preview_service, "get_recipe_by_source_url_record", lookup)
     draft = RecipeDraft(
         title=RECIPE_TITLE,
-        source_url=HttpUrl("https://draft-example.com/recipe"),
-        source_domain="draft-example.com",
+        source_url=HttpUrl(DRAFT_SOURCE_URL),
+        source_domain=DRAFT_SOURCE_DOMAIN,
         ingredients=[IngredientDraft(position=1, original_text="2 cups tomatoes")],
         steps=[RecipeStepDraft(position=1, instruction="Simmer the tomatoes.")],
     )
@@ -150,5 +153,72 @@ def test_import_preview_service_returns_successful_preview(
     assert response.status == import_status
     assert response.parser_used == PARSER
     assert response.warnings == [warning]
+    session.commit.assert_not_called()
+    session.rollback.assert_not_called()
+
+
+def test_import_preview_service_returns_successful_preview_from_copy_import(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    session = Mock(spec=Session)
+    current_user_id = uuid4()
+    lookup = Mock(side_effect=AssertionError("Duplicate lookup must be skipped"))
+    monkeypatch.setattr(import_preview_service, "get_recipe_by_source_url_record", lookup)
+    draft = RecipeDraft(
+        title=RECIPE_TITLE,
+        source_url=HttpUrl(DRAFT_SOURCE_URL),
+        source_domain=DRAFT_SOURCE_DOMAIN,
+        ingredients=[IngredientDraft(position=1, original_text="2 cups tomatoes")],
+        steps=[RecipeStepDraft(position=1, instruction="Simmer the tomatoes.")],
+    )
+    import_result = RecipeImportResult(
+        status=STATUS_SUCCESS,
+        parser_used=PARSER,
+        draft=draft,
+        warnings=(),
+    )
+
+    importer = Mock(spec=RecipeImporter)
+    importer.preview_from_url = AsyncMock(return_value=import_result)
+    import_log = RecipeImport(
+        id=uuid4(),
+        user_id=current_user_id,
+        source_url=str(draft.source_url),
+        source_domain=draft.source_domain,
+        parser_used=PARSER,
+        status=STATUS_SUCCESS,
+        warnings=[],
+        error_message=None,
+    )
+    create_log = Mock(return_value=import_log)
+    monkeypatch.setattr(import_preview_service, "create_import_log", create_log)
+
+    response = asyncio.run(
+        import_preview_service.preview_recipe_import(
+            session,
+            user_id=current_user_id,
+            importer=importer,
+            payload=RecipeImportPreviewRequest(
+                url=HttpUrl(SOURCE_URL),
+                import_as_copy=True,
+            ),
+        )
+    )
+
+    lookup.assert_not_called()
+    importer.preview_from_url.assert_awaited_once_with(SOURCE_URL)
+    create_log.assert_called_once_with(
+        session=session,
+        user_id=current_user_id,
+        source_url=str(draft.source_url),
+        source_domain=draft.source_domain,
+        parser_used=PARSER,
+        status=STATUS_SUCCESS,
+        warnings=[],
+        error_message=None,
+    )
+    assert response.status == STATUS_SUCCESS
+    assert response.draft == draft
+    assert response.existing_recipe_id is None
     session.commit.assert_not_called()
     session.rollback.assert_not_called()
