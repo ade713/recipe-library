@@ -18,6 +18,7 @@ from app.main import create_app
 from app.models import Base, Recipe, RecipeImport, User
 from app.schemas.import_recipe import RecipeImportPreviewRequest
 from app.schemas.recipe import RecipeDraft
+from app.services import import_preview as import_preview_service
 from app.services.recipe_importer import (
     RecipeImportBlockedError,
     RecipeImporter,
@@ -146,11 +147,11 @@ def test_import_preview_endpoint_returns_duplicate_before_importing(
     find_recipe = Mock(return_value=existing_recipe)
     create_log = Mock(return_value=import_log)
     monkeypatch.setattr(
-        import_routes,
+        import_preview_service,
         "get_recipe_by_source_url_record",
         find_recipe,
     )
-    monkeypatch.setattr(import_routes, "create_import_log", create_log)
+    monkeypatch.setattr(import_preview_service, "create_import_log", create_log)
 
     response = asyncio.run(
         import_routes.preview_import(
@@ -228,11 +229,11 @@ def test_import_preview_endpoint_can_import_duplicate_as_copy(
     find_recipe = Mock(return_value=existing_recipe)
     create_log = Mock(return_value=import_log)
     monkeypatch.setattr(
-        import_routes,
+        import_preview_service,
         "get_recipe_by_source_url_record",
         find_recipe,
     )
-    monkeypatch.setattr(import_routes, "create_import_log", create_log)
+    monkeypatch.setattr(import_preview_service, "create_import_log", create_log)
 
     response = asyncio.run(
         import_routes.preview_import(
@@ -284,7 +285,7 @@ def test_import_preview_endpoint_logs_expected_import_errors(
     )
     find_recipe = Mock(return_value=None)
     monkeypatch.setattr(
-        import_routes,
+        import_preview_service,
         "get_recipe_by_source_url_record",
         find_recipe,
     )
@@ -301,7 +302,7 @@ def test_import_preview_endpoint_logs_expected_import_errors(
         error_message=str(import_error),
     )
     create_log = Mock(return_value=import_log)
-    monkeypatch.setattr(import_routes, "create_import_log", create_log)
+    monkeypatch.setattr(import_preview_service, "create_import_log", create_log)
 
     response = asyncio.run(
         import_routes.preview_import(
@@ -348,14 +349,14 @@ def test_import_preview_endpoint_rolls_back_unexpected_errors(
     )
     find_recipe = Mock(return_value=None)
     monkeypatch.setattr(
-        import_routes,
+        import_preview_service,
         "get_recipe_by_source_url_record",
         find_recipe,
     )
     importer = Mock(spec=RecipeImporter)
     importer.preview_from_url = AsyncMock(side_effect=RuntimeError("unexpected import failure"))
     create_log = Mock()
-    monkeypatch.setattr(import_routes, "create_import_log", create_log)
+    monkeypatch.setattr(import_preview_service, "create_import_log", create_log)
 
     with pytest.raises(RuntimeError, match="unexpected import failure"):
         asyncio.run(
@@ -383,13 +384,13 @@ def test_import_preview_endpoint_rolls_back_duplicate_lookup_failure(
     )
 
     find_recipe = Mock(side_effect=RuntimeError("duplicate lookup failed"))
-    monkeypatch.setattr(import_routes, "get_recipe_by_source_url_record", find_recipe)
+    monkeypatch.setattr(import_preview_service, "get_recipe_by_source_url_record", find_recipe)
 
     importer = Mock(spec=RecipeImporter)
     importer.preview_from_url = AsyncMock()
 
     create_log = Mock()
-    monkeypatch.setattr(import_routes, "create_import_log", create_log)
+    monkeypatch.setattr(import_preview_service, "create_import_log", create_log)
 
     with pytest.raises(RuntimeError, match="duplicate lookup failed"):
         asyncio.run(
