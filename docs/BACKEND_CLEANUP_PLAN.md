@@ -4,7 +4,7 @@ The backend feature work through Week 12 is complete. Before the mobile MVP begi
 
 ## Required before Week 13
 
-Current status: PRs 1–5 and 6A are merged. PR 6B is implemented and verified, ready for pull request creation. Its review and merge are the remaining pre-mobile cleanup checkpoint before Week 13 begins.
+Current status: PRs 1–5, 6A, and 6B are merged. The planned pre-mobile cleanup is complete. One small additional import-preview test-constant refactor is ready for review; wider test cleanup must not delay Week 13 mobile development.
 
 ### PR 1: Strengthen backend quality gates
 
@@ -123,7 +123,7 @@ Verification: 210 tests pass, Ruff lint and formatting pass (99 Python files), a
 
 ### PR 6B: Refactor import-preview orchestration
 
-Status: Implemented and verified on `refactor/import-preview-orchestration`; ready for pull request creation.
+Status: Complete and merged in [PR #35](https://github.com/ade713/recipe-library/pull/35).
 
 Completed outcomes:
 
@@ -140,6 +140,20 @@ Scope covered:
 - Preserve endpoint behavior with characterization tests, including rollback on unexpected failures.
 
 PR 6 is split into save and preview changes to keep reviews manageable. Both parts remain in the pre-mobile cleanup scope; this split changes PR boundaries, not the release plan.
+
+## Additional focused test cleanup
+
+Status: Implemented on `refactor/import-preview-test-constants`; ready for pull request creation.
+
+- Consolidated repeated setup strings into module-local constants in `test_import_preview_endpoint.py`.
+- Kept ingredient/step objects local to each test and preserved explicit status assertions and distinct submitted/redirected URLs.
+- Used typed Pydantic objects in test setup without changing scenarios or assertions.
+- Verified all 8 endpoint tests, Ruff lint, and formatting pass; the known TestClient warning remains deferred.
+
+## Incremental maintenance that does not block mobile
+
+- Extend repeated test-string cleanup to other modules in small, focused PRs when convenient. Prefer module-local immutable setup constants, keep mutable test objects fresh, and retain explicit expectations where they verify API contracts. This work is not a prerequisite for mobile development or MVP release.
+- Continue shared-fixture adoption in the remaining endpoint modules as described under PR 5.
 
 ## After mobile work begins, before private MVP release
 
