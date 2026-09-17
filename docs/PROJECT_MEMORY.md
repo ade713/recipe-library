@@ -38,7 +38,15 @@ Structured ingredient parsing is deferred work for before private MVP release, n
 - Manual recipe, note, and tag CRUD are implemented and user-scoped.
 - Authentication, recipe search/filter/sort, safe URL fetching, import parsing, editable previews, duplicate handling, and import logging are implemented.
 - Reviewed `success` and `partial` import drafts can be saved transactionally with trusted source attribution and a link back to their import log.
-- The next work is the pre-mobile backend cleanup sequence in `docs/BACKEND_CLEANUP_PLAN.md`, followed by the React Native/Expo mobile MVP foundation.
+- The planned pre-mobile backend cleanup is complete. Week 13 mobile foundation work is now in progress.
+
+## Current mobile progress
+
+- Expo SDK 57 with Expo Router and strict TypeScript is configured in `mobile/`.
+- Root stack navigation and the initial Recipe Library placeholder screen are verified in Expo Go on a physical Android phone.
+- The user understands the router entry point and the distinction between layout and screen components; TypeScript checking passes.
+- API integration, secure token storage, authentication screens, and functional recipe screens remain upcoming work.
+- Follow `mobile/README.md` for setup. Track dependency audit findings before release without applying incompatible forced upgrades.
 
 ## UI exploration
 

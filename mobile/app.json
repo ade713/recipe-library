@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "Recipe Library",
+    "slug": "recipe-library-mobile",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "recipelibrary",
+    "userInterfaceStyle": "automatic",
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
