@@ -14,6 +14,11 @@ export default function RecipeLibraryScreen() {
 
     try {
       const res = await apiFetch<HealthResponse>("/health");
+
+      if (res === undefined) {
+        throw new Error("Expected a health response");
+      }
+
       setApiStatus(res.status);
     } catch {
       setApiStatus("An error occurred while checking health.");

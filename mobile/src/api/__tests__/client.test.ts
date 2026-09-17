@@ -78,4 +78,18 @@ describe("apiFetch", () => {
 
     await expect(apiFetch(HEALTH_PATH)).rejects.toBe(error);
   });
+
+  it("returns undefined for a 204 response without parsing JSON", async () => {
+    const response = new Response(null, { status: 204 });
+    const jsonSpy = jest.spyOn(response, "json");
+
+    jest.spyOn(globalThis, "fetch").mockResolvedValue(response);
+
+    const result = await apiFetch<void>("/recipes/test-recipe", {
+      method: "DELETE",
+    });
+
+    expect(result).toBeUndefined();
+    expect(jsonSpy).not.toHaveBeenCalled();
+  });
 });
