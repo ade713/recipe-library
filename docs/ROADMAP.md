@@ -104,7 +104,7 @@ Status: Complete
 
 Before beginning this phase, complete cleanup PRs 1–5, 6A, and 6B in the [Backend Cleanup Plan](BACKEND_CLEANUP_PLAN.md). Import-save and import-preview orchestration are separate PRs for manageable review. The remaining validation, database-parity, dependency-upgrade, and deployment-hardening items are scheduled separately so they do not delay mobile MVP work.
 
-- Expo setup
+- [x] Expo setup: SDK 57, root stack, and initial screen verified on Android
 - Library screen
 - Manual create/edit screen
 - Import screen
