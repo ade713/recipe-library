@@ -89,8 +89,34 @@ Use `npm run test:watch` during development. Jest uses the jest-expo preset;
 client tests mock fetch rather than calling the backend. Seven tests cover JSON
 responses, default/preserved headers, HTTP errors, network errors, and 204
 responses. Each JSON mock creates a fresh Response; spies are restored between
-tests. Secure token storage, authenticated API integration, and richer API-error
-handling remain separate follow-up work.
+tests. Authenticated API integration and richer API-error handling remain
+separate follow-up work.
+
+## Secure token storage
+
+`src/auth/token-storage.ts` wraps Expo SecureStore with three operations:
+
+- `saveAccessToken(token)`: persist the access token.
+- `getAccessToken()`: return the stored token, or null when none exists.
+- `removeAccessToken()`: delete the local token.
+
+All operations use the fixed key `recipe-library.access-token`. Storage errors
+propagate to the caller; a read failure is not treated as a missing token.
+Removing the local token does not revoke it on the backend. Store only access
+tokens, not passwords, and never log token values or put them in public
+environment variables.
+
+The SecureStore dependency and Expo config plugin are registered. Seven mocked
+storage tests cover saving, reading, absence, removal, and failures for each
+operation. Together with the client tests, the mobile suite contains 14 tests.
+
+```bash
+npm test -- token-storage.test.ts --runInBand
+```
+
+These tests do not verify native device storage. A real-device save/read/remove
+smoke check, app-restart persistence verification, login/logout integration,
+expired-token handling, and automatic authorization headers remain pending.
 
 ## Dependency follow-up
 
