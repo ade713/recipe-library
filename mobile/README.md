@@ -2,7 +2,8 @@
 
 React Native / Expo SDK 57 app using TypeScript and Expo Router. The initial
 Recipe Library screen and stack navigation run on a physical Android phone.
-Other routes remain placeholders; backend integration is not connected yet.
+The temporary Check API button verifies FastAPI health connectivity. Other
+routes remain placeholders; authentication and recipe integration are not connected yet.
 
 ## Local setup
 
@@ -36,6 +37,60 @@ placeholder `web` script.
 - `app/_layout.tsx`: shared stack navigation and screen headers.
 - `app/index.tsx`: the initial Recipe Library screen.
 - `tsconfig.json`: Expo defaults, strict checking, and the `@/*` source alias.
+
+## Connect a physical Android phone to FastAPI
+
+From the repository root, with backend dependencies and settings configured:
+
+```bash
+cd backend
+.venv/bin/uvicorn app.main:app --reload --host 0.0.0.0
+```
+
+Use a trusted local network: this exposes the development server to other
+devices. Keep the Mac and phone on the same Wi-Fi. Find the Mac's Wi-Fi IP in
+System Settings → Wi-Fi → Details → TCP/IP, then open
+`http://YOUR_MAC_IP:8000/api/v1/health` in the phone browser. Expect
+`{"status":"ok"}`. This checks API availability, not database connectivity.
+
+Create `mobile/.env.local` with the same IP:
+
+```dotenv
+EXPO_PUBLIC_API_BASE_URL=http://YOUR_MAC_IP:8000/api/v1
+```
+
+Replace the placeholder, restart Expo from `mobile/`, and tap Check API. Expect
+`ok`. Keep FastAPI running. On a phone, `localhost` means the phone itself;
+`0.0.0.0` is a server listening address, not the address to enter in the app.
+If the Mac's IP changes, update this file and restart Expo.
+
+`.env.local` is ignored by Git. `EXPO_PUBLIC_` values are bundled into the app,
+so never put secrets or access tokens in them. Local HTTP is for development;
+deployed API connections should use HTTPS.
+
+## Client behavior and tests
+
+`src/api/client.ts` prepends the configured API base URL, normalizes request
+headers, and defaults Content-Type to application/json only when absent.
+Caller-provided headers are preserved. Unsuccessful HTTP responses throw an
+error containing the status code; network errors propagate unchanged.
+Successful JSON responses are parsed; 204 responses return undefined without
+parsing. The return type is `Promise<T | undefined>`; the generic type is an
+expectation, not runtime response validation.
+
+From `mobile/`:
+
+```bash
+npm test -- --runInBand
+npx tsc --noEmit
+```
+
+Use `npm run test:watch` during development. Jest uses the jest-expo preset;
+client tests mock fetch rather than calling the backend. Seven tests cover JSON
+responses, default/preserved headers, HTTP errors, network errors, and 204
+responses. Each JSON mock creates a fresh Response; spies are restored between
+tests. Secure token storage, authenticated API integration, and richer API-error
+handling remain separate follow-up work.
 
 ## Dependency follow-up
 
