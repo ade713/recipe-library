@@ -213,9 +213,11 @@ Before Week 13 begins, complete cleanup PRs 1–5, 6A, and 6B in the [Backend Cl
 Status: In progress. Expo SDK 57 setup, root stack navigation, and a placeholder
 Recipe Library screen are verified on a physical Android phone. The temporary
 Check API button reaches FastAPI. API client header handling, HTTP/network
-errors, and 204 responses are covered by seven Jest tests; TypeScript checking
-passes. Authenticated API integration, secure token storage, richer API-error
-handling, and functional screens remain to be implemented.
+errors, and 204 responses are covered by seven Jest tests. The SecureStore
+save/read/remove wrapper has seven mocked tests, for 14 passing mobile tests;
+TypeScript checking passes. Native storage and restart-persistence verification,
+login/logout and authenticated API integration, richer API-error handling, and
+functional screens remain pending.
 
 | Day | Work |
 | --- | --- |

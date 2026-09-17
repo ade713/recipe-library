@@ -47,7 +47,8 @@ Structured ingredient parsing is deferred work for before private MVP release, n
 - The user understands the router entry point and the distinction between layout and screen components; TypeScript checking passes.
 - Android-to-FastAPI health connectivity is verified through a temporary Check API button using an ignored local API URL setting.
 - The API client preserves caller headers, handles HTTP/network failures, and returns undefined for 204 responses. Seven mocked Jest tests cover this behavior; TypeScript checking passes. Response generics do not provide runtime validation.
-- Secure token storage, authenticated API integration, richer API-error handling, authentication screens, and functional recipe screens remain upcoming work.
+- A SecureStore wrapper now saves, reads, and removes access tokens. Missing tokens return null; storage failures propagate. Seven mocked storage tests bring the mobile suite to 14 passing tests; TypeScript checking passes.
+- Native storage smoke testing and restart persistence verification, login/logout integration, expired-token handling, authenticated API integration, richer API-error handling, authentication screens, and functional recipe screens remain upcoming work. Local token removal does not revoke backend tokens.
 - Follow `mobile/README.md` for setup. Track dependency audit findings before release without applying incompatible forced upgrades.
 
 ## UI exploration
