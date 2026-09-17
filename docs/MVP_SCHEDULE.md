@@ -211,9 +211,11 @@ Before Week 13 begins, complete cleanup PRs 1–5, 6A, and 6B in the [Backend Cl
 ## Week 13 — Mobile MVP foundations
 
 Status: In progress. Expo SDK 57 setup, root stack navigation, and a placeholder
-Recipe Library screen are verified on a physical Android phone. TypeScript
-checking passes. API integration, secure token storage, and functional screens
-remain to be implemented.
+Recipe Library screen are verified on a physical Android phone. The temporary
+Check API button reaches FastAPI. API client header handling, HTTP/network
+errors, and 204 responses are covered by seven Jest tests; TypeScript checking
+passes. Authenticated API integration, secure token storage, richer API-error
+handling, and functional screens remain to be implemented.
 
 | Day | Work |
 | --- | --- |

@@ -45,7 +45,9 @@ Structured ingredient parsing is deferred work for before private MVP release, n
 - Expo SDK 57 with Expo Router and strict TypeScript is configured in `mobile/`.
 - Root stack navigation and the initial Recipe Library placeholder screen are verified in Expo Go on a physical Android phone.
 - The user understands the router entry point and the distinction between layout and screen components; TypeScript checking passes.
-- API integration, secure token storage, authentication screens, and functional recipe screens remain upcoming work.
+- Android-to-FastAPI health connectivity is verified through a temporary Check API button using an ignored local API URL setting.
+- The API client preserves caller headers, handles HTTP/network failures, and returns undefined for 204 responses. Seven mocked Jest tests cover this behavior; TypeScript checking passes. Response generics do not provide runtime validation.
+- Secure token storage, authenticated API integration, richer API-error handling, authentication screens, and functional recipe screens remain upcoming work.
 - Follow `mobile/README.md` for setup. Track dependency audit findings before release without applying incompatible forced upgrades.
 
 ## UI exploration
