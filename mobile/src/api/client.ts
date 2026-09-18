@@ -1,3 +1,5 @@
+import { ApiError } from "./errors";
+
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
 
 /**
@@ -16,7 +18,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   });
 
   if (!response.ok) {
-    throw new Error(`API request failed: ${response.status}`);
+    throw new ApiError(response.status);
   }
 
   if (response.status === 204) {

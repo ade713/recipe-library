@@ -72,8 +72,11 @@ deployed API connections should use HTTPS.
 
 `src/api/client.ts` prepends the configured API base URL, normalizes request
 headers, and defaults Content-Type to application/json only when absent.
-Caller-provided headers are preserved. Unsuccessful HTTP responses throw an
-error containing the status code; network errors propagate unchanged.
+Caller-provided headers are preserved. Unsuccessful HTTP responses throw
+`ApiError` (defined in `src/api/errors.ts`), an Error subclass with a readonly
+numeric `status` and the message `API request failed: <status>`. Network errors
+propagate unchanged rather than being converted to HTTP errors. Callers can
+use `error instanceof ApiError` and `error.status` instead of parsing messages.
 Successful JSON responses are parsed; 204 responses return undefined without
 parsing. The return type is `Promise<T | undefined>`; the generic type is an
 expectation, not runtime response validation.
@@ -86,11 +89,12 @@ npx tsc --noEmit
 ```
 
 Use `npm run test:watch` during development. Jest uses the jest-expo preset;
-client tests mock fetch rather than calling the backend. Seven tests cover JSON
-responses, default/preserved headers, HTTP errors, network errors, and 204
+client tests mock fetch rather than calling the backend. Eight tests cover JSON
+responses, default/preserved headers, HTTP 401/500 errors, network errors, and 204
 responses. Each JSON mock creates a fresh Response; spies are restored between
-tests. Authentication UI integration and richer API-error handling remain
-separate follow-up work.
+tests. A separate ApiError test verifies its status and standard error behavior.
+Authentication UI integration and server error-body parsing remain separate
+follow-up work; this change exposes HTTP status, not backend validation details.
 
 ## Authentication API helpers
 
@@ -139,8 +143,9 @@ npm test -- session.test.ts --runInBand
 
 Session restoration remains a separate checkpoint. It must distinguish invalid
 or expired credentials from network or server failures so being offline does
-not erase a valid stored token. Structured API errors are needed to make that
-distinction reliably; do not infer it by parsing error-message strings.
+not erase a valid stored token. Structured API errors now provide the status
+needed for that distinction; restoration logic is not implemented yet. Do not
+infer authentication failure by parsing error-message strings.
 
 ## Secure token storage
 
@@ -158,8 +163,8 @@ environment variables.
 
 The SecureStore dependency and Expo config plugin are registered. Seven mocked
 storage tests cover saving, reading, absence, removal, and failures for each
-operation. Together with seven client tests, six auth-helper tests, and six
-session tests, the mobile suite contains 26 passing tests; TypeScript checking
+operation. Together with eight client tests, one ApiError test, six auth-helper
+tests, and six session tests, the mobile suite contains 28 passing tests; TypeScript checking
 also passes.
 
 ```bash

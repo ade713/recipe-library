@@ -1,4 +1,5 @@
 import { apiFetch } from "../client";
+import { ApiError } from "../errors";
 
 const HEALTH_PATH = "/health";
 const TEST_AUTHORIZATION = "Bearer test-token";
@@ -65,10 +66,15 @@ describe("apiFetch", () => {
     expect(headers.get("Authorization")).toBe(TEST_AUTHORIZATION);
   });
 
-  it("rejects unsuccessful HTTP responses", async () => {
-    mockJsonResponse({ detail: "Not authenticated" }, 401);
+  it.each([401, 500])("rejects HTTP %i responses with an ApiError", async (status) => {
+    mockJsonResponse({ detail: "Not authenticated" }, status);
+    const request = apiFetch(HEALTH_PATH);
 
-    await expect(apiFetch(HEALTH_PATH)).rejects.toThrow("API request failed: 401");
+    await expect(request).rejects.toBeInstanceOf(ApiError);
+    await expect(request).rejects.toMatchObject({
+      status,
+      message: `API request failed: ${status}`,
+    });
   });
 
   it("propagates network failures", async () => {
