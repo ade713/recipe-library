@@ -214,10 +214,16 @@ Status: In progress. Expo SDK 57 setup, root stack navigation, and a placeholder
 Recipe Library screen are verified on a physical Android phone. The temporary
 Check API button reaches FastAPI. API client header handling, HTTP/network
 errors, and 204 responses are covered by seven Jest tests. The SecureStore
-save/read/remove wrapper has seven mocked tests, for 14 passing mobile tests;
-TypeScript checking passes. Native storage and restart-persistence verification,
+save/read/remove wrapper has seven mocked tests. Login and current-user API
+helpers have six mocked tests, for 20 passing mobile tests; TypeScript checking
+passes. Helpers remain separate from storage and UI. Native storage and restart-persistence verification,
 login/logout and authenticated API integration, richer API-error handling, and
 functional screens remain pending.
+
+Next checkpoint: after the auth-helper PR, add mobile GitHub Actions checks
+(npm ci, Jest, and tsc) and configure required backend/mobile merge checks on
+main. Verify enforcement through branch protection or a ruleset before continuing
+authentication integration; adding the workflow alone does not block merges.
 
 | Day | Work |
 | --- | --- |
