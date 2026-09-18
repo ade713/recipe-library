@@ -220,10 +220,11 @@ passes. Helpers remain separate from storage and UI. Native storage and restart-
 login/logout and authenticated API integration, richer API-error handling, and
 functional screens remain pending.
 
-Next checkpoint: after the auth-helper PR, add mobile GitHub Actions checks
-(npm ci, Jest, and tsc) and configure required backend/mobile merge checks on
-main. Verify enforcement through branch protection or a ruleset before continuing
-authentication integration; adding the workflow alone does not block merges.
+CI checkpoint complete: PR #41 is merged. Mobile CI runs npm ci, Jest, and tsc;
+both backend and mobile workflows passed on GitHub. Verified main-branch
+protection requires both checks and up-to-date branches, including for
+administrators. Next: authentication session orchestration, keeping UI and
+native storage verification as explicit follow-up checkpoints.
 
 | Day | Work |
 | --- | --- |

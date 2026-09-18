@@ -144,14 +144,15 @@ These tests do not verify native device storage. A real-device save/read/remove
 smoke check, app-restart persistence verification, login/logout integration,
 expired-token handling, and automatic authorization headers remain pending.
 
-## Next checkpoint: mobile CI and merge requirements
+## CI and merge requirements
 
-After the authentication-helper PR, add a focused GitHub Actions PR running
-`npm ci`, Jest, and `tsc --noEmit` for mobile. Then configure the main-branch
-ruleset or branch protection to require both backend and mobile checks before
-merging, once the mobile check has run successfully. A workflow alone does not
-enforce a merge restriction. This work is planned, not yet configured or verified,
-and precedes further authentication integration.
+Mobile CI runs on pull requests targeting main and pushes to main, using Node
+24, `npm ci`, `npm test -- --ci --runInBand`, and `npx tsc --noEmit`.
+PR #41 passed both workflows and is merged. Main-branch protection requires
+`Tests, Ruff, and mypy` and `Mobile Tests and TypeScript`, with branches up to
+date before merging. Protection applies to administrators too. These settings
+were verified through GitHub; they are repository settings, not workflow YAML.
+Neither workflow uses path filters, so required checks run for every PR to main.
 
 ## Dependency follow-up
 
