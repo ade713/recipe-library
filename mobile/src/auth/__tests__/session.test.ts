@@ -1,6 +1,6 @@
 import * as authApi from "../../api/auth";
 import * as tokenStorage from "../token-storage";
-import { signIn } from "../session";
+import { signIn, signOut } from "../session";
 import type { LoginRequest, TokenResponse, UserResponse } from "../../types/auth";
 
 const TEST_EMAIL = "test@example.com";
@@ -77,5 +77,23 @@ describe("signIn", () => {
     jest.spyOn(tokenStorage, "saveAccessToken").mockRejectedValue(error);
 
     await expect(signIn(payload)).rejects.toBe(error);
+  });
+});
+
+describe("signOut", () => {
+  it("remove the locally stored token", async () => {
+    const removeMock = jest.spyOn(tokenStorage, "removeAccessToken").mockResolvedValue(undefined);
+
+    await signOut();
+
+    expect(removeMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("propagates token-removal failures", async () => {
+    const error = new Error("Secure storage unavailable");
+
+    jest.spyOn(tokenStorage, "removeAccessToken").mockRejectedValue(error);
+
+    await expect(signOut()).rejects.toBe(error);
   });
 });
