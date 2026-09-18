@@ -119,10 +119,10 @@ requests, empty responses, and failures for both helpers.
 npm test -- auth.test.ts --runInBand
 ```
 
-Login screens, registration, UI authentication state, and session restoration are
+Login screens, registration, and UI authentication state are
 not implemented. These helper tests do not establish end-to-end authentication.
 
-## Sign-in and local sign-out
+## Sign-in, local sign-out, and session restoration
 
 `src/auth/session.ts` coordinates the API and storage helpers:
 
@@ -133,19 +133,26 @@ not implemented. These helper tests do not establish end-to-end authentication.
 - `signOut()` awaits local token removal without a backend request, allowing
   local sign-out while offline. Removal failures propagate. The future auth
   provider must clear UI state; this helper does not revoke backend tokens.
+- `restoreSession()` reads the stored token and returns null when none exists.
+  Otherwise, it fetches the user. A profile lookup rejected with ApiError status
+  401 triggers awaited token removal before returning null. Other errors
+  propagate without removing the token. Storage-read failures prevent profile
+  lookup; a failed removal after 401 propagates the cleanup error rather than
+  reporting successful cleanup.
 
-Six mocked tests cover successful sign-in, failures at each sign-in step,
-successful local sign-out, and token-removal failure.
+Thirteen mocked tests cover sign-in and local sign-out, plus restoration with
+no token, a valid profile response, HTTP 401, network failure, HTTP 500,
+storage-read failure, and cleanup failure.
 
 ```bash
 npm test -- session.test.ts --runInBand
 ```
 
-Session restoration remains a separate checkpoint. It must distinguish invalid
-or expired credentials from network or server failures so being offline does
-not erase a valid stored token. Structured API errors now provide the status
-needed for that distinction; restoration logic is not implemented yet. Do not
-infer authentication failure by parsing error-message strings.
+Restoration uses ApiError type/status checks, not message parsing. Network or
+server failure does not establish that credentials are invalid, so the stored
+token is preserved. This is service-level logic tested with mocks; startup
+invocation, loading/error/retry UI, and native restart-persistence verification
+remain pending. No user is restored on a failed profile request.
 
 ## Secure token storage
 
@@ -164,7 +171,7 @@ environment variables.
 The SecureStore dependency and Expo config plugin are registered. Seven mocked
 storage tests cover saving, reading, absence, removal, and failures for each
 operation. Together with eight client tests, one ApiError test, six auth-helper
-tests, and six session tests, the mobile suite contains 28 passing tests; TypeScript checking
+tests, and thirteen session tests, the mobile suite contains 35 passing tests; TypeScript checking
 also passes.
 
 ```bash
@@ -173,7 +180,8 @@ npm test -- token-storage.test.ts --runInBand
 
 These tests do not verify native device storage. A real-device save/read/remove
 smoke check, app-restart persistence verification, login/logout UI integration,
-expired-token handling, and automatic authorization headers remain pending.
+startup restoration UI integration, handling expiry during later API requests,
+and automatic authorization headers remain pending.
 
 ## CI and merge requirements
 
