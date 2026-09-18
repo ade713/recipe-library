@@ -89,7 +89,7 @@ Use `npm run test:watch` during development. Jest uses the jest-expo preset;
 client tests mock fetch rather than calling the backend. Seven tests cover JSON
 responses, default/preserved headers, HTTP errors, network errors, and 204
 responses. Each JSON mock creates a fresh Response; spies are restored between
-tests. Authentication flow integration and richer API-error handling remain
+tests. Authentication UI integration and richer API-error handling remain
 separate follow-up work.
 
 ## Authentication API helpers
@@ -106,7 +106,8 @@ These TypeScript types do not validate responses at runtime.
   return the user profile without reading SecureStore.
 
 Both helpers reject unexpected undefined responses and propagate API client
-failures. The caller will coordinate token storage and authentication state;
+failures. The session service coordinates sign-in and storage; UI authentication
+state remains future work, and
 the backend validates tokens. Six tests mock apiFetch to cover successful
 requests, empty responses, and failures for both helpers.
 
@@ -114,8 +115,32 @@ requests, empty responses, and failures for both helpers.
 npm test -- auth.test.ts --runInBand
 ```
 
-Login screens, registration, logout orchestration, and session restoration are
+Login screens, registration, UI authentication state, and session restoration are
 not implemented. These helper tests do not establish end-to-end authentication.
+
+## Sign-in and local sign-out
+
+`src/auth/session.ts` coordinates the API and storage helpers:
+
+- `signIn(payload)` awaits login, fetches the user with the issued token, then
+  awaits secure token storage before returning the user. Login failure prevents
+  profile lookup and saving; profile failure prevents saving; storage failure
+  rejects instead of reporting successful sign-in.
+- `signOut()` awaits local token removal without a backend request, allowing
+  local sign-out while offline. Removal failures propagate. The future auth
+  provider must clear UI state; this helper does not revoke backend tokens.
+
+Six mocked tests cover successful sign-in, failures at each sign-in step,
+successful local sign-out, and token-removal failure.
+
+```bash
+npm test -- session.test.ts --runInBand
+```
+
+Session restoration remains a separate checkpoint. It must distinguish invalid
+or expired credentials from network or server failures so being offline does
+not erase a valid stored token. Structured API errors are needed to make that
+distinction reliably; do not infer it by parsing error-message strings.
 
 ## Secure token storage
 
@@ -133,15 +158,16 @@ environment variables.
 
 The SecureStore dependency and Expo config plugin are registered. Seven mocked
 storage tests cover saving, reading, absence, removal, and failures for each
-operation. Together with seven client tests and six auth-helper tests, the
-mobile suite contains 20 passing tests; TypeScript checking also passes.
+operation. Together with seven client tests, six auth-helper tests, and six
+session tests, the mobile suite contains 26 passing tests; TypeScript checking
+also passes.
 
 ```bash
 npm test -- token-storage.test.ts --runInBand
 ```
 
 These tests do not verify native device storage. A real-device save/read/remove
-smoke check, app-restart persistence verification, login/logout integration,
+smoke check, app-restart persistence verification, login/logout UI integration,
 expired-token handling, and automatic authorization headers remain pending.
 
 ## CI and merge requirements

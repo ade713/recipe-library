@@ -215,16 +215,19 @@ Recipe Library screen are verified on a physical Android phone. The temporary
 Check API button reaches FastAPI. API client header handling, HTTP/network
 errors, and 204 responses are covered by seven Jest tests. The SecureStore
 save/read/remove wrapper has seven mocked tests. Login and current-user API
-helpers have six mocked tests, for 20 passing mobile tests; TypeScript checking
-passes. Helpers remain separate from storage and UI. Native storage and restart-persistence verification,
-login/logout and authenticated API integration, richer API-error handling, and
-functional screens remain pending.
+helpers have six mocked tests. Sign-in and local sign-out coordination have six
+mocked tests, for 26 passing mobile tests; TypeScript checking passes. Sign-in
+saves only after profile lookup succeeds, and local sign-out requires no backend
+request. Native storage and restart-persistence verification, authentication UI
+state, session restoration, broader authenticated API integration, richer
+API-error handling, and functional screens remain pending.
 
 CI checkpoint complete: PR #41 is merged. Mobile CI runs npm ci, Jest, and tsc;
 both backend and mobile workflows passed on GitHub. Verified main-branch
 protection requires both checks and up-to-date branches, including for
-administrators. Next: authentication session orchestration, keeping UI and
-native storage verification as explicit follow-up checkpoints.
+administrators. Next: structured API errors and session restoration, keeping UI
+and native storage verification as explicit follow-up checkpoints. Restoration
+must not erase stored credentials merely because the device is offline.
 
 | Day | Work |
 | --- | --- |
