@@ -89,8 +89,33 @@ Use `npm run test:watch` during development. Jest uses the jest-expo preset;
 client tests mock fetch rather than calling the backend. Seven tests cover JSON
 responses, default/preserved headers, HTTP errors, network errors, and 204
 responses. Each JSON mock creates a fresh Response; spies are restored between
-tests. Authenticated API integration and richer API-error handling remain
+tests. Authentication flow integration and richer API-error handling remain
 separate follow-up work.
+
+## Authentication API helpers
+
+`src/types/auth.ts` defines LoginRequest, TokenResponse, and UserResponse to
+match backend JSON, including snake_case token fields and string user IDs.
+These TypeScript types do not validate responses at runtime.
+
+`src/api/auth.ts` provides:
+
+- `login(payload)`: POST credentials as JSON to `/auth/login` and return the
+  token response without storing it.
+- `getCurrentUser(token)`: GET `/auth/me` with the supplied Bearer token and
+  return the user profile without reading SecureStore.
+
+Both helpers reject unexpected undefined responses and propagate API client
+failures. The caller will coordinate token storage and authentication state;
+the backend validates tokens. Six tests mock apiFetch to cover successful
+requests, empty responses, and failures for both helpers.
+
+```bash
+npm test -- auth.test.ts --runInBand
+```
+
+Login screens, registration, logout orchestration, and session restoration are
+not implemented. These helper tests do not establish end-to-end authentication.
 
 ## Secure token storage
 
@@ -108,7 +133,8 @@ environment variables.
 
 The SecureStore dependency and Expo config plugin are registered. Seven mocked
 storage tests cover saving, reading, absence, removal, and failures for each
-operation. Together with the client tests, the mobile suite contains 14 tests.
+operation. Together with seven client tests and six auth-helper tests, the
+mobile suite contains 20 passing tests; TypeScript checking also passes.
 
 ```bash
 npm test -- token-storage.test.ts --runInBand
@@ -117,6 +143,15 @@ npm test -- token-storage.test.ts --runInBand
 These tests do not verify native device storage. A real-device save/read/remove
 smoke check, app-restart persistence verification, login/logout integration,
 expired-token handling, and automatic authorization headers remain pending.
+
+## Next checkpoint: mobile CI and merge requirements
+
+After the authentication-helper PR, add a focused GitHub Actions PR running
+`npm ci`, Jest, and `tsc --noEmit` for mobile. Then configure the main-branch
+ruleset or branch protection to require both backend and mobile checks before
+merging, once the mobile check has run successfully. A workflow alone does not
+enforce a merge restriction. This work is planned, not yet configured or verified,
+and precedes further authentication integration.
 
 ## Dependency follow-up
 
