@@ -217,19 +217,21 @@ errors, and 204 responses are covered by eight Jest tests, including 401/500
 cases. HTTP failures expose ApiError.status; network errors remain unchanged.
 One additional test covers the ApiError class. The SecureStore
 save/read/remove wrapper has seven mocked tests. Login and current-user API
-helpers have six mocked tests. Sign-in and local sign-out coordination have six
-mocked tests, for 28 passing mobile tests; TypeScript checking passes. Sign-in
+helpers have six mocked tests. Sign-in, local sign-out, and session restoration have
+thirteen mocked tests, for 35 passing mobile tests; TypeScript checking passes. Sign-in
 saves only after profile lookup succeeds, and local sign-out requires no backend
 request. Native storage and restart-persistence verification, authentication UI
-state, session restoration, broader authenticated API integration, server
+state, startup restoration integration, broader authenticated API integration, server
 error-body parsing, and functional screens remain pending.
 
 CI checkpoint complete: PR #41 is merged. Mobile CI runs npm ci, Jest, and tsc;
 both backend and mobile workflows passed on GitHub. Verified main-branch
 protection requires both checks and up-to-date branches, including for
-administrators. Next: session restoration using structured API errors, keeping UI
-and native storage verification as explicit follow-up checkpoints. Restoration
-must not erase stored credentials merely because the device is offline.
+administrators. Service-level restoration is implemented: no token returns null,
+a profile 401 removes the token, and network/server errors preserve credentials.
+Storage-read and cleanup errors propagate. Next: React authentication state,
+including startup restoration and error/retry handling. Native storage and
+restart-persistence verification remain explicit follow-up checkpoints.
 
 | Day | Work |
 | --- | --- |

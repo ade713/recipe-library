@@ -1,7 +1,8 @@
 import * as authApi from "../../api/auth";
 import * as tokenStorage from "../token-storage";
-import { signIn, signOut } from "../session";
+import { restoreSession, signIn, signOut } from "../session";
 import type { LoginRequest, TokenResponse, UserResponse } from "../../types/auth";
+import { ApiError } from "@/api/errors";
 
 const TEST_EMAIL = "test@example.com";
 const TEST_PASSWORD = "test-password";
@@ -95,5 +96,73 @@ describe("signOut", () => {
     jest.spyOn(tokenStorage, "removeAccessToken").mockRejectedValue(error);
 
     await expect(signOut()).rejects.toBe(error);
+  });
+});
+
+describe("restoreSession", () => {
+  it("returns null without fetching a user when no token is stored", async () => {
+    const getMock = jest.spyOn(tokenStorage, "getAccessToken").mockResolvedValue(null);
+    const userMock = jest.spyOn(authApi, "getCurrentUser").mockRejectedValue(new Error("Unexpected profile request"));
+
+    await expect(restoreSession()).resolves.toBe(null);
+    expect(getMock).toHaveBeenCalledTimes(1);
+    expect(userMock).not.toHaveBeenCalled();
+  });
+
+  it("returns the user associated with the stored token", async () => {
+    const profile = makeCurrentUser();
+
+    jest.spyOn(tokenStorage, "getAccessToken").mockResolvedValue(TEST_ACCESS_TOKEN);
+    const userMock = jest.spyOn(authApi, "getCurrentUser").mockResolvedValue(profile);
+
+    await expect(restoreSession()).resolves.toBe(profile);
+    expect(userMock).toHaveBeenCalledWith(TEST_ACCESS_TOKEN);
+  });
+
+  it("removes the rejected token and returns null on HTTP 401", async () => {
+    const error = new ApiError(401);
+
+    jest.spyOn(tokenStorage, "getAccessToken").mockResolvedValue(TEST_ACCESS_TOKEN);
+    jest.spyOn(authApi, "getCurrentUser").mockRejectedValue(error);
+    const removeMock = jest.spyOn(tokenStorage, "removeAccessToken").mockResolvedValue(undefined);
+
+    await expect(restoreSession()).resolves.toBe(null);
+    expect(removeMock).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ["network failure", () => new TypeError("Network request failed")],
+    ["server failure", () => new ApiError(500)],
+  ] as const)("preserves the token on %s", async (_label, makeError) => {
+    const error = makeError();
+
+    jest.spyOn(tokenStorage, "getAccessToken").mockResolvedValue(TEST_ACCESS_TOKEN);
+    jest.spyOn(authApi, "getCurrentUser").mockRejectedValue(error);
+    const removeMock = jest.spyOn(tokenStorage, "removeAccessToken").mockResolvedValue(undefined);
+
+    await expect(restoreSession()).rejects.toBe(error);
+    expect(removeMock).not.toHaveBeenCalled();
+  });
+
+  it("propagates storage read failures without fetching or removing", async () => {
+    const error = new Error("Secure storage unavailable");
+
+    jest.spyOn(tokenStorage, "getAccessToken").mockRejectedValue(error);
+    const userMock = jest.spyOn(authApi, "getCurrentUser").mockResolvedValue(makeCurrentUser());
+    const removeMock = jest.spyOn(tokenStorage, "removeAccessToken").mockResolvedValue(undefined);
+
+    await expect(restoreSession()).rejects.toBe(error);
+    expect(userMock).not.toHaveBeenCalled();
+    expect(removeMock).not.toHaveBeenCalled();
+  });
+
+  it("propagates cleanup failure when a rejected token cannot be removed", async () => {
+    const storageError = new Error("Secure storage unavailable");
+
+    jest.spyOn(tokenStorage, "getAccessToken").mockResolvedValue(TEST_ACCESS_TOKEN);
+    jest.spyOn(authApi, "getCurrentUser").mockRejectedValue(new ApiError(401));
+    jest.spyOn(tokenStorage, "removeAccessToken").mockRejectedValue(storageError);
+
+    await expect(restoreSession()).rejects.toBe(storageError);
   });
 });
