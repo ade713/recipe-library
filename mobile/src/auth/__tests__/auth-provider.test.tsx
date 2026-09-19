@@ -65,4 +65,8 @@ describe("AuthProvider", () => {
     expect(screen.getByText("Unable to restore session. Please retry.")).toBeTruthy();
     expect(screen.queryByText("Internal storage details")).toBeNull();
   });
+
+  it("rejects consumers rendered outside AuthProvider", async () => {
+    await expect(render(<AuthStatus />)).rejects.toThrow("useAuth must be used within AuthProvider");
+  });
 });
