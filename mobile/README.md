@@ -163,8 +163,16 @@ restoration actions without calling the API or storage.
 The provider starts restoration on mount, dispatches the result, and exposes a
 safe error message instead of raw dependency errors. Its effect cleanup guard
 prevents dispatch after cleanup; it does not cancel the underlying request.
-Using useAuth outside AuthProvider throws a clear error. Context currently
-exposes state only, not raw dispatch or sign-in/sign-out/retry operations.
+Using useAuth outside AuthProvider throws a clear error. Its return value is now
+`{ state, retryRestoration }`; consumers read state with `const { state } = useAuth()`.
+Raw dispatch and sign-in/sign-out operations are not exposed.
+
+`retryRestoration()` dispatches restoreStarted to show loading and clear the
+previous error, then increments an attempt counter using a functional state
+update. The counter is an effect dependency, so changing it cleans up the prior
+effect and starts another restoration attempt. Success updates the auth state;
+failure exposes the same safe message and permits another retry. The cleanup
+guard suppresses late dispatch, not network or storage side effects.
 
 `app/_layout.tsx` wraps the navigation stack in AuthProvider. The user verified
 that the app still launches in Expo Go without a runtime error. This is a launch
@@ -172,9 +180,12 @@ smoke check, not verification of persisted-token restoration or error recovery.
 The provider does not protect routes, and app screens do not yet consume its
 state. Retry controls and provider sign-in/sign-out actions remain follow-up work.
 
-Four reducer tests cover state transitions; five component tests cover initial
+Four reducer tests cover state transitions; eight component tests cover initial
 loading, signed-out and authenticated results, safe error messaging, and the
-missing-provider guard. React Native Testing Library supports the component tests.
+missing-provider guard, successful retry, pending-retry loading/error clearing,
+and failed retry without raw error leakage. Retry controls currently exist only
+in the test consumer, not the app UI. React Native Testing Library supports the
+component tests.
 
 ```bash
 npm test -- auth-provider.test.tsx --runInBand
@@ -198,8 +209,8 @@ environment variables.
 The SecureStore dependency and Expo config plugin are registered. Seven mocked
 storage tests cover saving, reading, absence, removal, and failures for each
 operation. Together with eight client tests, one ApiError test, six auth-helper
-tests, thirteen session tests, four reducer tests, and five provider tests, the
-mobile suite contains 44 passing tests; TypeScript checking also passes.
+tests, thirteen session tests, four reducer tests, and eight provider tests, the
+mobile suite contains 47 passing tests; TypeScript checking also passes.
 
 ```bash
 npm test -- token-storage.test.ts --runInBand

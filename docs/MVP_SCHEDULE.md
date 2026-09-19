@@ -218,14 +218,17 @@ cases. HTTP failures expose ApiError.status; network errors remain unchanged.
 One additional test covers the ApiError class. The SecureStore
 save/read/remove wrapper has seven mocked tests. Login and current-user API
 helpers have six mocked tests. Sign-in, local sign-out, and session restoration have
-thirteen mocked tests. Four reducer and five provider tests bring the mobile
-suite to 44 passing tests; TypeScript checking passes. Sign-in
+thirteen mocked tests. Four reducer and eight provider tests bring the mobile
+suite to 47 passing tests; TypeScript checking passes. Sign-in
 saves only after profile lookup succeeds, and local sign-out requires no backend
 request. AuthProvider now wraps the navigation stack and runs restoration on
 mount, exposing loading, signedOut, authenticated, or safe error state. Expo Go
 launches without runtime errors; persisted-session restoration is not yet
-device-verified. Native storage and restart-persistence verification, provider
-retry/sign-in/sign-out actions, screen consumption, route protection, broader
+device-verified. Context now exposes state and retryRestoration; retry clears
+the old error, shows loading, and starts another effect-driven attempt. Tests
+cover successful, pending, and failed retries; the real app has no Retry control
+yet. Native storage and restart-persistence verification, provider
+sign-in/sign-out actions, screen consumption, route protection, broader
 authenticated API integration, server error-body parsing, and functional screens
 remain pending.
 
@@ -235,7 +238,7 @@ protection requires both checks and up-to-date branches, including for
 administrators. Service-level restoration is implemented: no token returns null,
 a profile 401 removes the token, and network/server errors preserve credentials.
 Storage-read and cleanup errors propagate. React authentication state and startup
-restoration wiring are implemented. Next: retry behavior and visible auth-state
+restoration wiring and provider retry behavior are implemented. Next: visible auth-state
 handling, followed by login/logout integration and route protection. Native
 storage and restart-persistence verification remain explicit follow-up checkpoints.
 
