@@ -110,16 +110,15 @@ These TypeScript types do not validate responses at runtime.
   return the user profile without reading SecureStore.
 
 Both helpers reject unexpected undefined responses and propagate API client
-failures. The session service coordinates sign-in and storage; UI authentication
-state remains future work, and
-the backend validates tokens. Six tests mock apiFetch to cover successful
+failures. The session service coordinates sign-in and storage; the provider
+exposes restoration state, and the backend validates tokens. Six tests mock apiFetch to cover successful
 requests, empty responses, and failures for both helpers.
 
 ```bash
 npm test -- auth.test.ts --runInBand
 ```
 
-Login screens, registration, and UI authentication state are
+Login screens, registration, and provider sign-in/sign-out actions are
 not implemented. These helper tests do not establish end-to-end authentication.
 
 ## Sign-in, local sign-out, and session restoration
@@ -131,8 +130,8 @@ not implemented. These helper tests do not establish end-to-end authentication.
   profile lookup and saving; profile failure prevents saving; storage failure
   rejects instead of reporting successful sign-in.
 - `signOut()` awaits local token removal without a backend request, allowing
-  local sign-out while offline. Removal failures propagate. The future auth
-  provider must clear UI state; this helper does not revoke backend tokens.
+  local sign-out while offline. Removal failures propagate. Provider integration
+  to clear UI state is still pending; this helper does not revoke backend tokens.
 - `restoreSession()` reads the stored token and returns null when none exists.
   Otherwise, it fetches the user. A profile lookup rejected with ApiError status
   401 triggers awaited token removal before returning null. Other errors
@@ -150,9 +149,37 @@ npm test -- session.test.ts --runInBand
 
 Restoration uses ApiError type/status checks, not message parsing. Network or
 server failure does not establish that credentials are invalid, so the stored
-token is preserved. This is service-level logic tested with mocks; startup
-invocation, loading/error/retry UI, and native restart-persistence verification
-remain pending. No user is restored on a failed profile request.
+token is preserved. The provider now invokes this service on mount. Visible
+loading/error/retry UI and native restart-persistence verification remain
+pending. No user is restored on a failed profile request.
+
+## React authentication state
+
+`src/auth/auth-state.ts` defines a discriminated union for loading, signedOut,
+authenticated (with a user), and error (with a message). Its pure reducer handles
+restoration actions without calling the API or storage.
+
+`src/auth/auth-provider.tsx` owns this state and exposes it through `useAuth()`.
+The provider starts restoration on mount, dispatches the result, and exposes a
+safe error message instead of raw dependency errors. Its effect cleanup guard
+prevents dispatch after cleanup; it does not cancel the underlying request.
+Using useAuth outside AuthProvider throws a clear error. Context currently
+exposes state only, not raw dispatch or sign-in/sign-out/retry operations.
+
+`app/_layout.tsx` wraps the navigation stack in AuthProvider. The user verified
+that the app still launches in Expo Go without a runtime error. This is a launch
+smoke check, not verification of persisted-token restoration or error recovery.
+The provider does not protect routes, and app screens do not yet consume its
+state. Retry controls and provider sign-in/sign-out actions remain follow-up work.
+
+Four reducer tests cover state transitions; five component tests cover initial
+loading, signed-out and authenticated results, safe error messaging, and the
+missing-provider guard. React Native Testing Library supports the component tests.
+
+```bash
+npm test -- auth-provider.test.tsx --runInBand
+npm test -- auth-state.test.ts --runInBand
+```
 
 ## Secure token storage
 
@@ -171,8 +198,8 @@ environment variables.
 The SecureStore dependency and Expo config plugin are registered. Seven mocked
 storage tests cover saving, reading, absence, removal, and failures for each
 operation. Together with eight client tests, one ApiError test, six auth-helper
-tests, and thirteen session tests, the mobile suite contains 35 passing tests; TypeScript checking
-also passes.
+tests, thirteen session tests, four reducer tests, and five provider tests, the
+mobile suite contains 44 passing tests; TypeScript checking also passes.
 
 ```bash
 npm test -- token-storage.test.ts --runInBand
