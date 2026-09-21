@@ -149,9 +149,9 @@ npm test -- session.test.ts --runInBand
 
 Restoration uses ApiError type/status checks, not message parsing. Network or
 server failure does not establish that credentials are invalid, so the stored
-token is preserved. The provider now invokes this service on mount. Visible
-loading/error/retry UI and native restart-persistence verification remain
-pending. No user is restored on a failed profile request.
+token is preserved. The provider invokes this service on mount, with visible
+loading/error/retry UI. Native restart-persistence verification remains pending.
+No user is restored on a failed profile request.
 
 ## React authentication state
 
@@ -174,22 +174,30 @@ effect and starts another restoration attempt. Success updates the auth state;
 failure exposes the same safe message and permits another retry. The cleanup
 guard suppresses late dispatch, not network or storage side effects.
 
-`app/_layout.tsx` wraps the navigation stack in AuthProvider. The user verified
-that the app still launches in Expo Go without a runtime error. This is a launch
-smoke check, not verification of persisted-token restoration or error recovery.
-The provider does not protect routes, and app screens do not yet consume its
-state. Retry controls and provider sign-in/sign-out actions remain follow-up work.
+`app/_layout.tsx` nests AuthProvider → AuthRestorationGate → Stack.
+The gate reads context and displays AuthRestorationStatus while loading or in
+error. The status component shows a progress indicator or the safe error message
+and a Retry button wired to retryRestoration. Both signedOut and authenticated
+states show children; this gate waits for restoration, not authentication, and
+does not protect routes. Provider sign-in/sign-out actions remain follow-up work.
+
+The user verified that the app launches on the Android phone and Check API
+returns OK after putting the phone and Mac on the same Wi-Fi. This smoke check
+does not verify persisted-token restoration or device error/retry recovery.
 
 Four reducer tests cover state transitions; eight component tests cover initial
 loading, signed-out and authenticated results, safe error messaging, and the
 missing-provider guard, successful retry, pending-retry loading/error clearing,
-and failed retry without raw error leakage. Retry controls currently exist only
-in the test consumer, not the app UI. React Native Testing Library supports the
-component tests.
+and failed retry without raw error leakage. Four status-component tests cover
+progress, error/retry, and both settled states. Four gate tests use the real
+provider with mocked restoration to cover hidden content while loading,
+failed-restoration retry recovery, and both settled states. React Native Testing
+Library supports the component tests.
 
 ```bash
 npm test -- auth-provider.test.tsx --runInBand
 npm test -- auth-state.test.ts --runInBand
+npm test -- auth-restoration-status.test.tsx auth-restoration-gate.test.tsx --runInBand
 ```
 
 ## Secure token storage
@@ -209,8 +217,9 @@ environment variables.
 The SecureStore dependency and Expo config plugin are registered. Seven mocked
 storage tests cover saving, reading, absence, removal, and failures for each
 operation. Together with eight client tests, one ApiError test, six auth-helper
-tests, thirteen session tests, four reducer tests, and eight provider tests, the
-mobile suite contains 47 passing tests; TypeScript checking also passes.
+tests, thirteen session tests, four reducer tests, eight provider tests, four
+status tests, and four gate tests, the mobile suite contains 55 passing tests
+across nine suites; TypeScript checking also passes.
 
 ```bash
 npm test -- token-storage.test.ts --runInBand
@@ -218,7 +227,7 @@ npm test -- token-storage.test.ts --runInBand
 
 These tests do not verify native device storage. A real-device save/read/remove
 smoke check, app-restart persistence verification, login/logout UI integration,
-startup restoration UI integration, handling expiry during later API requests,
+device restoration error/retry verification, handling expiry during later API requests,
 and automatic authorization headers remain pending.
 
 ## CI and merge requirements
