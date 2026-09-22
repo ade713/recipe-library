@@ -13,16 +13,26 @@ const TEST_LOGIN_PAYLOAD: LoginRequest = {
 };
 const NETWORK_ERROR_MESSAGE = "Network unavailable";
 const SESSION_ERROR_MESSAGE = "Unable to restore session. Please retry.";
+const STORAGE_ERROR_MESSAGE = "Secure storage unavailable";
 
+const makeUserResponse = (): UserResponse => ({
+  id: TEST_USER_ID,
+  email: TEST_EMAIL,
+});
 const AuthStatus = () => {
-  const { state, retryRestoration, signIn } = useAuth();
+  const { state, retryRestoration, signIn, signOut } = useAuth();
 
   return (
     <>
       <Text>{state.status}</Text>
       {state.status === "error" && <Text>{state.message}</Text>}
       {state.status === "error" && <Button title='Retry' onPress={retryRestoration} />}
-      {state.status === "authenticated" && <Text>{state.user.email}</Text>}
+      {state.status === "authenticated" && (
+        <>
+          <Text>{state.user.email}</Text>
+          <Button title='Sign out' onPress={() => signOut()} />
+        </>
+      )}
       {state.status === "signedOut" && <Button title='Sign in' onPress={() => signIn(TEST_LOGIN_PAYLOAD)} />}
     </>
   );
@@ -54,10 +64,7 @@ describe("AuthProvider", () => {
   });
 
   it("exposes the restored user to consumers", async () => {
-    const user = {
-      id: TEST_USER_ID,
-      email: TEST_EMAIL,
-    };
+    const user = makeUserResponse();
 
     jest.spyOn(session, "restoreSession").mockResolvedValue(user);
 
@@ -134,10 +141,7 @@ describe("AuthProvider", () => {
   });
 
   it("exposes the authenticated user after sign-in succeeds", async () => {
-    const user: UserResponse = {
-      id: TEST_USER_ID,
-      email: TEST_EMAIL,
-    };
+    const user = makeUserResponse();
 
     jest.spyOn(session, "restoreSession").mockResolvedValue(null);
     const signInMock = jest.spyOn(session, "signIn").mockResolvedValue(user);
@@ -185,5 +189,59 @@ describe("AuthProvider", () => {
 
     expect(signInMock).toHaveBeenCalledWith(TEST_LOGIN_PAYLOAD);
     expect(result.current.state.status).toBe("signedOut");
+  });
+
+  it("clears the authenticated user after sign-out succeeds", async () => {
+    const user = makeUserResponse();
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(user);
+    const signOutMock = jest.spyOn(session, "signOut").mockResolvedValue(undefined);
+
+    await renderAuthStatus();
+
+    await fireEvent.press(await screen.findByRole("button", { name: "Sign out" }));
+
+    expect(await screen.findByText("signedOut")).toBeTruthy();
+    expect(screen.queryByText(user.email)).toBeNull();
+    expect(signOutMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("preserves the authenticated user and propagates sign-out failures", async () => {
+    const user = makeUserResponse();
+    const error = new Error(STORAGE_ERROR_MESSAGE);
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(user);
+    jest.spyOn(session, "signOut").mockRejectedValue(error);
+
+    const { result } = await renderHook(() => useAuth(), {
+      wrapper: AuthProvider,
+    });
+
+    await waitFor(() => {
+      expect(result.current.state.status).toBe("authenticated");
+    });
+
+    await expect(result.current.signOut()).rejects.toBe(error);
+    expect(result.current.state).toEqual({ status: "authenticated", user });
+  });
+
+  it("keeps the authenticated user while sign-out is pending", async () => {
+    const user = makeUserResponse();
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(user);
+    const signOutMock = jest.spyOn(session, "signOut").mockImplementation(() => new Promise(() => {}));
+
+    const { result } = await renderHook(() => useAuth(), {
+      wrapper: AuthProvider,
+    });
+
+    await waitFor(() => {
+      expect(result.current.state.status).toBe("authenticated");
+    });
+
+    void result.current.signOut();
+
+    expect(signOutMock).toHaveBeenCalledTimes(1);
+    expect(result.current.state).toEqual({ status: "authenticated", user });
   });
 });
