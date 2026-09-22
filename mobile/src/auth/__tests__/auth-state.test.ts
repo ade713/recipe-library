@@ -4,6 +4,11 @@ import { authReducer } from "../auth-state";
 const TEST_USER_ID = "test-user-id";
 const TEST_EMAIL = "test@example.com";
 
+const makeUserResponse = (): UserResponse => ({
+  id: TEST_USER_ID,
+  email: TEST_EMAIL,
+});
+
 describe("authReducer", () => {
   it("clears the previous error when restoration starts", () => {
     const result = authReducer({ status: "error", message: "Unable to restore session" }, { type: "restoreStarted" });
@@ -12,10 +17,7 @@ describe("authReducer", () => {
   });
 
   it("sets authenticated state when restoration returns a user", () => {
-    const user: UserResponse = {
-      id: TEST_USER_ID,
-      email: TEST_EMAIL,
-    };
+    const user = makeUserResponse();
     const result = authReducer({ status: "loading" }, { type: "restoreSucceeded", user });
 
     expect(result).toEqual({ status: "authenticated", user });
@@ -37,12 +39,16 @@ describe("authReducer", () => {
   });
 
   it("sets authenticated state when sign-in succeeds", () => {
-    const user: UserResponse = {
-      id: TEST_USER_ID,
-      email: TEST_EMAIL,
-    };
+    const user = makeUserResponse();
     const result = authReducer({ status: "signedOut" }, { type: "signInSucceeded", user });
 
     expect(result).toEqual({ status: "authenticated", user });
+  });
+
+  it("clears the authenticated user when sign-out succeeds", () => {
+    const user = makeUserResponse();
+    const result = authReducer({ status: "authenticated", user }, { type: "signOutSucceeded" });
+
+    expect(result).toEqual({ status: "signedOut" });
   });
 });

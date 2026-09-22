@@ -218,14 +218,14 @@ cases. HTTP failures expose ApiError.status; network errors remain unchanged.
 One additional test covers the ApiError class. The SecureStore
 save/read/remove wrapper has seven mocked tests. Login and current-user API
 helpers have six mocked tests. Sign-in, local sign-out, and session restoration have
-thirteen mocked tests. Five reducer, eleven provider, four status-component, and
-four restoration-gate tests bring the mobile suite to 59 passing tests across
+thirteen mocked tests. Six reducer, fourteen provider, four status-component, and
+four restoration-gate tests bring the mobile suite to 63 passing tests across
 nine suites; TypeScript checking passes. Sign-in
 saves only after profile lookup succeeds, and local sign-out requires no backend
 request. AuthProvider now wraps the navigation stack and runs restoration on
 mount, exposing loading, signedOut, authenticated, or safe error state. Expo Go
 launches without runtime errors; persisted-session restoration is not yet
-device-verified. Context now exposes state, retryRestoration, and signIn. Provider
+device-verified. Context now exposes state, retryRestoration, signIn, and signOut. Provider
 signIn awaits authentication, profile lookup, and token storage through the
 session service before dispatching signInSucceeded. Pending and failed sign-in
 leave signed-out state unchanged; errors propagate for the future login screen
@@ -238,8 +238,8 @@ UI with a Retry button, then shows children for signedOut or authenticated; it
 does not protect routes. Gate tests cover loading, retry recovery, and both
 settled states. Android launch and Check API success were verified after phone
 and Mac joined the same Wi-Fi. Native storage and restart-persistence
-verification, device error/retry verification, provider
-sign-out, login-screen integration, route protection, broader
+verification, device error/retry verification,
+login/logout UI integration, route protection, broader
 authenticated API integration, server error-body parsing, and functional screens
 remain pending.
 
@@ -250,7 +250,11 @@ administrators. Service-level restoration is implemented: no token returns null,
 a profile 401 removes the token, and network/server errors preserve credentials.
 Storage-read and cleanup errors propagate. React authentication state and startup
 restoration wiring, visible loading/error/retry UI, and provider retry behavior
-and provider sign-in are implemented. Next: provider sign-out, login/logout UI
+and provider sign-in/sign-out are implemented. Provider sign-out awaits local
+token removal before clearing the user; pending or failed removal preserves the
+authenticated state, and failures propagate. Success, failure, and pending
+sign-out are tested. Local removal does not revoke backend tokens.
+Next: login/logout UI
 integration, and route protection. Native
 storage and restart-persistence verification remain explicit follow-up checkpoints.
 

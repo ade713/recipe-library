@@ -118,7 +118,7 @@ requests, empty responses, and failures for both helpers.
 npm test -- auth.test.ts --runInBand
 ```
 
-Login screens, registration, and the provider sign-out action are
+Login screens and registration are
 not implemented. These helper tests do not establish end-to-end authentication.
 
 ## Sign-in, local sign-out, and session restoration
@@ -130,8 +130,8 @@ not implemented. These helper tests do not establish end-to-end authentication.
   profile lookup and saving; profile failure prevents saving; storage failure
   rejects instead of reporting successful sign-in.
 - `signOut()` awaits local token removal without a backend request, allowing
-  local sign-out while offline. Removal failures propagate. Provider integration
-  to clear UI state is still pending; this helper does not revoke backend tokens.
+  local sign-out while offline. Removal failures propagate. The provider now
+  clears auth state after this helper succeeds; it does not revoke backend tokens.
 - `restoreSession()` reads the stored token and returns null when none exists.
   Otherwise, it fetches the user. A profile lookup rejected with ApiError status
   401 triggers awaited token removal before returning null. Other errors
@@ -157,15 +157,22 @@ No user is restored on a failed profile request.
 
 `src/auth/auth-state.ts` defines a discriminated union for loading, signedOut,
 authenticated (with a user), and error (with a message). Its pure reducer handles
-restoration and signInSucceeded actions without calling the API or storage.
+restoration, signInSucceeded, and signOutSucceeded actions without calling the API or storage.
 
 `src/auth/auth-provider.tsx` owns this state and exposes it through `useAuth()`.
 The provider starts restoration on mount, dispatches the result, and exposes a
 safe error message instead of raw dependency errors. Its effect cleanup guard
 prevents dispatch after cleanup; it does not cancel the underlying request.
 Using useAuth outside AuthProvider throws a clear error. Its return value is now
-`{ state, retryRestoration, signIn }`; consumers read state with `const { state } = useAuth()`.
-Raw dispatch and sign-out are not exposed.
+`{ state, retryRestoration, signIn, signOut }`; consumers read state with `const { state } = useAuth()`.
+Raw dispatch is not exposed.
+
+The provider's `signOut(): Promise<void>` awaits the session service's local
+token removal before dispatching signOutSucceeded. The reducer returns a fresh
+signedOut state without the previous user. Pending or failed removal preserves
+the authenticated state; failures propagate for the caller to handle. No backend
+request is made, and local removal does not revoke a copied token on the server.
+The app's sign-out control is not connected yet; tests use a consumer button.
 
 The provider's `signIn(payload): Promise<void>` awaits the session service before
 dispatching signInSucceeded with the returned user. Authentication, profile lookup,
@@ -186,18 +193,18 @@ The gate reads context and displays AuthRestorationStatus while loading or in
 error. The status component shows a progress indicator or the safe error message
 and a Retry button wired to retryRestoration. Both signedOut and authenticated
 states show children; this gate waits for restoration, not authentication, and
-does not protect routes. Provider sign-out and login-screen integration remain follow-up work.
+does not protect routes. Login/logout UI integration remains follow-up work.
 
 The user verified that the app launches on the Android phone and Check API
 returns OK after putting the phone and Mac on the same Wi-Fi. This smoke check
 does not verify persisted-token restoration or device error/retry recovery.
 
-Five reducer tests cover state transitions; eleven provider tests cover initial
+Six reducer tests cover state transitions; fourteen provider tests cover initial
 loading, signed-out and authenticated results, safe error messaging, and the
 missing-provider guard, successful retry, pending-retry loading/error clearing,
 and failed retry without raw error leakage, plus successful, failed, and pending
-sign-in. Failure and pending tests use renderHook to exercise the context method
-directly; the success test exercises a test consumer's button. Repeated test
+sign-in and sign-out. Failure and pending tests use renderHook to exercise the context method
+directly; success tests exercise a test consumer's buttons. Repeated test
 strings are kept in file-local constants independent of production messages.
 Four status-component tests cover
 progress, error/retry, and both settled states. Four gate tests use the real
@@ -228,8 +235,8 @@ environment variables.
 The SecureStore dependency and Expo config plugin are registered. Seven mocked
 storage tests cover saving, reading, absence, removal, and failures for each
 operation. Together with eight client tests, one ApiError test, six auth-helper
-tests, thirteen session tests, five reducer tests, eleven provider tests, four
-status tests, and four gate tests, the mobile suite contains 59 passing tests
+tests, thirteen session tests, six reducer tests, fourteen provider tests, four
+status tests, and four gate tests, the mobile suite contains 63 passing tests
 across nine suites; TypeScript checking also passes.
 
 ```bash

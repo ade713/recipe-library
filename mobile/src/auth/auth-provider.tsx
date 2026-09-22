@@ -2,11 +2,12 @@ import { createContext, useContext, useEffect, useReducer, useState } from "reac
 import type { PropsWithChildren } from "react";
 import type { LoginRequest } from "@/types/auth";
 import { authReducer } from "./auth-state";
-import { restoreSession, signIn as signInSession } from "./session";
+import { restoreSession, signIn as signInSession, signOut as signOutSession } from "./session";
 import type { AuthState } from "./auth-state";
 
 type AuthContextValue = {
   signIn: (payload: LoginRequest) => Promise<void>;
+  signOut: () => Promise<void>;
   state: AuthState;
   retryRestoration: () => void;
 };
@@ -28,6 +29,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
     authDispatch({
       type: "signInSucceeded",
       user,
+    });
+  };
+
+  const signOut = async (): Promise<void> => {
+    await signOutSession();
+    authDispatch({
+      type: "signOutSucceeded",
     });
   };
 
@@ -58,7 +66,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
     };
   }, [restorationAttempt]);
 
-  return <AuthContext.Provider value={{ state: authState, retryRestoration, signIn }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ state: authState, retryRestoration, signIn, signOut }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 /** Read authentication state from the surrounding provider. */
