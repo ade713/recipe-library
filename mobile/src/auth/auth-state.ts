@@ -9,7 +9,8 @@ export type AuthState =
 export type AuthAction =
   | { type: "restoreStarted" }
   | { type: "restoreSucceeded"; user: UserResponse | null }
-  | { type: "restoreFailed"; message: string };
+  | { type: "restoreFailed"; message: string }
+  | { type: "signInSucceeded"; user: UserResponse };
 
 /** Return the next authentication state for an action. */
 export function authReducer(state: AuthState, action: AuthAction): AuthState {
@@ -29,6 +30,13 @@ export function authReducer(state: AuthState, action: AuthAction): AuthState {
     return {
       status: "error",
       message: action.message,
+    };
+  }
+
+  if (action.type === "signInSucceeded") {
+    return {
+      status: "authenticated",
+      user: action.user,
     };
   }
 

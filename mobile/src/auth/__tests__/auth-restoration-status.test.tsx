@@ -4,6 +4,7 @@ import type { AuthState } from "../auth-state";
 
 const TEST_USER_ID = "test-user-id";
 const TEST_EMAIL = "test@example.com";
+const ERROR_MESSAGE = "Unable to restore session. Please retry.";
 
 const settledStates: AuthState[] = [
   { status: "signedOut" },
@@ -30,12 +31,12 @@ describe("AuthRestorationStatus", () => {
     await renderAuthRestorationStatus({
       state: {
         status: "error",
-        message: "Unable to restore session. Please retry.",
+        message: ERROR_MESSAGE,
       },
       onRetry,
     });
 
-    expect(screen.getByText("Unable to restore session. Please retry.")).toBeTruthy();
+    expect(screen.getByText(ERROR_MESSAGE)).toBeTruthy();
 
     await fireEvent.press(screen.getByRole("button", { name: "Retry" }));
     expect(onRetry).toHaveBeenCalledTimes(1);

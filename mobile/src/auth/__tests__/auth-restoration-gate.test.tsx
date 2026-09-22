@@ -6,12 +6,14 @@ import { AuthProvider } from "../auth-provider";
 
 const TEST_USER_ID = "test-user-id";
 const TEST_EMAIL = "test@example.com";
+const APP_CONTENT = "App content";
+const RESTORING_MESSAGE = "Restoring session...";
 
 const renderAuthRestorationGate = async () => {
   await render(
     <AuthProvider>
       <AuthRestorationGate>
-        <Text>App content</Text>
+        <Text>{APP_CONTENT}</Text>
       </AuthRestorationGate>
     </AuthProvider>,
   );
@@ -23,8 +25,8 @@ describe("AuthRestorationGate", () => {
 
     await renderAuthRestorationGate();
 
-    expect(screen.getByText("Restoring session...")).toBeTruthy();
-    expect(screen.queryByText("App content")).toBeNull();
+    expect(screen.getByText(RESTORING_MESSAGE)).toBeTruthy();
+    expect(screen.queryByText(APP_CONTENT)).toBeNull();
   });
 
   it("shows app content after retrying a failed restoration", async () => {
@@ -36,11 +38,11 @@ describe("AuthRestorationGate", () => {
     await renderAuthRestorationGate();
 
     expect(await screen.findByText(expectedMessage)).toBeTruthy();
-    expect(screen.queryByText("App content")).toBeNull();
+    expect(screen.queryByText(APP_CONTENT)).toBeNull();
 
     await fireEvent.press(screen.getByRole("button", { name: "Retry" }));
 
-    expect(await screen.findByText("App content")).toBeTruthy();
+    expect(await screen.findByText(APP_CONTENT)).toBeTruthy();
     expect(screen.queryByText(expectedMessage)).toBeNull();
     expect(restoreMock).toHaveBeenCalledTimes(2);
   });
@@ -56,7 +58,7 @@ describe("AuthRestorationGate", () => {
 
     await renderAuthRestorationGate();
 
-    expect(await screen.findByText("App content")).toBeTruthy();
-    expect(screen.queryByText("Restoring session...")).toBeNull();
+    expect(await screen.findByText(APP_CONTENT)).toBeTruthy();
+    expect(screen.queryByText(RESTORING_MESSAGE)).toBeNull();
   });
 });
