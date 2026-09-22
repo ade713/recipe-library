@@ -118,7 +118,7 @@ requests, empty responses, and failures for both helpers.
 npm test -- auth.test.ts --runInBand
 ```
 
-Login screens, registration, and provider sign-in/sign-out actions are
+Login screens, registration, and the provider sign-out action are
 not implemented. These helper tests do not establish end-to-end authentication.
 
 ## Sign-in, local sign-out, and session restoration
@@ -157,15 +157,22 @@ No user is restored on a failed profile request.
 
 `src/auth/auth-state.ts` defines a discriminated union for loading, signedOut,
 authenticated (with a user), and error (with a message). Its pure reducer handles
-restoration actions without calling the API or storage.
+restoration and signInSucceeded actions without calling the API or storage.
 
 `src/auth/auth-provider.tsx` owns this state and exposes it through `useAuth()`.
 The provider starts restoration on mount, dispatches the result, and exposes a
 safe error message instead of raw dependency errors. Its effect cleanup guard
 prevents dispatch after cleanup; it does not cancel the underlying request.
 Using useAuth outside AuthProvider throws a clear error. Its return value is now
-`{ state, retryRestoration }`; consumers read state with `const { state } = useAuth()`.
-Raw dispatch and sign-in/sign-out operations are not exposed.
+`{ state, retryRestoration, signIn }`; consumers read state with `const { state } = useAuth()`.
+Raw dispatch and sign-out are not exposed.
+
+The provider's `signIn(payload): Promise<void>` awaits the session service before
+dispatching signInSucceeded with the returned user. Authentication, profile lookup,
+and token storage must all succeed first. Pending or failed sign-in leaves a
+signed-out caller signed out; failures propagate to the caller. The future login
+screen will own submitting indicators and login-error feedback, rather than using
+the restoration error state and hiding the form behind the restoration gate.
 
 `retryRestoration()` dispatches restoreStarted to show loading and clear the
 previous error, then increments an attempt counter using a functional state
@@ -179,16 +186,20 @@ The gate reads context and displays AuthRestorationStatus while loading or in
 error. The status component shows a progress indicator or the safe error message
 and a Retry button wired to retryRestoration. Both signedOut and authenticated
 states show children; this gate waits for restoration, not authentication, and
-does not protect routes. Provider sign-in/sign-out actions remain follow-up work.
+does not protect routes. Provider sign-out and login-screen integration remain follow-up work.
 
 The user verified that the app launches on the Android phone and Check API
 returns OK after putting the phone and Mac on the same Wi-Fi. This smoke check
 does not verify persisted-token restoration or device error/retry recovery.
 
-Four reducer tests cover state transitions; eight component tests cover initial
+Five reducer tests cover state transitions; eleven provider tests cover initial
 loading, signed-out and authenticated results, safe error messaging, and the
 missing-provider guard, successful retry, pending-retry loading/error clearing,
-and failed retry without raw error leakage. Four status-component tests cover
+and failed retry without raw error leakage, plus successful, failed, and pending
+sign-in. Failure and pending tests use renderHook to exercise the context method
+directly; the success test exercises a test consumer's button. Repeated test
+strings are kept in file-local constants independent of production messages.
+Four status-component tests cover
 progress, error/retry, and both settled states. Four gate tests use the real
 provider with mocked restoration to cover hidden content while loading,
 failed-restoration retry recovery, and both settled states. React Native Testing
@@ -217,8 +228,8 @@ environment variables.
 The SecureStore dependency and Expo config plugin are registered. Seven mocked
 storage tests cover saving, reading, absence, removal, and failures for each
 operation. Together with eight client tests, one ApiError test, six auth-helper
-tests, thirteen session tests, four reducer tests, eight provider tests, four
-status tests, and four gate tests, the mobile suite contains 55 passing tests
+tests, thirteen session tests, five reducer tests, eleven provider tests, four
+status tests, and four gate tests, the mobile suite contains 59 passing tests
 across nine suites; TypeScript checking also passes.
 
 ```bash
