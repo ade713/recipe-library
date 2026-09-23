@@ -220,12 +220,13 @@ save/read/remove wrapper has seven mocked tests. Login and current-user API
 helpers have six mocked tests. Sign-in, local sign-out, and session restoration have
 thirteen mocked tests. Six reducer, fourteen provider, four status-component, and
 four restoration-gate tests, plus nine login-form tests, bring the mobile suite
-to 72 passing tests across ten suites; TypeScript checking passes. Sign-in
+plus one login-screen and three navigation tests, to 76 passing tests across
+twelve suites; TypeScript checking passes. Sign-in
 saves only after profile lookup succeeds, and local sign-out requires no backend
 request. AuthProvider now wraps the navigation stack and runs restoration on
 mount, exposing loading, signedOut, authenticated, or safe error state. Expo Go
-launches without runtime errors; persisted-session restoration is not yet
-device-verified. Context now exposes state, retryRestoration, signIn, and signOut. Provider
+launches without runtime errors; saved-session restoration after reopening is
+verified on Android. Context exposes state, retryRestoration, signIn, and signOut. Provider
 signIn awaits authentication, profile lookup, and token storage through the
 session service before dispatching signInSucceeded. Pending and failed sign-in
 leave signed-out state unchanged; errors propagate for the login form
@@ -233,13 +234,14 @@ to handle locally. Success, failure, and pending behavior are tested. Repeated
 test messages use file-local constants. Retry clears
 the old error, shows loading, and starts another effect-driven attempt. Tests
 cover successful, pending, and failed retries. The root layout now nests
-AuthProvider → AuthRestorationGate → Stack. The gate shows loading or safe error
+AuthProvider → AuthRestorationGate → AppNavigator → Stack. The gate shows loading or safe error
 UI with a Retry button, then shows children for signedOut or authenticated; it
-does not protect routes. Gate tests cover loading, retry recovery, and both
-settled states. Android launch and Check API success were verified after phone
-and Mac joined the same Wi-Fi. Native storage and restart-persistence
-verification, device error/retry verification,
-login/logout UI integration, route protection, broader
+does not itself protect routes. AppNavigator guards library/login by auth state.
+Gate tests cover loading, retry recovery, and both settled states. Android smoke
+checks passed for invalid credentials, login/profile HTTP 200, automatic library
+navigation, Back not returning to login, and restart restoration. LAN IP and
+Uvicorn binding were corrected for phone access. Device token-removal and
+restoration-error/retry verification, logout UI integration, broader
 authenticated API integration, server error-body parsing, and functional screens
 remain pending.
 
@@ -256,11 +258,12 @@ authenticated state, and failures propagate. Success, failure, and pending
 sign-out are tested. Local removal does not revoke backend tokens.
 The standalone LoginForm accepts an async callback and owns controlled inputs,
 missing-credential validation, pending submission protection, safe error feedback,
-and retry cleanup. Password whitespace is preserved. It is not connected to a
-route or AuthProvider yet, and Option C styling/device checks remain pending.
-Next: login-screen and logout UI
-integration, and route protection. Native
-storage and restart-persistence verification remain explicit follow-up checkpoints.
+and retry cleanup. Password whitespace is preserved. LoginScreen now connects
+the form to AuthProvider and is registered at /login. Protected navigation is
+tested without repeating all lower-level form scenarios.
+Next: logout UI, registration, and Option C styling. Device token-removal and
+restoration-error/retry checks remain pending. A focused test-overlap audit and
+explicit API timeout handling are follow-up work, not scope for this PR.
 
 | Day | Work |
 | --- | --- |

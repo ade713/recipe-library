@@ -3,7 +3,7 @@
 React Native / Expo SDK 57 app using TypeScript and Expo Router. The initial
 Recipe Library screen and stack navigation run on a physical Android phone.
 The temporary Check API button verifies FastAPI health connectivity. Other
-routes remain placeholders; authentication and recipe integration are not connected yet.
+recipe screens remain placeholders; login and protected navigation are connected.
 
 ## Local setup
 
@@ -52,6 +52,10 @@ devices. Keep the Mac and phone on the same Wi-Fi. Find the Mac's Wi-Fi IP in
 System Settings → Wi-Fi → Details → TCP/IP, then open
 `http://YOUR_MAC_IP:8000/api/v1/health` in the phone browser. Expect
 `{"status":"ok"}`. This checks API availability, not database connectivity.
+
+The Mac's LAN IP can change after switching networks. Update the local setting
+and reload Expo when it changes. Binding Uvicorn to 127.0.0.1 only permits local
+Mac access; use 0.0.0.0 for phone access, but use the LAN IP in the mobile URL.
 
 Create `mobile/.env.local` with the same IP:
 
@@ -118,8 +122,8 @@ requests, empty responses, and failures for both helpers.
 npm test -- auth.test.ts --runInBand
 ```
 
-A standalone login form is implemented, but login-screen integration and
-registration remain pending. These helper tests do not establish end-to-end authentication.
+The login form is connected through LoginScreen and AuthProvider. Registration
+remains pending. Helper tests alone do not establish end-to-end authentication.
 
 ## Sign-in, local sign-out, and session restoration
 
@@ -150,7 +154,7 @@ npm test -- session.test.ts --runInBand
 Restoration uses ApiError type/status checks, not message parsing. Network or
 server failure does not establish that credentials are invalid, so the stored
 token is preserved. The provider invokes this service on mount, with visible
-loading/error/retry UI. Native restart-persistence verification remains pending.
+loading/error/retry UI. Saved-session restoration after reopening was verified on Android.
 No user is restored on a failed profile request.
 
 ## React authentication state
@@ -188,16 +192,20 @@ effect and starts another restoration attempt. Success updates the auth state;
 failure exposes the same safe message and permits another retry. The cleanup
 guard suppresses late dispatch, not network or storage side effects.
 
-`app/_layout.tsx` nests AuthProvider → AuthRestorationGate → Stack.
+`app/_layout.tsx` nests AuthProvider → AuthRestorationGate → AppNavigator → Stack.
 The gate reads context and displays AuthRestorationStatus while loading or in
 error. The status component shows a progress indicator or the safe error message
 and a Retry button wired to retryRestoration. Both signedOut and authenticated
 states show children; this gate waits for restoration, not authentication, and
-does not protect routes. Login/logout UI integration remains follow-up work.
+does not itself protect routes. AppNavigator uses Stack.Protected to allow index
+only when authenticated and login only when signed out. Backend authentication
+and ownership checks remain required. Logout UI remains follow-up work.
 
-The user verified that the app launches on the Android phone and Check API
-returns OK after putting the phone and Mac on the same Wi-Fi. This smoke check
-does not verify persisted-token restoration or device error/retry recovery.
+On Android, the user verified invalid-credential feedback, successful login and
+profile requests (both HTTP 200), automatic library navigation, Android Back not
+returning to login, and saved-session restoration after closing and reopening.
+Health connectivity also passed after correcting the LAN IP/server binding.
+Device restoration-error/retry recovery and token removal remain unverified.
 
 Six reducer tests cover state transitions; fourteen provider tests cover initial
 loading, signed-out and authenticated results, safe error messaging, and the
@@ -234,9 +242,17 @@ submitting state after success or failure. This does not cancel pending requests
 
 Nine tests cover rendering, exact credentials, pending/duplicate-press behavior,
 safe error feedback, retry error clearing, three missing-field cases, and password
-whitespace preservation. The form is not mounted in a route or connected to
-AuthProvider yet. Screen integration, Option C styling, device/keyboard checks,
-and protected navigation remain follow-up work; registration is separate.
+whitespace preservation. LoginScreen passes useAuth().signIn to the form, and
+app/login.tsx re-exports the screen as the route default. One integration test
+checks this connection; three router tests cover signed-out library access,
+authenticated login access, and automatic navigation after sign-in. Option C
+styling and broader keyboard/accessibility checks remain pending.
+
+A focused test-overlap audit is deferred follow-up work, not a blocker for mobile
+progress. Keep behavior tests at their owning layer and integration tests focused
+on wiring and navigation rather than repeating every form/provider scenario.
+The API client still has no explicit request timeout; stalled-request handling
+is follow-up work identified during the phone connectivity check.
 
 ```bash
 npm test -- login-form.test.tsx --runInBand
@@ -261,14 +277,15 @@ storage tests cover saving, reading, absence, removal, and failures for each
 operation. Together with eight client tests, one ApiError test, six auth-helper
 tests, thirteen session tests, six reducer tests, fourteen provider tests, four
 status tests, four gate tests, and nine login-form tests, the mobile suite contains
-72 passing tests across ten suites; TypeScript checking also passes.
+76 passing tests across twelve suites, including one login-screen and three
+navigation tests; TypeScript checking also passes.
 
 ```bash
 npm test -- token-storage.test.ts --runInBand
 ```
 
-These tests do not verify native device storage. A real-device save/read/remove
-smoke check, app-restart persistence verification, login/logout UI integration,
+Mocked tests do not verify native device storage. Login and restart restoration
+were separately verified on Android. Device token-removal checks, logout UI,
 device restoration error/retry verification, handling expiry during later API requests,
 and automatic authorization headers remain pending.
 
