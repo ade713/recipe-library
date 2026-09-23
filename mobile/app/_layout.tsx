@@ -1,14 +1,12 @@
-import { Stack } from "expo-router";
 import { AuthProvider } from "@/auth/auth-provider";
 import { AuthRestorationGate } from "@/auth/auth-restoration-gate";
+import { AppNavigator } from "@/auth/app-navigator";
 
 export default function RootLayout() {
   return (
     <AuthProvider>
       <AuthRestorationGate>
-        <Stack>
-          <Stack.Screen name='index' options={{ title: "Recipe Library" }} />
-        </Stack>
+        <AppNavigator />
       </AuthRestorationGate>
     </AuthProvider>
   );
