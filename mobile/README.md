@@ -118,8 +118,8 @@ requests, empty responses, and failures for both helpers.
 npm test -- auth.test.ts --runInBand
 ```
 
-Login screens and registration are
-not implemented. These helper tests do not establish end-to-end authentication.
+A standalone login form is implemented, but login-screen integration and
+registration remain pending. These helper tests do not establish end-to-end authentication.
 
 ## Sign-in, local sign-out, and session restoration
 
@@ -177,8 +177,8 @@ The app's sign-out control is not connected yet; tests use a consumer button.
 The provider's `signIn(payload): Promise<void>` awaits the session service before
 dispatching signInSucceeded with the returned user. Authentication, profile lookup,
 and token storage must all succeed first. Pending or failed sign-in leaves a
-signed-out caller signed out; failures propagate to the caller. The future login
-screen will own submitting indicators and login-error feedback, rather than using
+signed-out caller signed out; failures propagate to the caller. The standalone login
+form owns submitting state and login-error feedback, rather than using
 the restoration error state and hiding the form behind the restoration gate.
 
 `retryRestoration()` dispatches restoreStarted to show loading and clear the
@@ -218,6 +218,30 @@ npm test -- auth-state.test.ts --runInBand
 npm test -- auth-restoration-status.test.tsx auth-restoration-gate.test.tsx --runInBand
 ```
 
+## Standalone login form
+
+`src/auth/login-form.tsx` accepts an async `onSubmit(LoginRequest)` callback;
+it does not call the API, store tokens, or navigate. Controlled email/password
+inputs have visible and accessibility labels, and the password input uses
+secureTextEntry. The form rejects empty or whitespace-only email and empty
+password before submission. Email trimming is only used for the blank check;
+submitted values, including password whitespace, are unchanged.
+
+While submitting, the button is disabled and the handler guards against another
+submission. Errors display a safe generic message rather than raw dependency
+details. Starting a valid retry clears the old message, and finally resets the
+submitting state after success or failure. This does not cancel pending requests.
+
+Nine tests cover rendering, exact credentials, pending/duplicate-press behavior,
+safe error feedback, retry error clearing, three missing-field cases, and password
+whitespace preservation. The form is not mounted in a route or connected to
+AuthProvider yet. Screen integration, Option C styling, device/keyboard checks,
+and protected navigation remain follow-up work; registration is separate.
+
+```bash
+npm test -- login-form.test.tsx --runInBand
+```
+
 ## Secure token storage
 
 `src/auth/token-storage.ts` wraps Expo SecureStore with three operations:
@@ -236,8 +260,8 @@ The SecureStore dependency and Expo config plugin are registered. Seven mocked
 storage tests cover saving, reading, absence, removal, and failures for each
 operation. Together with eight client tests, one ApiError test, six auth-helper
 tests, thirteen session tests, six reducer tests, fourteen provider tests, four
-status tests, and four gate tests, the mobile suite contains 63 passing tests
-across nine suites; TypeScript checking also passes.
+status tests, four gate tests, and nine login-form tests, the mobile suite contains
+72 passing tests across ten suites; TypeScript checking also passes.
 
 ```bash
 npm test -- token-storage.test.ts --runInBand
