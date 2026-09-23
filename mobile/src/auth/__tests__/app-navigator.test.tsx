@@ -2,9 +2,10 @@ import { renderRouter } from "expo-router/testing-library";
 import { fireEvent, screen } from "@testing-library/react-native";
 import { Text } from "react-native";
 import RootLayout from "../../../app/_layout";
+import RecipeLibraryScreen from "../../../app/index";
 import * as session from "../session";
-import type { UserResponse } from "@/types/auth";
 import { LoginScreen } from "../login-screen";
+import type { UserResponse } from "@/types/auth";
 
 const TEST_USER_ID = "test-user-id";
 const TEST_EMAIL = "test@example.com";
@@ -72,5 +73,26 @@ describe("AppNavigator", () => {
 
     expect(await screen.findByText(LIBRARY_TEXT)).toBeTruthy();
     expect(screen.queryByLabelText("Email")).toBeNull();
+  });
+
+  it("opens login after signing out from the library", async () => {
+    const user = makeUserResponse();
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(user);
+    const signOutMock = jest.spyOn(session, "signOut").mockResolvedValue(undefined);
+
+    await renderRouter(
+      {
+        _layout: RootLayout,
+        index: RecipeLibraryScreen,
+        login: () => <Text>{LOGIN_TEXT}</Text>,
+      },
+      { initialUrl: "/" },
+    );
+
+    await fireEvent.press(await screen.findByRole("button", { name: "Sign out" }));
+    expect(await screen.findByText(LOGIN_TEXT)).toBeTruthy();
+    expect(screen.queryByText("Your recipe library.")).toBeNull();
+    expect(signOutMock).toHaveBeenCalledTimes(1);
   });
 });
