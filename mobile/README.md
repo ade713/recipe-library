@@ -176,7 +176,13 @@ token removal before dispatching signOutSucceeded. The reducer returns a fresh
 signedOut state without the previous user. Pending or failed removal preserves
 the authenticated state; failures propagate for the caller to handle. No backend
 request is made, and local removal does not revoke a copied token on the server.
-The app's sign-out control is not connected yet; tests use a consumer button.
+The library screen now calls provider signOut from its Sign out control. It owns
+pending state and safe error feedback, disables repeated presses while removal
+is pending, clears prior feedback on retry, and resets pending state in finally.
+This behavior stays in the screen rather than introducing a one-off button
+component; extract shared components when reuse or complexity justifies it.
+Two screen tests cover safe failure feedback and pending duplicate-press prevention.
+A navigation test verifies successful sign-out opens login.
 
 The provider's `signIn(payload): Promise<void>` awaits the session service before
 dispatching signInSucceeded with the returned user. Authentication, profile lookup,
@@ -199,13 +205,15 @@ and a Retry button wired to retryRestoration. Both signedOut and authenticated
 states show children; this gate waits for restoration, not authentication, and
 does not itself protect routes. AppNavigator uses Stack.Protected to allow index
 only when authenticated and login only when signed out. Backend authentication
-and ownership checks remain required. Logout UI remains follow-up work.
+and ownership checks remain required. Sign-out is available on the library placeholder.
 
 On Android, the user verified invalid-credential feedback, successful login and
 profile requests (both HTTP 200), automatic library navigation, Android Back not
 returning to login, and saved-session restoration after closing and reopening.
 Health connectivity also passed after correcting the LAN IP/server binding.
-Device restoration-error/retry recovery and token removal remain unverified.
+The user also verified Sign out returns to login, Android Back cannot reopen the
+library, closing/reopening remains signed out, and signing in again works.
+Device restoration-error/retry recovery remains unverified.
 
 Six reducer tests cover state transitions; fourteen provider tests cover initial
 loading, signed-out and authenticated results, safe error messaging, and the
@@ -277,17 +285,17 @@ storage tests cover saving, reading, absence, removal, and failures for each
 operation. Together with eight client tests, one ApiError test, six auth-helper
 tests, thirteen session tests, six reducer tests, fourteen provider tests, four
 status tests, four gate tests, and nine login-form tests, the mobile suite contains
-76 passing tests across twelve suites, including one login-screen and three
-navigation tests; TypeScript checking also passes.
+79 passing tests across thirteen suites, including one login-screen, four
+navigation, and two library-screen tests; TypeScript checking also passes.
 
 ```bash
 npm test -- token-storage.test.ts --runInBand
 ```
 
 Mocked tests do not verify native device storage. Login and restart restoration
-were separately verified on Android. Device token-removal checks, logout UI,
+and sign-out persistence were separately verified on Android. Remaining work includes
 device restoration error/retry verification, handling expiry during later API requests,
-and automatic authorization headers remain pending.
+and automatic authorization headers.
 
 ## CI and merge requirements
 

@@ -220,8 +220,8 @@ save/read/remove wrapper has seven mocked tests. Login and current-user API
 helpers have six mocked tests. Sign-in, local sign-out, and session restoration have
 thirteen mocked tests. Six reducer, fourteen provider, four status-component, and
 four restoration-gate tests, plus nine login-form tests, bring the mobile suite
-plus one login-screen and three navigation tests, to 76 passing tests across
-twelve suites; TypeScript checking passes. Sign-in
+plus one login-screen, four navigation, and two library-screen tests, to 79 passing
+tests across thirteen suites; TypeScript checking passes. Sign-in
 saves only after profile lookup succeeds, and local sign-out requires no backend
 request. AuthProvider now wraps the navigation stack and runs restoration on
 mount, exposing loading, signedOut, authenticated, or safe error state. Expo Go
@@ -240,8 +240,10 @@ does not itself protect routes. AppNavigator guards library/login by auth state.
 Gate tests cover loading, retry recovery, and both settled states. Android smoke
 checks passed for invalid credentials, login/profile HTTP 200, automatic library
 navigation, Back not returning to login, and restart restoration. LAN IP and
-Uvicorn binding were corrected for phone access. Device token-removal and
-restoration-error/retry verification, logout UI integration, broader
+Uvicorn binding were corrected for phone access. Sign-out now lives in the library
+screen with local pending/error handling and duplicate-press protection. Android
+checks confirmed return to login, Back cannot reopen the library, reopening stays
+signed out, and signing in again works. Device restoration-error/retry verification, broader
 authenticated API integration, server error-body parsing, and functional screens
 remain pending.
 
@@ -261,7 +263,7 @@ missing-credential validation, pending submission protection, safe error feedbac
 and retry cleanup. Password whitespace is preserved. LoginScreen now connects
 the form to AuthProvider and is registered at /login. Protected navigation is
 tested without repeating all lower-level form scenarios.
-Next: logout UI, registration, and Option C styling. Device token-removal and
+Next: registration and Option C styling. Device
 restoration-error/retry checks remain pending. A focused test-overlap audit and
 explicit API timeout handling are follow-up work, not scope for this PR.
 
