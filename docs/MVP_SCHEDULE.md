@@ -219,8 +219,8 @@ One additional test covers the ApiError class. The SecureStore
 save/read/remove wrapper has seven mocked tests. Login and current-user API
 helpers have six mocked tests. Sign-in, local sign-out, and session restoration have
 thirteen mocked tests. Six reducer, fourteen provider, four status-component, and
-four restoration-gate tests bring the mobile suite to 63 passing tests across
-nine suites; TypeScript checking passes. Sign-in
+four restoration-gate tests, plus nine login-form tests, bring the mobile suite
+to 72 passing tests across ten suites; TypeScript checking passes. Sign-in
 saves only after profile lookup succeeds, and local sign-out requires no backend
 request. AuthProvider now wraps the navigation stack and runs restoration on
 mount, exposing loading, signedOut, authenticated, or safe error state. Expo Go
@@ -228,7 +228,7 @@ launches without runtime errors; persisted-session restoration is not yet
 device-verified. Context now exposes state, retryRestoration, signIn, and signOut. Provider
 signIn awaits authentication, profile lookup, and token storage through the
 session service before dispatching signInSucceeded. Pending and failed sign-in
-leave signed-out state unchanged; errors propagate for the future login screen
+leave signed-out state unchanged; errors propagate for the login form
 to handle locally. Success, failure, and pending behavior are tested. Repeated
 test messages use file-local constants. Retry clears
 the old error, shows loading, and starts another effect-driven attempt. Tests
@@ -254,7 +254,11 @@ and provider sign-in/sign-out are implemented. Provider sign-out awaits local
 token removal before clearing the user; pending or failed removal preserves the
 authenticated state, and failures propagate. Success, failure, and pending
 sign-out are tested. Local removal does not revoke backend tokens.
-Next: login/logout UI
+The standalone LoginForm accepts an async callback and owns controlled inputs,
+missing-credential validation, pending submission protection, safe error feedback,
+and retry cleanup. Password whitespace is preserved. It is not connected to a
+route or AuthProvider yet, and Option C styling/device checks remain pending.
+Next: login-screen and logout UI
 integration, and route protection. Native
 storage and restart-persistence verification remain explicit follow-up checkpoints.
 
