@@ -217,10 +217,13 @@ errors, and 204 responses are covered by eight Jest tests, including 401/500
 cases. HTTP failures expose ApiError.status; network errors remain unchanged.
 One additional test covers the ApiError class. The SecureStore
 save/read/remove wrapper has seven mocked tests. Login and current-user API
-helpers have six mocked tests. Sign-in, local sign-out, and session restoration have
+and registration helpers have ten mocked tests. Registration posts JSON and
+returns the created user without signing in or storing tokens; missing responses
+are rejected and duplicate-account/network errors propagate. Registration UI
+remains pending. Sign-in, local sign-out, and session restoration have
 thirteen mocked tests. Six reducer, fourteen provider, four status-component, and
 four restoration-gate tests, plus nine login-form tests, bring the mobile suite
-plus one login-screen, four navigation, and two library-screen tests, to 79 passing
+plus one login-screen, four navigation, and two library-screen tests, to 83 passing
 tests across thirteen suites; TypeScript checking passes. Sign-in
 saves only after profile lookup succeeds, and local sign-out requires no backend
 request. AuthProvider now wraps the navigation stack and runs restoration on
@@ -263,7 +266,7 @@ missing-credential validation, pending submission protection, safe error feedbac
 and retry cleanup. Password whitespace is preserved. LoginScreen now connects
 the form to AuthProvider and is registered at /login. Protected navigation is
 tested without repeating all lower-level form scenarios.
-Next: registration and Option C styling. Device
+Next: registration UI (consider existing form reuse) and Option C styling. Device
 restoration-error/retry checks remain pending. A focused test-overlap audit and
 explicit API timeout handling are follow-up work, not scope for this PR.
 
