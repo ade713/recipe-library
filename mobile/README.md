@@ -102,7 +102,7 @@ follow-up work; this change exposes HTTP status, not backend validation details.
 
 ## Authentication API helpers
 
-`src/types/auth.ts` defines LoginRequest, TokenResponse, and UserResponse to
+`src/types/auth.ts` defines LoginRequest, RegisterRequest, TokenResponse, and UserResponse to
 match backend JSON, including snake_case token fields and string user IDs.
 These TypeScript types do not validate responses at runtime.
 
@@ -113,16 +113,24 @@ These TypeScript types do not validate responses at runtime.
 - `getCurrentUser(token)`: GET `/auth/me` with the supplied Bearer token and
   return the user profile without reading SecureStore.
 
-Both helpers reject unexpected undefined responses and propagate API client
+The helpers reject unexpected undefined responses and propagate API client
 failures. The session service coordinates sign-in and storage; the provider
-exposes restoration state, and the backend validates tokens. Six tests mock apiFetch to cover successful
-requests, empty responses, and failures for both helpers.
+exposes authentication state, and the backend validates tokens. Ten tests mock
+apiFetch to cover successful requests, empty responses, and propagated failures.
+
+`register(payload)` posts JSON to `/auth/register` and returns UserResponse.
+The backend responds with HTTP 201 for account creation, not an access token.
+The helper rejects undefined responses and propagates errors unchanged, including
+ApiError(409) for a duplicate account and network failures. It does not sign in,
+store a token, or update auth state. RegisterRequest is separate from LoginRequest
+so the contracts can evolve independently. Registration UI remains pending;
+consider reuse of existing form behavior before introducing a second form.
 
 ```bash
 npm test -- auth.test.ts --runInBand
 ```
 
-The login form is connected through LoginScreen and AuthProvider. Registration
+The login form is connected through LoginScreen and AuthProvider. Registration UI
 remains pending. Helper tests alone do not establish end-to-end authentication.
 
 ## Sign-in, local sign-out, and session restoration
@@ -282,10 +290,10 @@ environment variables.
 
 The SecureStore dependency and Expo config plugin are registered. Seven mocked
 storage tests cover saving, reading, absence, removal, and failures for each
-operation. Together with eight client tests, one ApiError test, six auth-helper
+operation. Together with eight client tests, one ApiError test, ten auth-helper
 tests, thirteen session tests, six reducer tests, fourteen provider tests, four
 status tests, four gate tests, and nine login-form tests, the mobile suite contains
-79 passing tests across thirteen suites, including one login-screen, four
+83 passing tests across thirteen suites, including one login-screen, four
 navigation, and two library-screen tests; TypeScript checking also passes.
 
 ```bash

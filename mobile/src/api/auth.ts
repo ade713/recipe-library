@@ -1,5 +1,5 @@
 import { apiFetch } from "./client";
-import type { LoginRequest, TokenResponse, UserResponse } from "../types/auth";
+import type { LoginRequest, RegisterRequest, TokenResponse, UserResponse } from "../types/auth";
 
 /** Exchange login credentials for an access token without storing it. */
 export async function login(payload: LoginRequest): Promise<TokenResponse> {
@@ -24,6 +24,19 @@ export async function getCurrentUser(token: string): Promise<UserResponse> {
     },
   });
 
+  if (result === undefined) {
+    throw new Error("Expected a user response");
+  }
+
+  return result;
+}
+
+/** Create an account without signing in or storing a token */
+export async function register(payload: RegisterRequest): Promise<UserResponse> {
+  const result = await apiFetch<UserResponse>("/auth/register", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
   if (result === undefined) {
     throw new Error("Expected a user response");
   }
