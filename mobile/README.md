@@ -124,7 +124,7 @@ The helper rejects undefined responses and propagates errors unchanged, includin
 ApiError(409) for a duplicate account and network failures. It does not sign in,
 store a token, or update auth state. RegisterRequest is separate from LoginRequest
 so the contracts can evolve independently. Registration UI remains pending;
-consider reuse of existing form behavior before introducing a second form.
+reuse the shared AuthForm when adding the registration screen.
 
 ```bash
 npm test -- auth.test.ts --runInBand
@@ -242,9 +242,9 @@ npm test -- auth-state.test.ts --runInBand
 npm test -- auth-restoration-status.test.tsx auth-restoration-gate.test.tsx --runInBand
 ```
 
-## Standalone login form
+## Shared authentication form
 
-`src/auth/login-form.tsx` accepts an async `onSubmit(LoginRequest)` callback;
+`src/auth/auth-form.tsx` accepts an async `onSubmit(AuthFormValues)` callback;
 it does not call the API, store tokens, or navigate. Controlled email/password
 inputs have visible and accessibility labels, and the password input uses
 secureTextEntry. The form rejects empty or whitespace-only email and empty
@@ -256,7 +256,13 @@ submission. Errors display a safe generic message rather than raw dependency
 details. Starting a valid retry clears the old message, and finally resets the
 submitting state after success or failure. This does not cancel pending requests.
 
-Nine tests cover rendering, exact credentials, pending/duplicate-press behavior,
+AuthFormValues is a form-owned email/password shape, independent of LoginRequest
+and RegisterRequest. Required submitLabel and submitErrorMessage props let screens
+choose workflow-specific copy. LoginScreen supplies the existing sign-in values;
+the form does not branch on login versus registration. Only the test helper has
+default labels/messages, supplied through an options object.
+
+Eleven tests cover configurable labels/messages, rendering, exact credentials, pending/duplicate-press behavior,
 safe error feedback, retry error clearing, three missing-field cases, and password
 whitespace preservation. LoginScreen passes useAuth().signIn to the form, and
 app/login.tsx re-exports the screen as the route default. One integration test
@@ -271,7 +277,7 @@ The API client still has no explicit request timeout; stalled-request handling
 is follow-up work identified during the phone connectivity check.
 
 ```bash
-npm test -- login-form.test.tsx --runInBand
+npm test -- auth-form.test.tsx --runInBand
 ```
 
 ## Secure token storage
@@ -292,8 +298,8 @@ The SecureStore dependency and Expo config plugin are registered. Seven mocked
 storage tests cover saving, reading, absence, removal, and failures for each
 operation. Together with eight client tests, one ApiError test, ten auth-helper
 tests, thirteen session tests, six reducer tests, fourteen provider tests, four
-status tests, four gate tests, and nine login-form tests, the mobile suite contains
-83 passing tests across thirteen suites, including one login-screen, four
+status tests, four gate tests, and eleven shared auth-form tests, the mobile suite contains
+85 passing tests across thirteen suites, including one login-screen, four
 navigation, and two library-screen tests; TypeScript checking also passes.
 
 ```bash

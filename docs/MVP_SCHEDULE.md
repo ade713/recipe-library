@@ -222,8 +222,8 @@ returns the created user without signing in or storing tokens; missing responses
 are rejected and duplicate-account/network errors propagate. Registration UI
 remains pending. Sign-in, local sign-out, and session restoration have
 thirteen mocked tests. Six reducer, fourteen provider, four status-component, and
-four restoration-gate tests, plus nine login-form tests, bring the mobile suite
-plus one login-screen, four navigation, and two library-screen tests, to 83 passing
+four restoration-gate tests, plus eleven shared auth-form tests, bring the mobile suite
+plus one login-screen, four navigation, and two library-screen tests, to 85 passing
 tests across thirteen suites; TypeScript checking passes. Sign-in
 saves only after profile lookup succeeds, and local sign-out requires no backend
 request. AuthProvider now wraps the navigation stack and runs restoration on
@@ -261,12 +261,15 @@ and provider sign-in/sign-out are implemented. Provider sign-out awaits local
 token removal before clearing the user; pending or failed removal preserves the
 authenticated state, and failures propagate. Success, failure, and pending
 sign-out are tested. Local removal does not revoke backend tokens.
-The standalone LoginForm accepts an async callback and owns controlled inputs,
+The shared AuthForm accepts an async callback and owns controlled inputs,
 missing-credential validation, pending submission protection, safe error feedback,
 and retry cleanup. Password whitespace is preserved. LoginScreen now connects
 the form to AuthProvider and is registered at /login. Protected navigation is
 tested without repeating all lower-level form scenarios.
-Next: registration UI (consider existing form reuse) and Option C styling. Device
+The extraction preserves login behavior while requiring screen-supplied submit
+labels and safe failure messages. AuthFormValues is independent of API request
+types; tests cover both configurable props without duplicating all form scenarios.
+Next: registration UI using AuthForm and Option C styling. Device
 restoration-error/retry checks remain pending. A focused test-overlap audit and
 explicit API timeout handling are follow-up work, not scope for this PR.
 
