@@ -1,19 +1,22 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
-import { LoginForm } from "../login-form";
-import type { LoginRequest } from "@/types/auth";
+import { AuthForm, type AuthFormValues } from "../auth-form";
 
 const TEST_EMAIL = "test@example.com";
 const TEST_PASSWORD = "testPassword1";
 const NETWORK_ERROR_MESSAGE = "Network failure";
 const SIGN_IN_ERROR_MESSAGE = "Unable to sign in. Please try again.";
+const CREATE_ACCOUNT_ERROR_MESSAGE = "Unable to create account.";
 
-const renderLoginForm = async (onSubmit: (payload: LoginRequest) => Promise<void>) => {
-  await render(<LoginForm onSubmit={onSubmit} />);
+const renderAuthForm = async (
+  onSubmit: (payload: AuthFormValues) => Promise<void>,
+  { submitLabel = "Sign in", submitErrorMessage = SIGN_IN_ERROR_MESSAGE } = {},
+) => {
+  await render(<AuthForm onSubmit={onSubmit} submitLabel={submitLabel} submitErrorMessage={submitErrorMessage} />);
 };
 
-describe("LoginForm", () => {
+describe("AuthForm", () => {
   it("renders email and password inputs and a sign-in button", async () => {
-    await renderLoginForm(jest.fn());
+    await renderAuthForm(jest.fn());
 
     expect(screen.getByLabelText("Email")).toBeTruthy();
     expect(screen.getByLabelText("Password")).toBeTruthy();
@@ -23,7 +26,7 @@ describe("LoginForm", () => {
   it("submits the entered email and password", async () => {
     const onSubmit = jest.fn().mockResolvedValue(undefined);
 
-    await renderLoginForm(onSubmit);
+    await renderAuthForm(onSubmit);
 
     await fireEvent.changeText(screen.getByLabelText("Email"), TEST_EMAIL);
     await fireEvent.changeText(screen.getByLabelText("Password"), TEST_PASSWORD);
@@ -38,7 +41,7 @@ describe("LoginForm", () => {
   it("disables sign-in while submission is pending", async () => {
     const onSubmit = jest.fn(() => new Promise<void>(() => {}));
 
-    await renderLoginForm(onSubmit);
+    await renderAuthForm(onSubmit);
 
     await fireEvent.changeText(screen.getByLabelText("Email"), TEST_EMAIL);
     await fireEvent.changeText(screen.getByLabelText("Password"), TEST_PASSWORD);
@@ -60,7 +63,7 @@ describe("LoginForm", () => {
 
     const onSubmit = jest.fn().mockRejectedValue(error);
 
-    await renderLoginForm(onSubmit);
+    await renderAuthForm(onSubmit);
 
     await fireEvent.changeText(screen.getByLabelText("Email"), TEST_EMAIL);
     await fireEvent.changeText(screen.getByLabelText("Password"), TEST_PASSWORD);
@@ -80,7 +83,7 @@ describe("LoginForm", () => {
       .mockRejectedValueOnce(error)
       .mockImplementation(() => new Promise<void>(() => {}));
 
-    await renderLoginForm(onSubmit);
+    await renderAuthForm(onSubmit);
 
     await fireEvent.changeText(screen.getByLabelText("Email"), TEST_EMAIL);
     await fireEvent.changeText(screen.getByLabelText("Password"), TEST_PASSWORD);
@@ -104,7 +107,7 @@ describe("LoginForm", () => {
   ])("does not submit with $label", async ({ email, password }) => {
     const onSubmit = jest.fn().mockResolvedValue(undefined);
 
-    await renderLoginForm(onSubmit);
+    await renderAuthForm(onSubmit);
 
     await fireEvent.changeText(screen.getByLabelText("Email"), email);
     await fireEvent.changeText(screen.getByLabelText("Password"), password);
@@ -118,12 +121,32 @@ describe("LoginForm", () => {
     const password = "  testPassword1  ";
     const onSubmit = jest.fn().mockResolvedValue(undefined);
 
-    await renderLoginForm(onSubmit);
+    await renderAuthForm(onSubmit);
 
     await fireEvent.changeText(screen.getByLabelText("Email"), TEST_EMAIL);
     await fireEvent.changeText(screen.getByLabelText("Password"), password);
     await fireEvent.press(screen.getByRole("button", { name: "Sign in" }));
 
     expect(onSubmit).toHaveBeenCalledWith({ email: TEST_EMAIL, password });
+  });
+
+  it("uses the supplied submit label", async () => {
+    const suppliedSubmitLabel = "Create account";
+    await renderAuthForm(jest.fn(), { submitLabel: suppliedSubmitLabel });
+
+    expect(screen.getByRole("button", { name: suppliedSubmitLabel })).toBeTruthy();
+  });
+
+  it("shows the supplied message when submission fails", async () => {
+    const error = new Error(NETWORK_ERROR_MESSAGE);
+    const onSubmit = jest.fn().mockRejectedValue(error);
+
+    await renderAuthForm(onSubmit, { submitErrorMessage: CREATE_ACCOUNT_ERROR_MESSAGE });
+
+    await fireEvent.changeText(screen.getByLabelText("Email"), TEST_EMAIL);
+    await fireEvent.changeText(screen.getByLabelText("Password"), TEST_PASSWORD);
+    await fireEvent.press(screen.getByRole("button", { name: "Sign in" }));
+
+    expect(await screen.findByText(CREATE_ACCOUNT_ERROR_MESSAGE)).toBeTruthy();
   });
 });
