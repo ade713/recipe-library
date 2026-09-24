@@ -1,16 +1,21 @@
 import { Button, Text, TextInput, View } from "react-native";
-import type { LoginRequest } from "@/types/auth";
 import { useState } from "react";
 
+export type AuthFormValues = {
+  email: string;
+  password: string;
+};
+
 type Props = {
-  onSubmit: (payload: LoginRequest) => Promise<void>;
+  onSubmit: (payload: AuthFormValues) => Promise<void>;
+  submitLabel: string;
+  submitErrorMessage: string;
 };
 
 const BLANK_EMAIL_OR_PASSWORD_ERROR_MESSAGE = "Enter your email and password.";
-const SIGN_IN_ERROR_MESSAGE = "Unable to sign in. Please try again.";
 
-/** Collect credentials and display sign-in feedback. */
-export function LoginForm({ onSubmit }: Props) {
+/** Collect credentials and display submission feedback. */
+export function AuthForm({ onSubmit, submitLabel, submitErrorMessage }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,7 +35,7 @@ export function LoginForm({ onSubmit }: Props) {
     try {
       await onSubmit({ email, password });
     } catch {
-      setErrorMessage(SIGN_IN_ERROR_MESSAGE);
+      setErrorMessage(submitErrorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -50,7 +55,7 @@ export function LoginForm({ onSubmit }: Props) {
       />
       <Text>Password</Text>
       <TextInput accessibilityLabel='Password' secureTextEntry value={password} onChangeText={setPassword} />
-      <Button title='Sign in' disabled={isSubmitting} onPress={handleSubmit} />
+      <Button title={submitLabel} disabled={isSubmitting} onPress={handleSubmit} />
     </View>
   );
 }
