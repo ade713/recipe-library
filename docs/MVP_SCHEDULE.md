@@ -210,73 +210,20 @@ Before Week 13 begins, complete cleanup PRs 1–5, 6A, and 6B in the [Backend Cl
 
 ## Week 13 — Mobile MVP foundations
 
-Status: In progress. Expo SDK 57 setup, root stack navigation, and a placeholder
-Recipe Library screen are verified on a physical Android phone. The temporary
-Check API button reaches FastAPI. API client header handling, HTTP/network
-errors, and 204 responses are covered by eight Jest tests, including 401/500
-cases. HTTP failures expose ApiError.status; network errors remain unchanged.
-One additional test covers the ApiError class. The SecureStore
-save/read/remove wrapper has seven mocked tests. Login and current-user API
-and registration helpers have ten mocked tests. Registration posts JSON and
-returns the created user without signing in or storing tokens; missing responses
-are rejected and duplicate-account/network errors propagate. Registration UI
-now reuses AuthForm and is connected to signed-out navigation. Sign-in, local sign-out, and session restoration have
-thirteen mocked tests. Six reducer, fourteen provider, four status-component, and
-four restoration-gate tests, plus twelve shared auth-form tests, bring the mobile suite
-plus one login-screen, six navigation, four registration-screen, and two library-screen tests, to 92 passing
-tests across fourteen suites; TypeScript checking passes. Sign-in
-saves only after profile lookup succeeds, and local sign-out requires no backend
-request. AuthProvider now wraps the navigation stack and runs restoration on
-mount, exposing loading, signedOut, authenticated, or safe error state. Expo Go
-launches without runtime errors; saved-session restoration after reopening is
-verified on Android. Context exposes state, retryRestoration, signIn, and signOut. Provider
-signIn awaits authentication, profile lookup, and token storage through the
-session service before dispatching signInSucceeded. Pending and failed sign-in
-leave signed-out state unchanged; errors propagate for the login form
-to handle locally. Success, failure, and pending behavior are tested. Repeated
-test messages use file-local constants. Retry clears
-the old error, shows loading, and starts another effect-driven attempt. Tests
-cover successful, pending, and failed retries. The root layout now nests
-AuthProvider → AuthRestorationGate → AppNavigator → Stack. The gate shows loading or safe error
-UI with a Retry button, then shows children for signedOut or authenticated; it
-does not itself protect routes. AppNavigator guards library/login by auth state.
-Gate tests cover loading, retry recovery, and both settled states. Android smoke
-checks passed for invalid credentials, login/profile HTTP 200, automatic library
-navigation, Back not returning to login, and restart restoration. LAN IP and
-Uvicorn binding were corrected for phone access. Sign-out now lives in the library
-screen with local pending/error handling and duplicate-press protection. Android
-checks confirmed return to login, Back cannot reopen the library, reopening stays
-signed out, and signing in again works. Device restoration-error/retry verification, broader
-authenticated API integration, server error-body parsing, and functional screens
-remain pending.
+Status: In progress. Expo SDK 57, API connectivity, secure token storage, and
+authentication are implemented. Shared login/registration forms, session
+restoration with loading/error/retry states, local sign-out, and protected
+navigation are covered by 92 passing tests across fourteen suites; TypeScript
+checks pass. Android smoke checks confirmed registration, invalid-credential
+feedback, login, sign-out, Back navigation, and saved-session restoration.
+Registration does not sign users in automatically.
 
-CI checkpoint complete: PR #41 is merged. Mobile CI runs npm ci, Jest, and tsc;
-both backend and mobile workflows passed on GitHub. Verified main-branch
-protection requires both checks and up-to-date branches, including for
-administrators. Service-level restoration is implemented: no token returns null,
-a profile 401 removes the token, and network/server errors preserve credentials.
-Storage-read and cleanup errors propagate. React authentication state and startup
-restoration wiring, visible loading/error/retry UI, and provider retry behavior
-and provider sign-in/sign-out are implemented. Provider sign-out awaits local
-token removal before clearing the user; pending or failed removal preserves the
-authenticated state, and failures propagate. Success, failure, and pending
-sign-out are tested. Local removal does not revoke backend tokens.
-The shared AuthForm accepts an async callback and owns controlled inputs,
-missing-credential validation, pending submission protection, safe error feedback,
-and retry cleanup. Password whitespace is preserved. LoginScreen now connects
-the form to AuthProvider and is registered at /login. Protected navigation is
-tested without repeating all lower-level form scenarios.
-The extraction preserves login behavior while requiring screen-supplied submit
-labels and safe failure messages. AuthFormValues is independent of API request
-types; tests cover both configurable props without duplicating all form scenarios.
-Registration UI is implemented with optional form validation, an eight-character
-password minimum, success-only feedback, and a return-to-login link. Registration
-does not authenticate. Android smoke checks passed for short-password feedback,
-account creation, return to login, and sign-in with the new account.
-Next: Option C styling and mobile recipe workflows. Audit test overlap and repeated
-frontend constants in focused post-auth cleanup without delaying MVP work. Device
-restoration-error/retry checks remain pending. A focused test-overlap audit and
-explicit API timeout handling are follow-up work, not scope for this PR.
+Mobile CI and required backend/mobile checks are configured on main, including
+up-to-date branch requirements. Next: Option C styling and mobile recipe
+workflows. Device restoration-error/retry checks, broader API integration, and
+server error-body parsing remain pending. Focused test-overlap/constants audits
+and explicit API timeouts are follow-up work and should not delay the MVP.
+See mobile/README.md and docs/PROJECT_MEMORY.md for implementation details.
 
 | Day | Work |
 | --- | --- |
