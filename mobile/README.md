@@ -133,6 +133,22 @@ npm test -- auth.test.ts --runInBand
 The login form is connected through LoginScreen and AuthProvider. Registration
 creates an account without signing in. Helper tests alone do not establish end-to-end authentication.
 
+## Recipe-list API helper
+
+`listRecipes(token)` in `src/api/recipes.ts` requests `/recipes` with the supplied
+Bearer token and returns a typed `RecipeListResponse`. The backend scopes results
+to the authenticated user; no user ID is sent. `RecipeSummary` matches the JSON
+response, including nullable fields and string-serialized decimal servings.
+
+Five mocked tests cover the authenticated request, an empty library, a missing
+response, and unchanged authentication/network errors. `{ items: [] }` is valid;
+an undefined response is rejected. Library-screen integration, search, and filter
+controls remain next steps.
+
+```bash
+npm test -- --runInBand src/api/__tests__/recipes.test.ts
+```
+
 ## Sign-in, local sign-out, and session restoration
 
 `src/auth/session.ts` coordinates the API and storage helpers:
@@ -325,7 +341,7 @@ storage tests cover saving, reading, absence, removal, and failures for each
 operation. Together with eight client tests, one ApiError test, ten auth-helper
 tests, thirteen session tests, six reducer tests, fourteen provider tests, four
 status tests, four gate tests, and twelve shared auth-form tests, the mobile suite contains
-92 passing tests across fourteen suites, including one login-screen, six
+97 passing tests across fifteen suites, including five recipe-list helper tests, one login-screen, six
 navigation, four registration-screen, and two library-screen tests; TypeScript checking also passes.
 
 ```bash
