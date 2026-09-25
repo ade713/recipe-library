@@ -1,5 +1,5 @@
-import { Button, Text, TextInput, View } from "react-native";
 import { useState } from "react";
+import { Button, Text, TextInput, View } from "react-native";
 
 export type AuthFormValues = {
   email: string;
@@ -10,12 +10,13 @@ type Props = {
   onSubmit: (payload: AuthFormValues) => Promise<void>;
   submitLabel: string;
   submitErrorMessage: string;
+  validate?: (values: AuthFormValues) => string | null;
 };
 
 const BLANK_EMAIL_OR_PASSWORD_ERROR_MESSAGE = "Enter your email and password.";
 
 /** Collect credentials and display submission feedback. */
-export function AuthForm({ onSubmit, submitLabel, submitErrorMessage }: Props) {
+export function AuthForm({ onSubmit, submitLabel, submitErrorMessage, validate }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -26,6 +27,12 @@ export function AuthForm({ onSubmit, submitLabel, submitErrorMessage }: Props) {
 
     if (email.trim() === "" || password === "") {
       setErrorMessage(BLANK_EMAIL_OR_PASSWORD_ERROR_MESSAGE);
+      return;
+    }
+
+    const validationMessage = validate?.({ email, password });
+    if (validationMessage != null) {
+      setErrorMessage(validationMessage);
       return;
     }
 

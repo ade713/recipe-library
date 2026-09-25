@@ -123,15 +123,15 @@ The backend responds with HTTP 201 for account creation, not an access token.
 The helper rejects undefined responses and propagates errors unchanged, including
 ApiError(409) for a duplicate account and network failures. It does not sign in,
 store a token, or update auth state. RegisterRequest is separate from LoginRequest
-so the contracts can evolve independently. Registration UI remains pending;
-reuse the shared AuthForm when adding the registration screen.
+so the contracts can evolve independently. RegisterScreen now reuses AuthForm
+and is available at /register for signed-out users.
 
 ```bash
 npm test -- auth.test.ts --runInBand
 ```
 
-The login form is connected through LoginScreen and AuthProvider. Registration UI
-remains pending. Helper tests alone do not establish end-to-end authentication.
+The login form is connected through LoginScreen and AuthProvider. Registration
+creates an account without signing in. Helper tests alone do not establish end-to-end authentication.
 
 ## Sign-in, local sign-out, and session restoration
 
@@ -262,11 +262,11 @@ choose workflow-specific copy. LoginScreen supplies the existing sign-in values;
 the form does not branch on login versus registration. Only the test helper has
 default labels/messages, supplied through an options object.
 
-Eleven tests cover configurable labels/messages, rendering, exact credentials, pending/duplicate-press behavior,
+Twelve tests cover custom validation, configurable labels/messages, rendering, exact credentials, pending/duplicate-press behavior,
 safe error feedback, retry error clearing, three missing-field cases, and password
 whitespace preservation. LoginScreen passes useAuth().signIn to the form, and
 app/login.tsx re-exports the screen as the route default. One integration test
-checks this connection; three router tests cover signed-out library access,
+checks this connection; router tests cover signed-out library access,
 authenticated login access, and automatic navigation after sign-in. Option C
 styling and broader keyboard/accessibility checks remain pending.
 
@@ -275,6 +275,32 @@ progress. Keep behavior tests at their owning layer and integration tests focuse
 on wiring and navigation rather than repeating every form/provider scenario.
 The API client still has no explicit request timeout; stalled-request handling
 is follow-up work identified during the phone connectivity check.
+
+## Registration screen
+
+RegisterScreen supplies AuthForm with registration copy and a synchronous
+validator returning a message or null. AuthForm runs optional validation after
+blank-field checks and before submission. Registration rejects passwords shorter
+than eight characters; login does not apply this new-account rule. Backend
+validation remains authoritative.
+
+Successful registration replaces the form with account-created feedback and a
+Sign in link using replace navigation. Success state is set only after the API
+resolves; failures remain in the form with safe feedback. Registration does not
+store a token or change auth state. Login links to /register, which shares the
+signed-out protected group. In-memory test route maps include all declared routes.
+
+Four screen tests cover seven/eight/longer password boundaries and failure without
+false success. Six navigation tests include opening registration and returning
+to login after account creation. The user confirmed the Android smoke checklist:
+short-password validation, new-account creation (201), signed-out success feedback,
+return to login, and successful sign-in using the newly created account.
+
+After auth, audit repeated frontend constants alongside test overlap. Extract
+genuinely shared values into focused modules, not a catch-all constants utility;
+keep screen copy and test fixtures local when sharing provides no benefit.
+If a new route is missing from generated types, restart Expo to regenerate them;
+do not manually edit .expo/types/router.d.ts or bypass the type check.
 
 ```bash
 npm test -- auth-form.test.tsx --runInBand
@@ -298,9 +324,9 @@ The SecureStore dependency and Expo config plugin are registered. Seven mocked
 storage tests cover saving, reading, absence, removal, and failures for each
 operation. Together with eight client tests, one ApiError test, ten auth-helper
 tests, thirteen session tests, six reducer tests, fourteen provider tests, four
-status tests, four gate tests, and eleven shared auth-form tests, the mobile suite contains
-85 passing tests across thirteen suites, including one login-screen, four
-navigation, and two library-screen tests; TypeScript checking also passes.
+status tests, four gate tests, and twelve shared auth-form tests, the mobile suite contains
+92 passing tests across fourteen suites, including one login-screen, six
+navigation, four registration-screen, and two library-screen tests; TypeScript checking also passes.
 
 ```bash
 npm test -- token-storage.test.ts --runInBand

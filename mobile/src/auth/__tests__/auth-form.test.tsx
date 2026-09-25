@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+
 import { AuthForm, type AuthFormValues } from "../auth-form";
 
 const TEST_EMAIL = "test@example.com";
@@ -6,12 +7,27 @@ const TEST_PASSWORD = "testPassword1";
 const NETWORK_ERROR_MESSAGE = "Network failure";
 const SIGN_IN_ERROR_MESSAGE = "Unable to sign in. Please try again.";
 const CREATE_ACCOUNT_ERROR_MESSAGE = "Unable to create account.";
+const SHORT_PASSWORD_MESSAGE = "Password is too short.";
+const SIGN_IN_LABEL = "Sign in";
+
+type FormOptions = {
+  submitLabel?: string;
+  submitErrorMessage?: string;
+  validate?: (values: AuthFormValues) => string | null;
+};
 
 const renderAuthForm = async (
   onSubmit: (payload: AuthFormValues) => Promise<void>,
-  { submitLabel = "Sign in", submitErrorMessage = SIGN_IN_ERROR_MESSAGE } = {},
+  { submitLabel = SIGN_IN_LABEL, submitErrorMessage = SIGN_IN_ERROR_MESSAGE, validate }: FormOptions = {},
 ) => {
-  await render(<AuthForm onSubmit={onSubmit} submitLabel={submitLabel} submitErrorMessage={submitErrorMessage} />);
+  await render(
+    <AuthForm
+      onSubmit={onSubmit}
+      submitLabel={submitLabel}
+      submitErrorMessage={submitErrorMessage}
+      validate={validate}
+    />,
+  );
 };
 
 describe("AuthForm", () => {
@@ -20,7 +36,7 @@ describe("AuthForm", () => {
 
     expect(screen.getByLabelText("Email")).toBeTruthy();
     expect(screen.getByLabelText("Password")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Sign in" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: SIGN_IN_LABEL })).toBeTruthy();
   });
 
   it("submits the entered email and password", async () => {
@@ -30,7 +46,7 @@ describe("AuthForm", () => {
 
     await fireEvent.changeText(screen.getByLabelText("Email"), TEST_EMAIL);
     await fireEvent.changeText(screen.getByLabelText("Password"), TEST_PASSWORD);
-    const signInButton = screen.getByRole("button", { name: "Sign in" });
+    const signInButton = screen.getByRole("button", { name: SIGN_IN_LABEL });
     await fireEvent.press(signInButton);
 
     expect(onSubmit).toHaveBeenCalledTimes(1);
@@ -46,7 +62,7 @@ describe("AuthForm", () => {
     await fireEvent.changeText(screen.getByLabelText("Email"), TEST_EMAIL);
     await fireEvent.changeText(screen.getByLabelText("Password"), TEST_PASSWORD);
 
-    const signInButton = screen.getByRole("button", { name: "Sign in" });
+    const signInButton = screen.getByRole("button", { name: SIGN_IN_LABEL });
     void fireEvent.press(signInButton);
 
     await waitFor(() => {
@@ -67,7 +83,7 @@ describe("AuthForm", () => {
 
     await fireEvent.changeText(screen.getByLabelText("Email"), TEST_EMAIL);
     await fireEvent.changeText(screen.getByLabelText("Password"), TEST_PASSWORD);
-    const signInButton = screen.getByRole("button", { name: "Sign in" });
+    const signInButton = screen.getByRole("button", { name: SIGN_IN_LABEL });
     await fireEvent.press(signInButton);
 
     expect(await screen.findByText(SIGN_IN_ERROR_MESSAGE)).toBeTruthy();
@@ -87,7 +103,7 @@ describe("AuthForm", () => {
 
     await fireEvent.changeText(screen.getByLabelText("Email"), TEST_EMAIL);
     await fireEvent.changeText(screen.getByLabelText("Password"), TEST_PASSWORD);
-    const signInButton = screen.getByRole("button", { name: "Sign in" });
+    const signInButton = screen.getByRole("button", { name: SIGN_IN_LABEL });
     await fireEvent.press(signInButton);
 
     expect(await screen.findByText(SIGN_IN_ERROR_MESSAGE)).toBeTruthy();
@@ -111,7 +127,7 @@ describe("AuthForm", () => {
 
     await fireEvent.changeText(screen.getByLabelText("Email"), email);
     await fireEvent.changeText(screen.getByLabelText("Password"), password);
-    await fireEvent.press(screen.getByRole("button", { name: "Sign in" }));
+    await fireEvent.press(screen.getByRole("button", { name: SIGN_IN_LABEL }));
 
     expect(await screen.findByText("Enter your email and password.")).toBeTruthy();
     expect(onSubmit).not.toHaveBeenCalled();
@@ -125,7 +141,7 @@ describe("AuthForm", () => {
 
     await fireEvent.changeText(screen.getByLabelText("Email"), TEST_EMAIL);
     await fireEvent.changeText(screen.getByLabelText("Password"), password);
-    await fireEvent.press(screen.getByRole("button", { name: "Sign in" }));
+    await fireEvent.press(screen.getByRole("button", { name: SIGN_IN_LABEL }));
 
     expect(onSubmit).toHaveBeenCalledWith({ email: TEST_EMAIL, password });
   });
@@ -145,8 +161,22 @@ describe("AuthForm", () => {
 
     await fireEvent.changeText(screen.getByLabelText("Email"), TEST_EMAIL);
     await fireEvent.changeText(screen.getByLabelText("Password"), TEST_PASSWORD);
-    await fireEvent.press(screen.getByRole("button", { name: "Sign in" }));
+    await fireEvent.press(screen.getByRole("button", { name: SIGN_IN_LABEL }));
 
     expect(await screen.findByText(CREATE_ACCOUNT_ERROR_MESSAGE)).toBeTruthy();
+  });
+
+  it("shows custom validation feedback without submitting", async () => {
+    const validate = jest.fn().mockReturnValue(SHORT_PASSWORD_MESSAGE);
+    const onSubmit = jest.fn();
+
+    await renderAuthForm(onSubmit, { validate });
+
+    await fireEvent.changeText(screen.getByLabelText("Email"), TEST_EMAIL);
+    await fireEvent.changeText(screen.getByLabelText("Password"), TEST_PASSWORD);
+    await fireEvent.press(screen.getByRole("button", { name: SIGN_IN_LABEL }));
+
+    expect(await screen.findByText(SHORT_PASSWORD_MESSAGE)).toBeTruthy();
+    expect(onSubmit).not.toHaveBeenCalled();
   });
 });
