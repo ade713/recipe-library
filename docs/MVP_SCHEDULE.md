@@ -220,11 +220,11 @@ save/read/remove wrapper has seven mocked tests. Login and current-user API
 and registration helpers have ten mocked tests. Registration posts JSON and
 returns the created user without signing in or storing tokens; missing responses
 are rejected and duplicate-account/network errors propagate. Registration UI
-remains pending. Sign-in, local sign-out, and session restoration have
+now reuses AuthForm and is connected to signed-out navigation. Sign-in, local sign-out, and session restoration have
 thirteen mocked tests. Six reducer, fourteen provider, four status-component, and
-four restoration-gate tests, plus eleven shared auth-form tests, bring the mobile suite
-plus one login-screen, four navigation, and two library-screen tests, to 85 passing
-tests across thirteen suites; TypeScript checking passes. Sign-in
+four restoration-gate tests, plus twelve shared auth-form tests, bring the mobile suite
+plus one login-screen, six navigation, four registration-screen, and two library-screen tests, to 92 passing
+tests across fourteen suites; TypeScript checking passes. Sign-in
 saves only after profile lookup succeeds, and local sign-out requires no backend
 request. AuthProvider now wraps the navigation stack and runs restoration on
 mount, exposing loading, signedOut, authenticated, or safe error state. Expo Go
@@ -269,7 +269,12 @@ tested without repeating all lower-level form scenarios.
 The extraction preserves login behavior while requiring screen-supplied submit
 labels and safe failure messages. AuthFormValues is independent of API request
 types; tests cover both configurable props without duplicating all form scenarios.
-Next: registration UI using AuthForm and Option C styling. Device
+Registration UI is implemented with optional form validation, an eight-character
+password minimum, success-only feedback, and a return-to-login link. Registration
+does not authenticate. Android smoke checks passed for short-password feedback,
+account creation, return to login, and sign-in with the new account.
+Next: Option C styling and mobile recipe workflows. Audit test overlap and repeated
+frontend constants in focused post-auth cleanup without delaying MVP work. Device
 restoration-error/retry checks remain pending. A focused test-overlap audit and
 explicit API timeout handling are follow-up work, not scope for this PR.
 
