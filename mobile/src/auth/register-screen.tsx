@@ -1,8 +1,10 @@
+import { Link } from "expo-router";
 import { useState } from "react";
 import { Text } from "react-native";
+
 import { register } from "@/api/auth";
+
 import { AuthForm, type AuthFormValues } from "./auth-form";
-import { Link } from "expo-router";
 
 const CREATE_ACCOUNT_LABEL = "Create account";
 const CREATE_ACCOUNT_ERROR_MESSAGE = "Unable to create account. Please try again.";

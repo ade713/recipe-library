@@ -1,6 +1,7 @@
-import { useAuth } from "./auth-provider";
-import { AuthForm } from "./auth-form";
 import { Link } from "expo-router";
+
+import { AuthForm } from "./auth-form";
+import { useAuth } from "./auth-provider";
 
 const SIGN_IN_ERROR_MESSAGE = "Unable to sign in. Please try again.";
 const SIGN_IN_LABEL = "Sign in";

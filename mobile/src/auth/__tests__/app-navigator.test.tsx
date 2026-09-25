@@ -1,14 +1,16 @@
-import { renderRouter } from "expo-router/testing-library";
 import { fireEvent, screen } from "@testing-library/react-native";
+import { renderRouter } from "expo-router/testing-library";
+import type { ReactElement } from "react";
 import { Text } from "react-native";
+
+import type { UserResponse } from "@/types/auth";
+
 import RootLayout from "../../../app/_layout";
 import RecipeLibraryScreen from "../../../app/index";
-import * as session from "../session";
 import * as auth from "../../api/auth";
 import { LoginScreen } from "../login-screen";
-import type { UserResponse } from "@/types/auth";
-import type { ReactElement } from "react";
 import { RegisterScreen } from "../register-screen";
+import * as session from "../session";
 
 const TEST_USER_ID = "test-user-id";
 const TEST_EMAIL = "test@example.com";

@@ -1,4 +1,5 @@
 import { Stack } from "expo-router";
+
 import { useAuth } from "./auth-provider";
 
 /** Define the app's navigation screens. */
@@ -12,8 +13,6 @@ export function AppNavigator() {
       </Stack.Protected>
       <Stack.Protected guard={state.status === "signedOut"}>
         <Stack.Screen name='login' options={{ title: "Sign in" }} />
-      </Stack.Protected>
-      <Stack.Protected guard={state.status === "signedOut"}>
         <Stack.Screen name='register' options={{ title: "Create account" }} />
       </Stack.Protected>
     </Stack>

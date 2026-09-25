@@ -1,7 +1,9 @@
 import { fireEvent, render, screen } from "@testing-library/react-native";
+
 import * as auth from "@/api/auth";
-import { RegisterScreen } from "../register-screen";
 import type { RegisterRequest, UserResponse } from "@/types/auth";
+
+import { RegisterScreen } from "../register-screen";
 
 const TEST_USER_ID = "test-user-id";
 const TEST_EMAIL = "test@example.com";

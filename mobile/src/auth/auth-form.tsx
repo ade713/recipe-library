@@ -1,5 +1,5 @@
-import { Button, Text, TextInput, View } from "react-native";
 import { useState } from "react";
+import { Button, Text, TextInput, View } from "react-native";
 
 export type AuthFormValues = {
   email: string;

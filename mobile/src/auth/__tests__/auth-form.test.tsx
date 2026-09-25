@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+
 import { AuthForm, type AuthFormValues } from "../auth-form";
 
 const TEST_EMAIL = "test@example.com";
