@@ -8,7 +8,7 @@ export type IngredientDraft = {
   preparationNote?: string | null;
   isOptional: boolean;
   scaleLocked: boolean;
-  parseStatus: 'parsed' | 'partial' | 'unparsed';
+  parseStatus: "parsed" | "partial" | "unparsed";
 };
 
 export type RecipeStepDraft = {
@@ -30,4 +30,18 @@ export type RecipeDraft = {
   steps: RecipeStepDraft[];
   tips: string[];
   tags: string[];
+};
+
+export type RecipeSummary = {
+  id: string;
+  title: string;
+  image_url: string | null;
+  total_time_minutes: number | null;
+  base_servings: string | null;
+  is_favorite: boolean;
+  tags: string[];
+};
+
+export type RecipeListResponse = {
+  items: RecipeSummary[];
 };
