@@ -4,6 +4,7 @@ import type { ReactElement } from "react";
 import { Text } from "react-native";
 
 import type { UserResponse } from "@/types/auth";
+import * as recipeService from "@/recipes/recipe-service";
 
 import RootLayout from "../../../app/_layout";
 import RecipeLibraryScreen from "../../../app/index";
@@ -99,6 +100,7 @@ describe("AppNavigator", () => {
     const user = makeUserResponse();
 
     jest.spyOn(session, "restoreSession").mockResolvedValue(user);
+    jest.spyOn(recipeService, "loadRecipes").mockResolvedValue({ items: [] });
     const signOutMock = jest.spyOn(session, "signOut").mockResolvedValue(undefined);
 
     await renderRouteNavigation(INDEX_PATH, {
