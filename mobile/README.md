@@ -142,12 +142,32 @@ response, including nullable fields and string-serialized decimal servings.
 
 Five mocked tests cover the authenticated request, an empty library, a missing
 response, and unchanged authentication/network errors. `{ items: [] }` is valid;
-an undefined response is rejected. Library-screen integration, search, and filter
-controls remain next steps.
+an undefined response is rejected. Search and filter controls remain follow-up work.
 
 ```bash
 npm test -- --runInBand src/api/__tests__/recipes.test.ts
 ```
+
+## Recipe Library loading
+
+`src/recipes/recipe-service.ts` coordinates secure token retrieval and the recipe
+API helper. Four tests cover success, missing credentials, storage failure, and
+API failure propagation without duplicating HTTP-level tests.
+
+The library loads on mount and displays recipe titles, loading feedback, a safe
+error with Retry, or an empty-library message only after a successful empty
+response. Retry reruns the effect through an attempt counter. Cleanup prevents
+late state updates but does not cancel requests. Sign-out remains available.
+Eight screen tests cover sign-out and recipe loading, including successful and
+pending retries; navigation tests mock recipe loading at the service boundary.
+
+Android smoke testing confirmed saved titles load and session-restoration recovery
+works after PostgreSQL is restarted. Recipe-loading retry is covered by automated
+tests, not verified on-device. Stopping PostgreSQL and reloading the app exercised
+the restoration gate before the library mounted, not the recipe Retry button.
+
+Recipe cards, scrolling/layout polish, detail navigation, search, and filters
+remain follow-up work. The temporary Check API control is unchanged.
 
 ## Sign-in, local sign-out, and session restoration
 
@@ -237,7 +257,7 @@ returning to login, and saved-session restoration after closing and reopening.
 Health connectivity also passed after correcting the LAN IP/server binding.
 The user also verified Sign out returns to login, Android Back cannot reopen the
 library, closing/reopening remains signed out, and signing in again works.
-Device restoration-error/retry recovery remains unverified.
+Device restoration-error/retry recovery was subsequently verified after restarting PostgreSQL.
 
 Six reducer tests cover state transitions; fourteen provider tests cover initial
 loading, signed-out and authenticated results, safe error messaging, and the
@@ -341,8 +361,9 @@ storage tests cover saving, reading, absence, removal, and failures for each
 operation. Together with eight client tests, one ApiError test, ten auth-helper
 tests, thirteen session tests, six reducer tests, fourteen provider tests, four
 status tests, four gate tests, and twelve shared auth-form tests, the mobile suite contains
-97 passing tests across fifteen suites, including five recipe-list helper tests, one login-screen, six
-navigation, four registration-screen, and two library-screen tests; TypeScript checking also passes.
+107 passing tests across sixteen suites, including five recipe-list helper tests,
+four recipe-service tests, one login-screen, six navigation, four registration-screen,
+and eight library-screen tests; TypeScript checking also passes.
 
 ```bash
 npm test -- token-storage.test.ts --runInBand

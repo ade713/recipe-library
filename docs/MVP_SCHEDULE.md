@@ -213,15 +213,15 @@ Before Week 13 begins, complete cleanup PRs 1–5, 6A, and 6B in the [Backend Cl
 Status: In progress. Expo SDK 57, API connectivity, secure token storage, and
 authentication are implemented. Shared login/registration forms, session
 restoration with loading/error/retry states, local sign-out, and protected
-navigation and the typed recipe-list API helper are implemented. The mobile suite
-has 97 passing tests across fifteen suites; TypeScript
+navigation and library loading with empty/error/retry states are implemented. The mobile suite
+has 107 passing tests across sixteen suites; TypeScript
 checks pass. Android smoke checks confirmed registration, invalid-credential
-feedback, login, sign-out, Back navigation, and saved-session restoration.
+feedback, login, sign-out, Back navigation, saved recipe titles, and session-restoration recovery.
 Registration does not sign users in automatically.
 
 Mobile CI and required backend/mobile checks are configured on main, including
-up-to-date branch requirements. Next: library-screen integration, Option C styling, and mobile recipe
-workflows. Device restoration-error/retry checks, broader API integration, and
+up-to-date branch requirements. Next: Option C styling and further mobile recipe
+workflows. Recipe-loading retry is automated-test covered, not device verified. Broader API integration and
 server error-body parsing remain pending. Focused test-overlap/constants audits
 and explicit API timeouts are follow-up work and should not delay the MVP.
 See mobile/README.md and docs/PROJECT_MEMORY.md for implementation details.
