@@ -21,6 +21,7 @@ from recipe_scrapers import (
     WebsiteNotImplementedError,
     scrape_html,
 )
+from recipe_scrapers._exceptions import SchemaOrgException
 
 FieldValue = TypeVar("FieldValue")
 
@@ -29,6 +30,7 @@ ScraperFactory = Callable[..., AbstractScraper]
 MISSING_FIELD_ERRORS = (
     ElementNotFoundInHtml,
     FieldNotProvidedByWebsiteException,
+    SchemaOrgException,
 )
 
 PARSER_CREATION_ERRORS = (
