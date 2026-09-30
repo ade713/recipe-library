@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react-native";
+import { fireEvent, render, screen } from "@testing-library/react-native";
 
 import type { RecipeSummary } from "@/types/recipe";
 
@@ -130,6 +130,26 @@ describe("RecipeSummaryCard", () => {
     await renderRecipeSummaryCard(recipe);
 
     expect(screen.queryByLabelText(`${recipe.title} photo`)).toBeNull();
+    expect(screen.getByText(recipe.title)).toBeTruthy();
+  });
+
+  it("calls onPress when the recipe card is pressed", async () => {
+    const recipe = makeRecipeSummary();
+    const onPress = jest.fn();
+
+    await render(<RecipeSummaryCard recipe={recipe} onPress={onPress} />);
+
+    await fireEvent.press(screen.getByRole("button", { name: `Open ${recipe.title}` }));
+
+    expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not expose a button when no onPress is provided", async () => {
+    const recipe = makeRecipeSummary();
+
+    await renderRecipeSummaryCard(recipe);
+
+    expect(screen.queryByRole("button", { name: `Open ${recipe.title}` })).toBeNull();
     expect(screen.getByText(recipe.title)).toBeTruthy();
   });
 });

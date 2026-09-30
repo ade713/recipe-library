@@ -1,14 +1,23 @@
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text } from "react-native";
 
 import type { RecipeSummary } from "@/types/recipe";
 
 type RecipeSummaryCardProps = {
   recipe: RecipeSummary;
+  onPress?: () => void;
 };
 
-export function RecipeSummaryCard({ recipe }: RecipeSummaryCardProps) {
+export function RecipeSummaryCard({ recipe, onPress }: RecipeSummaryCardProps) {
+  const isDisabledButton = onPress === undefined;
+
   return (
-    <View style={styles.container}>
+    <Pressable
+      accessibilityRole={!isDisabledButton ? "button" : undefined}
+      accessibilityLabel={!isDisabledButton ? `Open ${recipe.title}` : undefined}
+      disabled={isDisabledButton}
+      onPress={onPress}
+      style={styles.container}
+    >
       <Text>{recipe.title}</Text>
       {recipe.image_url !== null && (
         <Image
@@ -24,7 +33,7 @@ export function RecipeSummaryCard({ recipe }: RecipeSummaryCardProps) {
         <Text key={tag}>{tag}</Text>
       ))}
       {recipe.is_favorite && <Text>Favorite</Text>}
-    </View>
+    </Pressable>
   );
 }
 
