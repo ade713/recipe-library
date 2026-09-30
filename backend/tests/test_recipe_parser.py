@@ -9,6 +9,7 @@ from recipe_scrapers import (
     RecipeSchemaNotFound,
     WebsiteNotImplementedError,
 )
+from recipe_scrapers._exceptions import SchemaOrgException
 
 from app.services.recipe_parser import (
     RecipeParseError,
@@ -227,3 +228,33 @@ def test_recipe_parser_does_not_hide_unexpected_factory_errors() -> None:
         )
 
     assert error_info.value is unexpected_error
+
+
+def test_recipe_parser_warns_when_cook_time_metadata_is_missing() -> None:
+    scraper = Mock()
+    scraper.title.return_value = "Tomato Soup"
+    scraper.ingredients.return_value = ["2 cans tomatoes"]
+    scraper.instructions_list.return_value = ["Simmer for 20 minutes."]
+    scraper.description.return_value = "A quick pantry soup."
+    scraper.image.return_value = "https://example.com/soup.jpg"
+    scraper.author.return_value = "Ada Cook"
+    scraper.site_name.return_value = "Example Kitchen"
+    scraper.yields.return_value = "4 servings"
+    scraper.prep_time.return_value = 10
+    scraper.total_time.return_value = 30
+    scraper.cook_time.side_effect = SchemaOrgException(
+        "Cooktime information not found in SchemaOrg"
+    )
+
+    parser = RecipeParser(
+        scraper_factory=cast(ScraperFactory, Mock(return_value=scraper)),
+    )
+
+    result = parser.parse(
+        html="<html>recipe data</html>",
+        source_url="https://example.com/tomato-soup",
+    )
+
+    assert result.title == "Tomato Soup"
+    assert result.cook_time_minutes is None
+    assert result.warnings == ("Cook Time Minutes was not provided by the source.",)

@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { Button, StyleSheet, Text, View } from "react-native";
+import { Button, FlatList, StyleSheet, Text } from "react-native";
 
 import { apiFetch } from "@/api/client";
 import { loadRecipes } from "@/recipes/recipe-service";
 import type { RecipeSummary } from "@/types/recipe";
+import { RecipeSummaryCard } from "@/recipes/recipe-summary-card";
 import { useAuth } from "@/auth/auth-provider";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type HealthResponse = {
   status: string;
@@ -104,7 +106,7 @@ export default function RecipeLibraryScreen() {
   const shouldDisplayNoRecipesMessage = !isLoadingRecipes && loadingRecipesError === null && recipes.length === 0;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView edges={["bottom"]} style={styles.container}>
       <Text>Your recipe library.</Text>
 
       {shouldDisplayNoRecipesMessage && <Text>{NO_RECIPES_MESSAGE}</Text>}
@@ -118,7 +120,11 @@ export default function RecipeLibraryScreen() {
       {isLoadingRecipes ? (
         <Text>{LOADING_RECIPES_MESSAGE}</Text>
       ) : (
-        recipes.map((recipe) => <Text key={recipe.id}>{recipe.title}</Text>)
+        <FlatList
+          data={recipes}
+          renderItem={({ item }) => <RecipeSummaryCard recipe={item} />}
+          keyExtractor={(item) => item.id}
+        />
       )}
 
       <Button title='Check API' onPress={checkAPI} />
@@ -126,7 +132,7 @@ export default function RecipeLibraryScreen() {
 
       {signOutError && <Text>{signOutError}</Text>}
       <Button title='Sign out' disabled={isSigningOut} onPress={handleSignOut} />
-    </View>
+    </SafeAreaView>
   );
 }
 

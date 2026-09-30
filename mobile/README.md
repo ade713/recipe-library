@@ -154,7 +154,7 @@ npm test -- --runInBand src/api/__tests__/recipes.test.ts
 API helper. Four tests cover success, missing credentials, storage failure, and
 API failure propagation without duplicating HTTP-level tests.
 
-The library loads on mount and displays recipe titles, loading feedback, a safe
+The library loads on mount and displays recipe summary cards, loading feedback, a safe
 error with Retry, or an empty-library message only after a successful empty
 response. Retry reruns the effect through an attempt counter. Cleanup prevents
 late state updates but does not cancel requests. Sign-out remains available.
@@ -166,8 +166,18 @@ works after PostgreSQL is restarted. Recipe-loading retry is covered by automate
 tests, not verified on-device. Stopping PostgreSQL and reloading the app exercised
 the restoration gate before the library mounted, not the recipe Retry button.
 
-Recipe cards, scrolling/layout polish, detail navigation, search, and filters
-remain follow-up work. The temporary Check API control is unchanged.
+`RecipeSummaryCard` receives a `RecipeSummary` and displays its title, optional
+image/time/servings, tags, and favorite indicator. Eleven component tests cover
+rendering, absent metadata, and zero minutes. A `FlatList` renders the cards with
+recipe IDs as stable keys; the screen integration test checks summary metadata.
+The pending sign-out test wraps its initial press in awaited `act` to avoid
+overlapping React updates; no fake-timer hooks are needed in this suite.
+
+Android checks confirmed card content and scrolling through a library larger than
+one screen. A bottom-edge `SafeAreaView` from `react-native-safe-area-context`
+keeps Sign out above Android system navigation; the user verified the fix.
+Broader layout polish, detail navigation, search, and filters remain follow-up
+work. The temporary Check API control is unchanged.
 
 ## Sign-in, local sign-out, and session restoration
 
@@ -361,9 +371,9 @@ storage tests cover saving, reading, absence, removal, and failures for each
 operation. Together with eight client tests, one ApiError test, ten auth-helper
 tests, thirteen session tests, six reducer tests, fourteen provider tests, four
 status tests, four gate tests, and twelve shared auth-form tests, the mobile suite contains
-107 passing tests across sixteen suites, including five recipe-list helper tests,
+118 passing tests across seventeen suites, including five recipe-list helper tests,
 four recipe-service tests, one login-screen, six navigation, four registration-screen,
-and eight library-screen tests; TypeScript checking also passes.
+eight library-screen tests, and eleven recipe-summary-card tests; TypeScript checking also passes.
 
 ```bash
 npm test -- token-storage.test.ts --runInBand

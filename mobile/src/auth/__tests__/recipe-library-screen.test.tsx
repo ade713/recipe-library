@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 
 import type { RecipeListResponse, RecipeSummary } from "@/types/recipe";
 import type { UserResponse } from "@/types/auth";
@@ -84,7 +84,9 @@ describe("RecipeLibraryScreen", () => {
     await renderRecipeLibraryScreen();
 
     const signOutButton = screen.getByRole("button", { name: "Sign out" });
-    void fireEvent.press(signOutButton);
+    await act(async () => {
+      void fireEvent.press(signOutButton);
+    });
 
     await waitFor(() => {
       expect(signOutButton).toBeDisabled();
@@ -122,7 +124,7 @@ describe("RecipeLibraryScreen", () => {
     expect(screen.queryByText(NO_RECIPES_MESSAGE)).toBeNull();
   });
 
-  it("displays loaded recipe titles", async () => {
+  it("displays loaded recipe summaries", async () => {
     const user = makeUserResponse();
     const recipeSummary1 = makeRecipeSummary({ id: RECIPE_ID, title: RECIPE_TITLE });
     const recipeSummary2 = makeRecipeSummary({ id: RECIPE_ID_2, title: RECIPE_TITLE_2 });
@@ -138,6 +140,8 @@ describe("RecipeLibraryScreen", () => {
     expect(screen.getByText(RECIPE_TITLE_2)).toBeTruthy();
     expect(screen.queryByText(LOADING_RECIPES_MESSAGE)).toBeNull();
     expect(screen.queryByText(NO_RECIPES_MESSAGE)).toBeNull();
+    expect(screen.getAllByText("35 min")).toHaveLength(2);
+    expect(screen.getAllByText("Servings: 4")).toHaveLength(2);
   });
 
   it("shows an empty-library message when no recipes are returned", async () => {
