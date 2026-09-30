@@ -247,10 +247,7 @@ def test_recipe_parser_warns_when_cook_time_metadata_is_missing() -> None:
     )
 
     parser = RecipeParser(
-        scraper_factory=cast(
-            ScraperFactory,
-            Mock(return_value=scraper)
-        ),
+        scraper_factory=cast(ScraperFactory, Mock(return_value=scraper)),
     )
 
     result = parser.parse(
@@ -260,6 +257,4 @@ def test_recipe_parser_warns_when_cook_time_metadata_is_missing() -> None:
 
     assert result.title == "Tomato Soup"
     assert result.cook_time_minutes is None
-    assert result.warnings == (
-        "Cook Time Minutes was not provided by the source.",
-    )
+    assert result.warnings == ("Cook Time Minutes was not provided by the source.",)
