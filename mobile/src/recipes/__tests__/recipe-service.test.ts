@@ -1,19 +1,46 @@
-import type { RecipeListResponse } from "@/types/recipe";
+import type { RecipeDetailResponse, RecipeListResponse } from "@/types/recipe";
 
 import * as recipesApi from "../../api/recipes";
 import * as tokenStorage from "../../auth/token-storage";
-import { loadRecipes } from "../recipe-service";
+import { loadRecipe, loadRecipes } from "../recipe-service";
 
+const RECIPE_ID = "test_recipe_id";
+const RECIPE_TITLE = "Chicken Wings";
+const IMAGE_URL = "https://example.com/chicken-wings";
+const BASE_SERVINGS = "4";
+const TIME_MINUTES = 35;
 const TEST_ACCESS_TOKEN = "test-access-token";
 const TOKEN_ERROR_MESSAGE = "No access token available";
 const STORAGE_ERROR_MESSAGE = "Secure storage unavailable";
 const NETWORK_ERROR_MESSAGE = "Network unavailable";
+const RECIPE_REQUEST_ERROR_MESSAGE = "Unexpected recipe request";
 
 const makeRecipeListResponse = (): RecipeListResponse => {
   return {
     items: [],
   };
 };
+
+const makeRecipeDetailResponse = (): RecipeDetailResponse => ({
+  id: RECIPE_ID,
+  title: RECIPE_TITLE,
+  image_url: IMAGE_URL,
+  total_time_minutes: TIME_MINUTES,
+  base_servings: BASE_SERVINGS,
+  is_favorite: false,
+  tags: [],
+  description: null,
+  source_url: null,
+  source_domain: null,
+  source_site_name: null,
+  source_author: null,
+  prep_time_minutes: null,
+  cook_time_minutes: null,
+  servings_unit: null,
+  ingredients: [],
+  steps: [],
+  tips: [],
+});
 
 describe("loadRecipes", () => {
   it("loads recipes using the stored access token", async () => {
@@ -56,5 +83,51 @@ describe("loadRecipes", () => {
     jest.spyOn(recipesApi, "listRecipes").mockRejectedValue(error);
 
     await expect(loadRecipes()).rejects.toBe(error);
+  });
+});
+
+describe("loadRecipe", () => {
+  it("rejects without requesting a recipe when no token is stored", async () => {
+    jest.spyOn(tokenStorage, "getAccessToken").mockResolvedValue(null);
+    const recipeMock = jest.spyOn(recipesApi, "getRecipe").mockImplementation(() => {
+      throw new Error(RECIPE_REQUEST_ERROR_MESSAGE);
+    });
+
+    await expect(loadRecipe(RECIPE_ID)).rejects.toThrow(TOKEN_ERROR_MESSAGE);
+
+    expect(recipeMock).not.toHaveBeenCalled();
+  });
+
+  it("loads the selected recipe using the stored token", async () => {
+    const recipe = makeRecipeDetailResponse();
+
+    jest.spyOn(tokenStorage, "getAccessToken").mockResolvedValue(TEST_ACCESS_TOKEN);
+    const recipeMock = jest.spyOn(recipesApi, "getRecipe").mockResolvedValue(recipe);
+
+    const result = await loadRecipe(recipe.id);
+
+    expect(recipeMock).toHaveBeenCalledWith(TEST_ACCESS_TOKEN, recipe.id);
+    expect(result).toBe(recipe);
+  });
+
+  it("propagates storage failures without requesting a recipe", async () => {
+    const error = new Error(STORAGE_ERROR_MESSAGE);
+
+    jest.spyOn(tokenStorage, "getAccessToken").mockRejectedValue(error);
+    const recipeMock = jest.spyOn(recipesApi, "getRecipe").mockImplementation(() => {
+      throw new Error(RECIPE_REQUEST_ERROR_MESSAGE);
+    });
+
+    await expect(loadRecipe(RECIPE_ID)).rejects.toBe(error);
+    expect(recipeMock).not.toHaveBeenCalled();
+  });
+
+  it("propagates recipe API failures", async () => {
+    const error = new Error(NETWORK_ERROR_MESSAGE);
+
+    jest.spyOn(tokenStorage, "getAccessToken").mockResolvedValue(TEST_ACCESS_TOKEN);
+    jest.spyOn(recipesApi, "getRecipe").mockRejectedValue(error);
+
+    await expect(loadRecipe(RECIPE_ID)).rejects.toBe(error);
   });
 });
