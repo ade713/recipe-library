@@ -24,6 +24,8 @@ const SIGN_IN_TEXT = "Sign in";
 const INDEX_PATH = "/";
 const LOGIN_PATH = "/login";
 const REGISTER_PATH = "/register";
+const RECIPE_DETAIL_TEXT = "Recipe detail route";
+const RECIPE_DETAIL_PATH = "/recipes/recipe-1";
 
 const makeUserResponse = (): UserResponse => ({
   id: TEST_USER_ID,
@@ -50,6 +52,7 @@ const renderRouteNavigation = async (
       index,
       login,
       register,
+      "recipes/[id]": () => <Text>{RECIPE_DETAIL_TEXT}</Text>,
     },
     { initialUrl },
   );
@@ -143,5 +146,51 @@ describe("AppNavigator", () => {
 
     expect(await screen.findByText(LOGIN_TEXT)).toBeTruthy();
     expect(screen.queryByText(LIBRARY_TEXT)).toBeNull();
+  });
+
+  it("redirects signed-out users from recipe detail to login", async () => {
+    jest.spyOn(session, "restoreSession").mockResolvedValue(null);
+
+    await renderRouteNavigation(RECIPE_DETAIL_PATH);
+
+    expect(await screen.findByText(LOGIN_TEXT)).toBeTruthy();
+    expect(screen.queryByText(RECIPE_DETAIL_TEXT)).toBeNull();
+  });
+
+  it("allows authenticated users to open recipe detail", async () => {
+    const user = makeUserResponse();
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(user);
+
+    await renderRouteNavigation(RECIPE_DETAIL_PATH);
+
+    expect(await screen.findByText(RECIPE_DETAIL_TEXT)).toBeTruthy();
+    expect(screen.queryByText(LOGIN_TEXT)).toBeNull();
+  });
+
+  it("opens recipe detail from the library", async () => {
+    const user = makeUserResponse();
+    const recipe = {
+      id: "recipe-1",
+      title: "Tomato Soup",
+      image_url: null,
+      total_time_minutes: null,
+      base_servings: null,
+      is_favorite: false,
+      tags: [],
+    };
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(user);
+    jest.spyOn(recipeService, "loadRecipes").mockResolvedValue({
+      items: [recipe],
+    });
+
+    await renderRouteNavigation(INDEX_PATH, {
+      index: RecipeLibraryScreen,
+    });
+
+    await fireEvent.press(await screen.findByRole("button", { name: `Open ${recipe.title}` }));
+
+    expect(await screen.findByText(RECIPE_DETAIL_TEXT)).toBeTruthy();
   });
 });
