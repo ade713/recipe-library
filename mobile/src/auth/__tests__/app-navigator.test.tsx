@@ -8,10 +8,11 @@ import * as recipeService from "@/recipes/recipe-service";
 
 import RootLayout from "../../../app/_layout";
 import RecipeLibraryScreen from "../../../app/index";
+import RecipeDetailRoute from "../../../app/recipes/[id]";
 import * as auth from "../../api/auth";
+import * as session from "../session";
 import { LoginScreen } from "../login-screen";
 import { RegisterScreen } from "../register-screen";
-import * as session from "../session";
 
 const TEST_USER_ID = "test-user-id";
 const TEST_EMAIL = "test@example.com";
@@ -24,8 +25,10 @@ const SIGN_IN_TEXT = "Sign in";
 const INDEX_PATH = "/";
 const LOGIN_PATH = "/login";
 const REGISTER_PATH = "/register";
+const RECIPE_ID = "recipe-1";
 const RECIPE_DETAIL_TEXT = "Recipe detail route";
 const RECIPE_DETAIL_PATH = "/recipes/recipe-1";
+const LOADING_RECIPE_TEXT = "Loading recipe...";
 
 const makeUserResponse = (): UserResponse => ({
   id: TEST_USER_ID,
@@ -33,6 +36,7 @@ const makeUserResponse = (): UserResponse => ({
 });
 
 type RouteOptions = {
+  detail?: () => ReactElement | null;
   index?: () => ReactElement;
   login?: () => ReactElement;
   register?: () => ReactElement;
@@ -41,6 +45,7 @@ type RouteOptions = {
 const renderRouteNavigation = async (
   initialUrl: string,
   {
+    detail = () => <Text>{RECIPE_DETAIL_TEXT}</Text>,
     index = () => <Text>{LIBRARY_TEXT}</Text>,
     login = () => <Text>{LOGIN_TEXT}</Text>,
     register = () => <Text>{REGISTER_TEXT}</Text>,
@@ -52,7 +57,7 @@ const renderRouteNavigation = async (
       index,
       login,
       register,
-      "recipes/[id]": () => <Text>{RECIPE_DETAIL_TEXT}</Text>,
+      "recipes/[id]": detail,
     },
     { initialUrl },
   );
@@ -171,7 +176,7 @@ describe("AppNavigator", () => {
   it("opens recipe detail from the library", async () => {
     const user = makeUserResponse();
     const recipe = {
-      id: "recipe-1",
+      id: RECIPE_ID,
       title: "Tomato Soup",
       image_url: null,
       total_time_minutes: null,
@@ -192,5 +197,19 @@ describe("AppNavigator", () => {
     await fireEvent.press(await screen.findByRole("button", { name: `Open ${recipe.title}` }));
 
     expect(await screen.findByText(RECIPE_DETAIL_TEXT)).toBeTruthy();
+  });
+
+  it("loads recipe detail using the route ID", async () => {
+    const user = makeUserResponse();
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(user);
+    const loadMock = jest.spyOn(recipeService, "loadRecipe").mockImplementation(() => new Promise(() => {}));
+
+    await renderRouteNavigation(RECIPE_DETAIL_PATH, {
+      detail: RecipeDetailRoute,
+    });
+
+    expect(await screen.findByText(LOADING_RECIPE_TEXT)).toBeTruthy();
+    expect(loadMock).toHaveBeenCalledWith(RECIPE_ID);
   });
 });
