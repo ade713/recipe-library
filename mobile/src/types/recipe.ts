@@ -45,3 +45,41 @@ export type RecipeSummary = {
 export type RecipeListResponse = {
   items: RecipeSummary[];
 };
+
+export type RecipeDetailResponse = RecipeSummary & {
+  description: string | null;
+  source_url: string | null;
+  source_domain: string | null;
+  source_site_name: string | null;
+  source_author: string | null;
+  prep_time_minutes: number | null;
+  cook_time_minutes: number | null;
+  servings_unit: string | null;
+  ingredients: RecipeIngredient[];
+  steps: RecipeStep[];
+  tips: RecipeTip[];
+};
+
+export type RecipeIngredient = {
+  position: number;
+  original_text: string;
+  quantity: string | null;
+  quantity_text: string | null;
+  unit: string | null;
+  name: string | null;
+  preparation_note: string | null;
+  is_optional: boolean;
+  scale_locked: boolean;
+  parse_status: string;
+};
+
+export type RecipeStep = {
+  position: number;
+  instruction: string;
+  section_title: string | null;
+};
+
+export type RecipeTip = {
+  position: number;
+  tip: string;
+};
