@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button, ScrollView, Text } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { RecipeDetailResponse } from "@/types/recipe";
 
@@ -77,21 +78,23 @@ export function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps) {
 
   if (recipe !== null) {
     return (
-      <ScrollView>
-        <Text>{recipe.title}</Text>
-        <Text>{INGREDIENTS_HEADER_TEXT}</Text>
-        {recipe.ingredients.length === 0 ? (
-          <Text>{NO_INGREDIENTS_TEXT}</Text>
-        ) : (
-          recipe.ingredients.map((ingredient) => <Text key={ingredient.position}>{ingredient.original_text}</Text>)
-        )}
-        <Text>{INSTRUCTIONS_HEADER_TEXT}</Text>
-        {recipe.steps.length === 0 ? (
-          <Text>{NO_INSTRUCTIONS_TEXT}</Text>
-        ) : (
-          recipe.steps.map((step) => <Text key={step.position}>{`${step.position}. ${step.instruction}`}</Text>)
-        )}
-      </ScrollView>
+      <SafeAreaView edges={["bottom"]} style={{ flex: 1 }}>
+        <ScrollView>
+          <Text>{recipe.title}</Text>
+          <Text>{INGREDIENTS_HEADER_TEXT}</Text>
+          {recipe.ingredients.length === 0 ? (
+            <Text>{NO_INGREDIENTS_TEXT}</Text>
+          ) : (
+            recipe.ingredients.map((ingredient) => <Text key={ingredient.position}>{ingredient.original_text}</Text>)
+          )}
+          <Text>{INSTRUCTIONS_HEADER_TEXT}</Text>
+          {recipe.steps.length === 0 ? (
+            <Text>{NO_INSTRUCTIONS_TEXT}</Text>
+          ) : (
+            recipe.steps.map((step) => <Text key={step.position}>{`${step.position}. ${step.instruction}`}</Text>)
+          )}
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
