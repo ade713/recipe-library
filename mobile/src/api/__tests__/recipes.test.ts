@@ -1,33 +1,32 @@
-import type { RecipeDetailResponse, RecipeListResponse, RecipeSummary } from "@/types/recipe";
+import { makeRecipeDetailResponse, makeRecipeSummary } from "@/test/fixtures/recipes";
+import type { RecipeListResponse } from "@/types/recipe";
 
 import * as client from "../client";
 import { ApiError } from "../errors";
 import { getRecipe, listRecipes } from "../recipes";
 
-const TEST_ACCESS_TOKEN = "test-access-token";
-const RECIPES_PATH = "/recipes";
-const RECIPE_ID = "test_recipe_id";
-const RECIPE_TITLE = "Chicken Wings";
-const IMAGE_URL = "https://example.com/chicken-wings";
 const BASE_SERVINGS = "4";
-const TIME_MINUTES = 35;
-const RECIPE_LIST_ERROR_MESSAGE = "Expected a recipe list response";
-const RECIPE_DETAIL_ERROR_MESSAGE = "Expected a recipe detail response";
+const IMAGE_URL = "https://example.com/chicken-wings";
 const NETWORK_ERROR_MESSAGE = "Network unavailable";
+const RECIPE_DETAIL_ERROR_MESSAGE = "Expected a recipe detail response";
+const RECIPE_ID = "test_recipe_id";
+const RECIPE_LIST_ERROR_MESSAGE = "Expected a recipe list response";
+const RECIPE_TITLE = "Chicken Wings";
+const RECIPES_PATH = "/recipes";
+const TEST_ACCESS_TOKEN = "test-access-token";
+const TIME_MINUTES = 35;
 
 describe("listRecipes", () => {
   it("returns recipes using the supplied access token", async () => {
-    const recipeSummary: RecipeSummary = {
+    const recipe = makeRecipeSummary({
       id: RECIPE_ID,
       title: RECIPE_TITLE,
       image_url: IMAGE_URL,
       base_servings: BASE_SERVINGS,
       total_time_minutes: TIME_MINUTES,
-      is_favorite: false,
-      tags: [],
-    };
+    });
     const recipeListResponse: RecipeListResponse = {
-      items: [recipeSummary],
+      items: [recipe],
     };
 
     const requestMock = jest.spyOn(client, "apiFetch").mockResolvedValue(recipeListResponse);
@@ -84,26 +83,13 @@ describe("getRecipe", () => {
   });
 
   it("returns the requested recipe detail", async () => {
-    const recipe: RecipeDetailResponse = {
+    const recipe = makeRecipeDetailResponse({
       id: RECIPE_ID,
       title: RECIPE_TITLE,
-      image_url: null,
-      total_time_minutes: TIME_MINUTES,
+      image_url: IMAGE_URL,
       base_servings: BASE_SERVINGS,
-      is_favorite: false,
-      tags: [],
-      description: null,
-      source_url: null,
-      source_domain: null,
-      source_site_name: null,
-      source_author: null,
-      prep_time_minutes: null,
-      cook_time_minutes: null,
-      servings_unit: null,
-      ingredients: [],
-      steps: [],
-      tips: [],
-    };
+      total_time_minutes: TIME_MINUTES,
+    });
 
     jest.spyOn(client, "apiFetch").mockResolvedValue(recipe);
 

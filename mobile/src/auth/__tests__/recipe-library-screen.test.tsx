@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import { router } from "expo-router";
 
+import { makeRecipeSummary } from "@/test/fixtures/recipes";
 import type { RecipeListResponse, RecipeSummary } from "@/types/recipe";
 import type { UserResponse } from "@/types/auth";
 import * as recipeService from "@/recipes/recipe-service";
@@ -9,38 +10,26 @@ import { AuthProvider } from "../auth-provider";
 import RecipeLibraryScreen from "../../../app/index";
 import * as session from "../session";
 
-const TEST_USER_ID = "test-user-id";
-const TEST_EMAIL = "test@example.com";
-const RECIPE_ID = "test_recipe_id";
-const RECIPE_TITLE = "Chicken Wings";
-const RECIPE_ID_2 = "test_recipe_id_2";
-const RECIPE_TITLE_2 = "Honey Garlic Chicken Wings";
-const IMAGE_URL = "https://example.com/chicken-wings";
 const BASE_SERVINGS = "4";
-const TIME_MINUTES = 35;
-const NO_RECIPES_MESSAGE = "No saved recipes yet.";
-const STORAGE_ERROR_MESSAGE = "Secure storage unavailable";
-const SIGN_OUT_ERROR_MESSAGE = "Unable to sign out. Please try again.";
+const IMAGE_URL = "https://example.com/chicken-wings";
 const LOAD_RECIPES_ERROR_MESSAGE = "Unable to load recipes.";
 const LOADING_RECIPES_MESSAGE = "Loading recipes...";
+const NO_RECIPES_MESSAGE = "No saved recipes yet.";
+const RECIPE_ID = "test_recipe_id";
+const RECIPE_ID_2 = "test_recipe_id_2";
 const RECIPE_LIST_ERROR_MESSAGE = "Expected a recipe list response";
+const RECIPE_TITLE = "Chicken Wings";
+const RECIPE_TITLE_2 = "Honey Garlic Chicken Wings";
 const RETRY_TEXT = "Retry";
+const SIGN_OUT_ERROR_MESSAGE = "Unable to sign out. Please try again.";
+const STORAGE_ERROR_MESSAGE = "Secure storage unavailable";
+const TEST_EMAIL = "test@example.com";
+const TEST_USER_ID = "test-user-id";
+const TIME_MINUTES = 35;
 
 const makeUserResponse = (): UserResponse => ({
   id: TEST_USER_ID,
   email: TEST_EMAIL,
-});
-const makeRecipeSummary = ({
-  id = RECIPE_ID,
-  title = RECIPE_TITLE,
-}: { id?: string; title?: string } = {}): RecipeSummary => ({
-  id,
-  title,
-  image_url: IMAGE_URL,
-  base_servings: BASE_SERVINGS,
-  total_time_minutes: TIME_MINUTES,
-  is_favorite: false,
-  tags: [],
 });
 const makeRecipeListResponse = (items: RecipeSummary[] = []): RecipeListResponse => ({
   items,
@@ -127,9 +116,21 @@ describe("RecipeLibraryScreen", () => {
 
   it("displays loaded recipe summaries", async () => {
     const user = makeUserResponse();
-    const recipeSummary1 = makeRecipeSummary({ id: RECIPE_ID, title: RECIPE_TITLE });
-    const recipeSummary2 = makeRecipeSummary({ id: RECIPE_ID_2, title: RECIPE_TITLE_2 });
-    const items = [recipeSummary1, recipeSummary2];
+    const recipe1 = makeRecipeSummary({
+      id: RECIPE_ID,
+      title: RECIPE_TITLE,
+      image_url: IMAGE_URL,
+      base_servings: BASE_SERVINGS,
+      total_time_minutes: TIME_MINUTES,
+    });
+    const recipe2 = makeRecipeSummary({
+      id: RECIPE_ID_2,
+      title: RECIPE_TITLE_2,
+      image_url: IMAGE_URL,
+      base_servings: BASE_SERVINGS,
+      total_time_minutes: TIME_MINUTES,
+    });
+    const items = [recipe1, recipe2];
     const recipes = makeRecipeListResponse(items);
 
     jest.spyOn(session, "restoreSession").mockResolvedValue(user);
@@ -206,7 +207,13 @@ describe("RecipeLibraryScreen", () => {
 
   it("opens the selected recipe when its card is pressed", async () => {
     const user = makeUserResponse();
-    const recipe = makeRecipeSummary();
+    const recipe = makeRecipeSummary({
+      id: RECIPE_ID,
+      title: RECIPE_TITLE,
+      image_url: IMAGE_URL,
+      base_servings: BASE_SERVINGS,
+      total_time_minutes: TIME_MINUTES,
+    });
     const recipeList = makeRecipeListResponse([recipe]);
 
     const pushMock = jest.spyOn(router, "push").mockImplementation(() => {});

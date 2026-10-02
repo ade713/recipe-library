@@ -1,44 +1,20 @@
 import { fireEvent, render, screen } from "@testing-library/react-native";
 
-import type { RecipeDetailResponse } from "@/types/recipe";
+import { makeRecipeDetailResponse } from "@/test/fixtures/recipes";
 
 import { RecipeDetailScreen } from "../recipe-detail-screen";
 import * as recipeService from "../recipe-service";
 
+const INGREDIENTS_HEADER_TEXT = "Ingredients";
+const INSTRUCTIONS_HEADER_TEXT = "Instructions";
+const LOAD_RECIPE_ERROR_MESSAGE = "Unable to load recipe.";
+const LOADING_RECIPE_TEXT = "Loading recipe...";
+const NO_INGREDIENTS_TEXT = "No ingredients available";
+const NO_INSTRUCTIONS_TEXT = "No instructions available";
 const RECIPE_ID = "test_recipe_id";
 const RECIPE_TITLE = "Chicken Wings";
-const IMAGE_URL = "https://example.com/chicken-wings";
-const BASE_SERVINGS = "4";
-const TIME_MINUTES = 35;
-const LOADING_RECIPE_TEXT = "Loading recipe...";
 const RETRY_TEXT = "Retry";
 const STORAGE_ERROR_MESSAGE = "Secure storage unavailable";
-const LOAD_RECIPE_ERROR_MESSAGE = "Unable to load recipe.";
-const INGREDIENTS_HEADER_TEXT = "Ingredients";
-const NO_INGREDIENTS_TEXT = "No ingredients available";
-const INSTRUCTIONS_HEADER_TEXT = "Instructions";
-const NO_INSTRUCTIONS_TEXT = "No instructions available";
-
-const makeRecipeDetailResponse = (): RecipeDetailResponse => ({
-  id: RECIPE_ID,
-  title: RECIPE_TITLE,
-  image_url: IMAGE_URL,
-  total_time_minutes: TIME_MINUTES,
-  base_servings: BASE_SERVINGS,
-  is_favorite: false,
-  tags: [],
-  description: null,
-  source_url: null,
-  source_domain: null,
-  source_site_name: null,
-  source_author: null,
-  prep_time_minutes: null,
-  cook_time_minutes: null,
-  servings_unit: null,
-  ingredients: [],
-  steps: [],
-  tips: [],
-});
 
 const renderRecipeDetailScreen = async () => {
   await render(<RecipeDetailScreen recipeId={RECIPE_ID} />);
