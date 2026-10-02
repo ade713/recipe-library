@@ -73,8 +73,9 @@ Post-auth follow-up: audit test overlap and repeated frontend constants without 
 
 - Recipe cards now invoke optional callbacks; the library opens the selected protected detail route. The route passes its ID to RecipeDetailScreen.
 - Typed getRecipe and token-coordinating loadRecipe helpers support detail requests. The screen handles loading, safe failure feedback, repeated/pending retries, title, original ingredient text, numbered steps, and explicit empty sections.
-- Android verified navigation, different selected titles, Back, backend-outage error feedback, and retry recovery. Ingredient/instruction rendering was added afterward and still needs device layout verification.
+- Android verified navigation, different selected titles, Back, backend-outage error feedback, and retry recovery. Final checks confirmed original ingredient text, numbered instructions, both empty sections, and content replacement between recipes. A bottom-edge SafeAreaView around the detail ScrollView fixes Android navigation overlap; the final content is reachable above system navigation.
 - Stop this PR at ingredients/instructions and empty states. Source attribution and further detail presentation are follow-up PRs. Conservative backend ingredient parsing remains required before scaling.
+- Next separate task after closing this PR: consolidate repeated recipe test fixtures into shared typed builders, preserving test behavior. Exclude UI features and loading-state refactoring from that cleanup.
 - User preference: keep PRs small and digestible, define scope up front, count test/doc size, and split adjacent features into follow-ups. Separate commits alone do not address oversized PRs; see AGENTS.md.
 
 ## UI exploration

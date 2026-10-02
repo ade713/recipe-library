@@ -200,14 +200,21 @@ states, including repeated failed retries and pending retries.
 
 Android checks confirmed card-to-detail navigation, different selected recipe
 titles, Back navigation, failed loading with the backend stopped, and successful
-Retry after restarting it. These checks preceded ingredient/instruction rendering;
-that content has automated coverage but still needs a device layout check.
+Retry after restarting it. Final Android checks confirmed original ingredient text,
+numbered instructions, both empty-section messages, and content replacement when
+switching recipes. A bottom-edge SafeAreaView around the detail ScrollView fixes
+content overlapping Android system navigation; scrolling to the final content
+above the navigation controls was verified on-device.
 
 This PR stops at initial ingredients/instructions. Source attribution UI and
 further detail presentation belong in follow-up PRs. Structured ingredient parsing
 remains deferred backend work: imports retain original text and default to
 unparsed; the existing scaling utility is not connected to import normalization.
 Do not enable portion scaling until conservative parsing is connected.
+
+The next separate task is shared typed recipe test-fixture builders to reduce
+repetition across suites while preserving test behavior. Keep UI features and
+loading-state refactoring outside that cleanup PR.
 
 ## Sign-in, local sign-out, and session restoration
 
