@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
-import { Button, Text } from "react-native";
+import { Button, ScrollView, Text } from "react-native";
 
 import type { RecipeDetailResponse } from "@/types/recipe";
 
 import { loadRecipe } from "./recipe-service";
 
+const INGREDIENTS_HEADER_TEXT = "Ingredients";
+const INSTRUCTIONS_HEADER_TEXT = "Instructions";
 const LOADING_RECIPE_TEXT = "Loading recipe...";
 const LOAD_RECIPE_ERROR_MESSAGE = "Unable to load recipe.";
+const NO_INGREDIENTS_TEXT = "No ingredients available";
+const NO_INSTRUCTIONS_TEXT = "No instructions available";
 const RETRY_TEXT = "Retry";
 
 type RecipeDetailScreenProps = {
@@ -72,7 +76,23 @@ export function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps) {
   }
 
   if (recipe !== null) {
-    return <Text>{recipe.title}</Text>;
+    return (
+      <ScrollView>
+        <Text>{recipe.title}</Text>
+        <Text>{INGREDIENTS_HEADER_TEXT}</Text>
+        {recipe.ingredients.length === 0 ? (
+          <Text>{NO_INGREDIENTS_TEXT}</Text>
+        ) : (
+          recipe.ingredients.map((ingredient) => <Text key={ingredient.position}>{ingredient.original_text}</Text>)
+        )}
+        <Text>{INSTRUCTIONS_HEADER_TEXT}</Text>
+        {recipe.steps.length === 0 ? (
+          <Text>{NO_INSTRUCTIONS_TEXT}</Text>
+        ) : (
+          recipe.steps.map((step) => <Text key={step.position}>{`${step.position}. ${step.instruction}`}</Text>)
+        )}
+      </ScrollView>
+    );
   }
 
   return <Text>{LOADING_RECIPE_TEXT}</Text>;

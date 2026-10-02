@@ -14,6 +14,10 @@ const LOADING_RECIPE_TEXT = "Loading recipe...";
 const RETRY_TEXT = "Retry";
 const STORAGE_ERROR_MESSAGE = "Secure storage unavailable";
 const LOAD_RECIPE_ERROR_MESSAGE = "Unable to load recipe.";
+const INGREDIENTS_HEADER_TEXT = "Ingredients";
+const NO_INGREDIENTS_TEXT = "No ingredients available";
+const INSTRUCTIONS_HEADER_TEXT = "Instructions";
+const NO_INSTRUCTIONS_TEXT = "No instructions available";
 
 const makeRecipeDetailResponse = (): RecipeDetailResponse => ({
   id: RECIPE_ID,
@@ -129,5 +133,93 @@ describe("RecipeDetailScreen", () => {
     expect(screen.queryByText(LOAD_RECIPE_ERROR_MESSAGE)).toBeNull();
     expect(screen.queryByRole("button", { name: RETRY_TEXT })).toBeNull();
     expect(loadMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("displays the recipe ingredients", async () => {
+    const recipe = makeRecipeDetailResponse();
+    const ingredientText = "2 cups flour";
+    const ingredient2Text = "A pinch of salt";
+    recipe.ingredients = [
+      {
+        position: 1,
+        original_text: ingredientText,
+        quantity: null,
+        quantity_text: null,
+        unit: null,
+        name: null,
+        preparation_note: null,
+        is_optional: false,
+        scale_locked: false,
+        parse_status: "unparsed",
+      },
+      {
+        position: 2,
+        original_text: ingredient2Text,
+        quantity: null,
+        quantity_text: null,
+        unit: null,
+        name: null,
+        preparation_note: null,
+        is_optional: false,
+        scale_locked: false,
+        parse_status: "unparsed",
+      },
+    ];
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+
+    await renderRecipeDetailScreen();
+
+    expect(await screen.findByText(INGREDIENTS_HEADER_TEXT)).toBeTruthy();
+    expect(screen.getByText(ingredientText)).toBeTruthy();
+    expect(screen.getByText(ingredient2Text)).toBeTruthy();
+  });
+
+  it("shows feedback when no ingredients are available", async () => {
+    const recipe = makeRecipeDetailResponse();
+    recipe.ingredients = [];
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+
+    await renderRecipeDetailScreen();
+
+    expect(await screen.findByText(NO_INGREDIENTS_TEXT)).toBeTruthy();
+    expect(screen.getByText(recipe.title)).toBeTruthy();
+  });
+
+  it("displays numbered recipe instructions", async () => {
+    const recipe = makeRecipeDetailResponse();
+    recipe.steps = [
+      {
+        position: 1,
+        instruction: "Mix the ingredients.",
+        section_title: null,
+      },
+      {
+        position: 2,
+        instruction: "Bake for 25 minutes.",
+        section_title: null,
+      },
+    ];
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+
+    await renderRecipeDetailScreen();
+
+    expect(await screen.findByText(INSTRUCTIONS_HEADER_TEXT)).toBeTruthy();
+    expect(screen.getByText("1. Mix the ingredients.")).toBeTruthy();
+    expect(screen.getByText("2. Bake for 25 minutes.")).toBeTruthy();
+  });
+
+  it("shows feedback when no instructions are available", async () => {
+    const recipe = makeRecipeDetailResponse();
+    recipe.steps = [];
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+
+    await renderRecipeDetailScreen();
+
+    expect(await screen.findByText(NO_INSTRUCTIONS_TEXT)).toBeTruthy();
+    expect(screen.getByText(recipe.title)).toBeTruthy();
   });
 });
