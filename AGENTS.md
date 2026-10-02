@@ -54,6 +54,13 @@ Review the user's diff and suggest improvements without rewriting everything.
 
 Avoid using Builder mode for core learning tasks. Builder mode is acceptable for repetitive boilerplate after the user understands the pattern.
 
+## PR scope
+
+- Keep PRs small, focused, and easy to review; agree on a clear boundary before starting.
+- Count tests and documentation toward review size, not only implementation lines.
+- Stop at a coherent, tested milestone before adding another feature. Separate commits do not replace separate PRs.
+- Put adjacent features into follow-up PRs instead of expanding the current branch indefinitely.
+
 ## Done means
 
 A task is done when:

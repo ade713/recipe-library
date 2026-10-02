@@ -176,8 +176,38 @@ overlapping React updates; no fake-timer hooks are needed in this suite.
 Android checks confirmed card content and scrolling through a library larger than
 one screen. A bottom-edge `SafeAreaView` from `react-native-safe-area-context`
 keeps Sign out above Android system navigation; the user verified the fix.
-Broader layout polish, detail navigation, search, and filters remain follow-up
+Broader layout polish, search, and filters remain follow-up
 work. The temporary Check API control is unchanged.
+
+## Recipe detail navigation and initial content
+
+Cards accept an optional press callback. The library pushes `/recipes/[id]` with
+the selected recipe ID, and the detail route is inside the authenticated
+`Stack.Protected` group. The route reads `id` and passes it to RecipeDetailScreen.
+Backend authentication and ownership checks remain authoritative.
+
+`getRecipe(token, recipeId)` returns a typed RecipeDetailResponse, rejects an
+undefined response, and preserves API errors. Response types use backend
+snake_case keys and decimal strings; they do not validate JSON at runtime.
+`loadRecipe(recipeId)` reads the stored token, rejects missing credentials, and
+preserves storage/API failures.
+
+The screen shows loading, safe errors with Retry, or a scrollable title,
+original ingredient lines, and numbered instructions. Empty ingredient and step
+lists have explicit messages. An attempt counter drives retries; effect cleanup
+prevents stale updates but does not cancel requests. Ten screen tests cover these
+states, including repeated failed retries and pending retries.
+
+Android checks confirmed card-to-detail navigation, different selected recipe
+titles, Back navigation, failed loading with the backend stopped, and successful
+Retry after restarting it. These checks preceded ingredient/instruction rendering;
+that content has automated coverage but still needs a device layout check.
+
+This PR stops at initial ingredients/instructions. Source attribution UI and
+further detail presentation belong in follow-up PRs. Structured ingredient parsing
+remains deferred backend work: imports retain original text and default to
+unparsed; the existing scaling utility is not connected to import normalization.
+Do not enable portion scaling until conservative parsing is connected.
 
 ## Sign-in, local sign-out, and session restoration
 
@@ -367,13 +397,8 @@ tokens, not passwords, and never log token values or put them in public
 environment variables.
 
 The SecureStore dependency and Expo config plugin are registered. Seven mocked
-storage tests cover saving, reading, absence, removal, and failures for each
-operation. Together with eight client tests, one ApiError test, ten auth-helper
-tests, thirteen session tests, six reducer tests, fourteen provider tests, four
-status tests, four gate tests, and twelve shared auth-form tests, the mobile suite contains
-118 passing tests across seventeen suites, including five recipe-list helper tests,
-four recipe-service tests, one login-screen, six navigation, four registration-screen,
-eight library-screen tests, and eleven recipe-summary-card tests; TypeScript checking also passes.
+storage tests cover saving, reading, absence, and failures. The full mobile suite
+has 144 passing tests across eighteen suites; TypeScript checking also passes.
 
 ```bash
 npm test -- token-storage.test.ts --runInBand
