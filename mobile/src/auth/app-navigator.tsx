@@ -10,6 +10,7 @@ export function AppNavigator() {
     <Stack>
       <Stack.Protected guard={state.status === "authenticated"}>
         <Stack.Screen name='index' options={{ title: "Recipe Library" }} />
+        <Stack.Screen name='recipes/[id]' options={{ title: "Recipe detail" }} />
       </Stack.Protected>
       <Stack.Protected guard={state.status === "signedOut"}>
         <Stack.Screen name='login' options={{ title: "Sign in" }} />

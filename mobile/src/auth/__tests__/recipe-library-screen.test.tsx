@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { router } from "expo-router";
 
 import type { RecipeListResponse, RecipeSummary } from "@/types/recipe";
 import type { UserResponse } from "@/types/auth";
@@ -201,5 +202,24 @@ describe("RecipeLibraryScreen", () => {
     expect(screen.queryByText(NO_RECIPES_MESSAGE)).toBeNull();
     expect(screen.queryByRole("button", { name: RETRY_TEXT })).toBeNull();
     expect(recipeMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("opens the selected recipe when its card is pressed", async () => {
+    const user = makeUserResponse();
+    const recipe = makeRecipeSummary();
+    const recipeList = makeRecipeListResponse([recipe]);
+
+    const pushMock = jest.spyOn(router, "push").mockImplementation(() => {});
+    jest.spyOn(session, "restoreSession").mockResolvedValue(user);
+    jest.spyOn(recipeService, "loadRecipes").mockResolvedValue(recipeList);
+
+    await renderRecipeLibraryScreen();
+
+    await fireEvent.press(await screen.findByRole("button", { name: `Open ${recipe.title}` }));
+
+    expect(pushMock).toHaveBeenCalledWith({
+      pathname: "/recipes/[id]",
+      params: { id: recipe.id },
+    });
   });
 });

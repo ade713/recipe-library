@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button, FlatList, StyleSheet, Text } from "react-native";
+import { router } from "expo-router";
 
 import { apiFetch } from "@/api/client";
 import { loadRecipes } from "@/recipes/recipe-service";
@@ -122,7 +123,17 @@ export default function RecipeLibraryScreen() {
       ) : (
         <FlatList
           data={recipes}
-          renderItem={({ item }) => <RecipeSummaryCard recipe={item} />}
+          renderItem={({ item }) => (
+            <RecipeSummaryCard
+              recipe={item}
+              onPress={() =>
+                router.push({
+                  pathname: "/recipes/[id]",
+                  params: { id: item.id },
+                })
+              }
+            />
+          )}
           keyExtractor={(item) => item.id}
         />
       )}
