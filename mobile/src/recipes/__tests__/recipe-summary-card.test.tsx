@@ -1,39 +1,9 @@
 import { fireEvent, render, screen } from "@testing-library/react-native";
 
+import { makeRecipeSummary } from "@/test/fixtures/recipes";
 import type { RecipeSummary } from "@/types/recipe";
 
 import { RecipeSummaryCard } from "../recipe-summary-card";
-
-const RECIPE_ID = "test_recipe_id";
-const RECIPE_TITLE = "Chicken Wings";
-
-type RecipeSummaryOptions = {
-  id?: string;
-  title?: string;
-  image_url?: string | null;
-  total_time_minutes?: number | null;
-  base_servings?: string | null;
-  is_favorite?: boolean;
-  tags?: string[];
-};
-
-const makeRecipeSummary = ({
-  id = RECIPE_ID,
-  title = RECIPE_TITLE,
-  image_url = null,
-  total_time_minutes = null,
-  base_servings = null,
-  is_favorite = false,
-  tags = [],
-}: RecipeSummaryOptions = {}): RecipeSummary => ({
-  id,
-  title,
-  image_url,
-  total_time_minutes,
-  base_servings,
-  is_favorite,
-  tags,
-});
 
 const renderRecipeSummaryCard = async (recipe: RecipeSummary): Promise<void> => {
   await render(<RecipeSummaryCard recipe={recipe} />);

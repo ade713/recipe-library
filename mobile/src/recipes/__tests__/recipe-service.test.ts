@@ -1,46 +1,22 @@
-import type { RecipeDetailResponse, RecipeListResponse } from "@/types/recipe";
+import type { RecipeListResponse } from "@/types/recipe";
+import { makeRecipeDetailResponse } from "@/test/fixtures/recipes";
 
 import * as recipesApi from "../../api/recipes";
 import * as tokenStorage from "../../auth/token-storage";
 import { loadRecipe, loadRecipes } from "../recipe-service";
 
+const NETWORK_ERROR_MESSAGE = "Network unavailable";
 const RECIPE_ID = "test_recipe_id";
-const RECIPE_TITLE = "Chicken Wings";
-const IMAGE_URL = "https://example.com/chicken-wings";
-const BASE_SERVINGS = "4";
-const TIME_MINUTES = 35;
+const RECIPE_REQUEST_ERROR_MESSAGE = "Unexpected recipe request";
+const STORAGE_ERROR_MESSAGE = "Secure storage unavailable";
 const TEST_ACCESS_TOKEN = "test-access-token";
 const TOKEN_ERROR_MESSAGE = "No access token available";
-const STORAGE_ERROR_MESSAGE = "Secure storage unavailable";
-const NETWORK_ERROR_MESSAGE = "Network unavailable";
-const RECIPE_REQUEST_ERROR_MESSAGE = "Unexpected recipe request";
 
 const makeRecipeListResponse = (): RecipeListResponse => {
   return {
     items: [],
   };
 };
-
-const makeRecipeDetailResponse = (): RecipeDetailResponse => ({
-  id: RECIPE_ID,
-  title: RECIPE_TITLE,
-  image_url: IMAGE_URL,
-  total_time_minutes: TIME_MINUTES,
-  base_servings: BASE_SERVINGS,
-  is_favorite: false,
-  tags: [],
-  description: null,
-  source_url: null,
-  source_domain: null,
-  source_site_name: null,
-  source_author: null,
-  prep_time_minutes: null,
-  cook_time_minutes: null,
-  servings_unit: null,
-  ingredients: [],
-  steps: [],
-  tips: [],
-});
 
 describe("loadRecipes", () => {
   it("loads recipes using the stored access token", async () => {

@@ -3,6 +3,7 @@ import { renderRouter } from "expo-router/testing-library";
 import type { ReactElement } from "react";
 import { Text } from "react-native";
 
+import { makeRecipeSummary } from "@/test/fixtures/recipes";
 import type { UserResponse } from "@/types/auth";
 import * as recipeService from "@/recipes/recipe-service";
 
@@ -14,21 +15,21 @@ import * as session from "../session";
 import { LoginScreen } from "../login-screen";
 import { RegisterScreen } from "../register-screen";
 
-const TEST_USER_ID = "test-user-id";
+const CREATE_ACCOUNT_TEXT = "Create account";
+const INDEX_PATH = "/";
+const LIBRARY_TEXT = "Library route";
+const LOADING_RECIPE_TEXT = "Loading recipe...";
+const LOGIN_PATH = "/login";
+const LOGIN_TEXT = "Login route";
+const RECIPE_DETAIL_PATH = "/recipes/recipe-1";
+const RECIPE_DETAIL_TEXT = "Recipe detail route";
+const RECIPE_ID = "recipe-1";
+const REGISTER_PATH = "/register";
+const REGISTER_TEXT = "Registration route";
+const SIGN_IN_TEXT = "Sign in";
 const TEST_EMAIL = "test@example.com";
 const TEST_PASSWORD = "testPassword1";
-const LIBRARY_TEXT = "Library route";
-const LOGIN_TEXT = "Login route";
-const REGISTER_TEXT = "Registration route";
-const CREATE_ACCOUNT_TEXT = "Create account";
-const SIGN_IN_TEXT = "Sign in";
-const INDEX_PATH = "/";
-const LOGIN_PATH = "/login";
-const REGISTER_PATH = "/register";
-const RECIPE_ID = "recipe-1";
-const RECIPE_DETAIL_TEXT = "Recipe detail route";
-const RECIPE_DETAIL_PATH = "/recipes/recipe-1";
-const LOADING_RECIPE_TEXT = "Loading recipe...";
+const TEST_USER_ID = "test-user-id";
 
 const makeUserResponse = (): UserResponse => ({
   id: TEST_USER_ID,
@@ -175,15 +176,10 @@ describe("AppNavigator", () => {
 
   it("opens recipe detail from the library", async () => {
     const user = makeUserResponse();
-    const recipe = {
+    const recipe = makeRecipeSummary({
       id: RECIPE_ID,
       title: "Tomato Soup",
-      image_url: null,
-      total_time_minutes: null,
-      base_servings: null,
-      is_favorite: false,
-      tags: [],
-    };
+    });
 
     jest.spyOn(session, "restoreSession").mockResolvedValue(user);
     jest.spyOn(recipeService, "loadRecipes").mockResolvedValue({
