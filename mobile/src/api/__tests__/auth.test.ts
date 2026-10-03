@@ -1,40 +1,35 @@
-import { getCurrentUser, login, register } from "../auth";
-import * as client from "../client";
-import type { LoginRequest, RegisterRequest, TokenResponse, UserResponse } from "../../types/auth";
-import { ApiError } from "../errors";
+import { makeUserResponse } from "@/test/fixtures/users";
 
-const TEST_EMAIL = "test@example.com";
-const TEST_PASSWORD = "test-password";
-const TEST_ACCESS_TOKEN = "test-access-token";
-const TOKEN_TYPE = "bearer";
-const LOGIN_PATH = "/auth/login";
-const REGISTER_PATH = "/auth/register";
+import { getCurrentUser, login, register } from "../auth";
+import type { LoginRequest, RegisterRequest, TokenResponse } from "../../types/auth";
+import { ApiError } from "../errors";
+import * as client from "../client";
+
+const ACCESS_TOKEN = "test-access-token";
+const EMAIL = "test@example.com";
 const GET_CURRENT_USER_PATH = "/auth/me";
-const CURRENT_USER_ID = "current-user-uuid";
-const TOKEN_ERROR_MESSAGE = "Expected a token response";
-const USER_ERROR_MESSAGE = "Expected a user response";
+const LOGIN_PATH = "/auth/login";
 const NETWORK_ERROR_MESSAGE = "Network unavailable";
+const PASSWORD = "test-password";
+const REGISTER_PATH = "/auth/register";
+const TOKEN_ERROR_MESSAGE = "Expected a token response";
+const TOKEN_TYPE = "bearer";
+const USER_ERROR_MESSAGE = "Expected a user response";
 
 const makeLoginPayload = (): LoginRequest => ({
-  email: TEST_EMAIL,
-  password: TEST_PASSWORD,
+  email: EMAIL,
+  password: PASSWORD,
 });
-
 const makeRegisterPayload = (): RegisterRequest => ({
-  email: TEST_EMAIL,
-  password: TEST_PASSWORD,
-});
-
-const makeUserResponse = (): UserResponse => ({
-  id: CURRENT_USER_ID,
-  email: TEST_EMAIL,
+  email: EMAIL,
+  password: PASSWORD,
 });
 
 describe("login", () => {
   it("posts credentials and returns the token response", async () => {
     const payload = makeLoginPayload();
     const tokenResponse: TokenResponse = {
-      access_token: TEST_ACCESS_TOKEN,
+      access_token: ACCESS_TOKEN,
       token_type: TOKEN_TYPE,
     };
 
@@ -73,13 +68,13 @@ describe("getCurrentUser", () => {
 
     const requestMock = jest.spyOn(client, "apiFetch").mockResolvedValue(userResponse);
 
-    const response = await getCurrentUser(TEST_ACCESS_TOKEN);
+    const response = await getCurrentUser(ACCESS_TOKEN);
 
     expect(response).toBe(userResponse);
     expect(requestMock).toHaveBeenCalledWith(GET_CURRENT_USER_PATH, {
       method: "GET",
       headers: {
-        Authorization: `Bearer ${TEST_ACCESS_TOKEN}`,
+        Authorization: `Bearer ${ACCESS_TOKEN}`,
       },
     });
   });
@@ -87,7 +82,7 @@ describe("getCurrentUser", () => {
   it("rejects an empty user response", async () => {
     jest.spyOn(client, "apiFetch").mockResolvedValue(undefined);
 
-    await expect(getCurrentUser(TEST_ACCESS_TOKEN)).rejects.toThrow(USER_ERROR_MESSAGE);
+    await expect(getCurrentUser(ACCESS_TOKEN)).rejects.toThrow(USER_ERROR_MESSAGE);
   });
 
   it("propagates API client failures", async () => {
@@ -95,7 +90,7 @@ describe("getCurrentUser", () => {
 
     jest.spyOn(client, "apiFetch").mockRejectedValue(error);
 
-    await expect(getCurrentUser(TEST_ACCESS_TOKEN)).rejects.toBe(error);
+    await expect(getCurrentUser(ACCESS_TOKEN)).rejects.toBe(error);
   });
 });
 

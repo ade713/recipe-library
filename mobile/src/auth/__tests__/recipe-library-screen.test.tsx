@@ -2,8 +2,8 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-
 import { router } from "expo-router";
 
 import { makeRecipeSummary } from "@/test/fixtures/recipes";
+import { makeUserResponse } from "@/test/fixtures/users";
 import type { RecipeListResponse, RecipeSummary } from "@/types/recipe";
-import type { UserResponse } from "@/types/auth";
 import * as recipeService from "@/recipes/recipe-service";
 
 import { AuthProvider } from "../auth-provider";
@@ -23,14 +23,8 @@ const RECIPE_TITLE_2 = "Honey Garlic Chicken Wings";
 const RETRY_TEXT = "Retry";
 const SIGN_OUT_ERROR_MESSAGE = "Unable to sign out. Please try again.";
 const STORAGE_ERROR_MESSAGE = "Secure storage unavailable";
-const TEST_EMAIL = "test@example.com";
-const TEST_USER_ID = "test-user-id";
 const TIME_MINUTES = 35;
 
-const makeUserResponse = (): UserResponse => ({
-  id: TEST_USER_ID,
-  email: TEST_EMAIL,
-});
 const makeRecipeListResponse = (items: RecipeSummary[] = []): RecipeListResponse => ({
   items,
 });

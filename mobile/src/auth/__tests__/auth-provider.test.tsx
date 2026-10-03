@@ -1,24 +1,23 @@
-import { fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react-native";
 import { Button, Text } from "react-native";
+import { fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react-native";
+
+import { makeUserResponse } from "@/test/fixtures/users";
+import type { LoginRequest } from "@/types/auth";
+
 import { AuthProvider, useAuth } from "../auth-provider";
 import * as session from "../session";
-import type { LoginRequest, UserResponse } from "@/types/auth";
 
-const TEST_USER_ID = "test-user-id";
-const TEST_EMAIL = "test@example.com";
-const TEST_PASSWORD = "testPassword1";
-const TEST_LOGIN_PAYLOAD: LoginRequest = {
-  email: TEST_EMAIL,
-  password: TEST_PASSWORD,
-};
+const EMAIL = "test@example.com";
 const NETWORK_ERROR_MESSAGE = "Network unavailable";
+const PASSWORD = "testPassword1";
 const SESSION_ERROR_MESSAGE = "Unable to restore session. Please retry.";
 const STORAGE_ERROR_MESSAGE = "Secure storage unavailable";
 
-const makeUserResponse = (): UserResponse => ({
-  id: TEST_USER_ID,
-  email: TEST_EMAIL,
-});
+const LOGIN_PAYLOAD: LoginRequest = {
+  email: EMAIL,
+  password: PASSWORD,
+};
+
 const AuthStatus = () => {
   const { state, retryRestoration, signIn, signOut } = useAuth();
 
@@ -33,7 +32,7 @@ const AuthStatus = () => {
           <Button title='Sign out' onPress={() => signOut()} />
         </>
       )}
-      {state.status === "signedOut" && <Button title='Sign in' onPress={() => signIn(TEST_LOGIN_PAYLOAD)} />}
+      {state.status === "signedOut" && <Button title='Sign in' onPress={() => signIn(LOGIN_PAYLOAD)} />}
     </>
   );
 };
@@ -152,7 +151,7 @@ describe("AuthProvider", () => {
 
     expect(await screen.findByText("authenticated")).toBeTruthy();
     expect(screen.getByText(user.email)).toBeTruthy();
-    expect(signInMock).toHaveBeenCalledWith(TEST_LOGIN_PAYLOAD);
+    expect(signInMock).toHaveBeenCalledWith(LOGIN_PAYLOAD);
   });
 
   it("preserves signed-out state and propagates sign-in failures", async () => {
@@ -169,7 +168,7 @@ describe("AuthProvider", () => {
       expect(result.current.state.status).toBe("signedOut");
     });
 
-    await expect(result.current.signIn(TEST_LOGIN_PAYLOAD)).rejects.toBe(error);
+    await expect(result.current.signIn(LOGIN_PAYLOAD)).rejects.toBe(error);
     expect(result.current.state).toEqual({ status: "signedOut" });
   });
 
@@ -185,9 +184,9 @@ describe("AuthProvider", () => {
       expect(result.current.state.status).toBe("signedOut");
     });
 
-    void result.current.signIn(TEST_LOGIN_PAYLOAD);
+    void result.current.signIn(LOGIN_PAYLOAD);
 
-    expect(signInMock).toHaveBeenCalledWith(TEST_LOGIN_PAYLOAD);
+    expect(signInMock).toHaveBeenCalledWith(LOGIN_PAYLOAD);
     expect(result.current.state.status).toBe("signedOut");
   });
 

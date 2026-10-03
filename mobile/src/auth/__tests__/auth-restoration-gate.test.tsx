@@ -1,11 +1,12 @@
 import { fireEvent, render, screen } from "@testing-library/react-native";
-import { AuthRestorationGate } from "../auth-restoration-gate";
 import { Text } from "react-native";
-import * as session from "../session";
-import { AuthProvider } from "../auth-provider";
 
-const TEST_USER_ID = "test-user-id";
-const TEST_EMAIL = "test@example.com";
+import { makeUserResponse } from "@/test/fixtures/users";
+
+import { AuthProvider } from "../auth-provider";
+import { AuthRestorationGate } from "../auth-restoration-gate";
+import * as session from "../session";
+
 const APP_CONTENT = "App content";
 const RESTORING_MESSAGE = "Restoring session...";
 
@@ -51,7 +52,7 @@ describe("AuthRestorationGate", () => {
     { label: "signedOut", user: null },
     {
       label: "authenticated",
-      user: { id: TEST_USER_ID, email: TEST_EMAIL },
+      user: makeUserResponse(),
     },
   ])("shows app content when restoration completes as $label", async ({ user }) => {
     jest.spyOn(session, "restoreSession").mockResolvedValue(user);

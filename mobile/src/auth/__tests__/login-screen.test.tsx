@@ -1,17 +1,13 @@
 import { fireEvent, render, screen } from "@testing-library/react-native";
+
+import { makeUserResponse } from "@/test/fixtures/users";
+
+import { AuthProvider } from "../auth-provider";
 import { LoginScreen } from "../login-screen";
 import * as session from "../session";
-import type { UserResponse } from "@/types/auth";
-import { AuthProvider } from "../auth-provider";
 
-const TEST_USER_ID = "test-user-id";
 const TEST_EMAIL = "test@example.com";
 const TEST_PASSWORD = "testPassword1";
-
-const makeUserResponse = (): UserResponse => ({
-  id: TEST_USER_ID,
-  email: TEST_EMAIL,
-});
 
 const renderLoginScreen = async () => {
   await render(

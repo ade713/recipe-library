@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 import { Text } from "react-native";
 
 import { makeRecipeSummary } from "@/test/fixtures/recipes";
-import type { UserResponse } from "@/types/auth";
+import { makeUserResponse } from "@/test/fixtures/users";
 import * as recipeService from "@/recipes/recipe-service";
 
 import RootLayout from "../../../app/_layout";
@@ -16,25 +16,19 @@ import { LoginScreen } from "../login-screen";
 import { RegisterScreen } from "../register-screen";
 
 const CREATE_ACCOUNT_TEXT = "Create account";
+const EMAIL = "test@example.com";
 const INDEX_PATH = "/";
 const LIBRARY_TEXT = "Library route";
 const LOADING_RECIPE_TEXT = "Loading recipe...";
 const LOGIN_PATH = "/login";
 const LOGIN_TEXT = "Login route";
+const PASSWORD = "testPassword1";
 const RECIPE_DETAIL_PATH = "/recipes/recipe-1";
 const RECIPE_DETAIL_TEXT = "Recipe detail route";
 const RECIPE_ID = "recipe-1";
 const REGISTER_PATH = "/register";
 const REGISTER_TEXT = "Registration route";
 const SIGN_IN_TEXT = "Sign in";
-const TEST_EMAIL = "test@example.com";
-const TEST_PASSWORD = "testPassword1";
-const TEST_USER_ID = "test-user-id";
-
-const makeUserResponse = (): UserResponse => ({
-  id: TEST_USER_ID,
-  email: TEST_EMAIL,
-});
 
 type RouteOptions = {
   detail?: () => ReactElement | null;
@@ -97,8 +91,8 @@ describe("AppNavigator", () => {
       login: LoginScreen,
     });
 
-    await fireEvent.changeText(await screen.findByLabelText("Email"), TEST_EMAIL);
-    await fireEvent.changeText(screen.getByLabelText("Password"), TEST_PASSWORD);
+    await fireEvent.changeText(await screen.findByLabelText("Email"), EMAIL);
+    await fireEvent.changeText(screen.getByLabelText("Password"), PASSWORD);
     await fireEvent.press(screen.getByRole("button", { name: "Sign in" }));
 
     expect(await screen.findByText(LIBRARY_TEXT)).toBeTruthy();
@@ -144,8 +138,8 @@ describe("AppNavigator", () => {
       register: RegisterScreen,
     });
 
-    await fireEvent.changeText(await screen.findByLabelText("Email"), TEST_EMAIL);
-    await fireEvent.changeText(screen.getByLabelText("Password"), TEST_PASSWORD);
+    await fireEvent.changeText(await screen.findByLabelText("Email"), EMAIL);
+    await fireEvent.changeText(screen.getByLabelText("Password"), PASSWORD);
     await fireEvent.press(screen.getByRole("button", { name: CREATE_ACCOUNT_TEXT }));
 
     await fireEvent.press(await screen.findByRole("link", { name: SIGN_IN_TEXT }));
