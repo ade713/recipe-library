@@ -1,16 +1,17 @@
 import { fireEvent, render, screen } from "@testing-library/react-native";
+
+import { makeUserResponse } from "@/test/fixtures/users";
+
 import { AuthRestorationStatus } from "../auth-restoration-status";
 import type { AuthState } from "../auth-state";
 
-const TEST_USER_ID = "test-user-id";
-const TEST_EMAIL = "test@example.com";
 const ERROR_MESSAGE = "Unable to restore session. Please retry.";
 
 const settledStates: AuthState[] = [
   { status: "signedOut" },
   {
     status: "authenticated",
-    user: { id: TEST_USER_ID, email: TEST_EMAIL },
+    user: makeUserResponse(),
   },
 ];
 

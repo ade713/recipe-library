@@ -1,33 +1,30 @@
+import { ApiError } from "@/api/errors";
+import { makeUserResponse } from "@/test/fixtures/users";
+
+import { restoreSession, signIn, signOut } from "../session";
+import type { LoginRequest, TokenResponse } from "../../types/auth";
 import * as authApi from "../../api/auth";
 import * as tokenStorage from "../token-storage";
-import { restoreSession, signIn, signOut } from "../session";
-import type { LoginRequest, TokenResponse, UserResponse } from "../../types/auth";
-import { ApiError } from "@/api/errors";
 
-const TEST_EMAIL = "test@example.com";
-const TEST_PASSWORD = "test-password";
-const TEST_ACCESS_TOKEN = "test-access-token";
+const ACCESS_TOKEN = "test-access-token";
+const EMAIL = "test@example.com";
+const PASSWORD = "test-password";
 const TOKEN_TYPE = "bearer";
-const CURRENT_USER_ID = "current-user-uuid";
 
 const makeLoginPayload = (): LoginRequest => ({
-  email: TEST_EMAIL,
-  password: TEST_PASSWORD,
+  email: EMAIL,
+  password: PASSWORD,
 });
 const makeTokenResponse = (): TokenResponse => ({
-  access_token: TEST_ACCESS_TOKEN,
+  access_token: ACCESS_TOKEN,
   token_type: TOKEN_TYPE,
-});
-const makeCurrentUser = (): UserResponse => ({
-  id: CURRENT_USER_ID,
-  email: TEST_EMAIL,
 });
 
 describe("signIn", () => {
   it("authenticates, stores the token, and returns the user", async () => {
     const payload = makeLoginPayload();
     const tokenResponse = makeTokenResponse();
-    const currentUser = makeCurrentUser();
+    const currentUser = makeUserResponse();
 
     const loginMock = jest.spyOn(authApi, "login").mockResolvedValue(tokenResponse);
     const userMock = jest.spyOn(authApi, "getCurrentUser").mockResolvedValue(currentUser);
@@ -70,7 +67,7 @@ describe("signIn", () => {
   it("rejects when saving the token fails", async () => {
     const payload = makeLoginPayload();
     const tokenResponse = makeTokenResponse();
-    const user = makeCurrentUser();
+    const user = makeUserResponse();
     const error = new Error("Secure storage unavailable");
 
     jest.spyOn(authApi, "login").mockResolvedValue(tokenResponse);
@@ -110,19 +107,19 @@ describe("restoreSession", () => {
   });
 
   it("returns the user associated with the stored token", async () => {
-    const profile = makeCurrentUser();
+    const profile = makeUserResponse();
 
-    jest.spyOn(tokenStorage, "getAccessToken").mockResolvedValue(TEST_ACCESS_TOKEN);
+    jest.spyOn(tokenStorage, "getAccessToken").mockResolvedValue(ACCESS_TOKEN);
     const userMock = jest.spyOn(authApi, "getCurrentUser").mockResolvedValue(profile);
 
     await expect(restoreSession()).resolves.toBe(profile);
-    expect(userMock).toHaveBeenCalledWith(TEST_ACCESS_TOKEN);
+    expect(userMock).toHaveBeenCalledWith(ACCESS_TOKEN);
   });
 
   it("removes the rejected token and returns null on HTTP 401", async () => {
     const error = new ApiError(401);
 
-    jest.spyOn(tokenStorage, "getAccessToken").mockResolvedValue(TEST_ACCESS_TOKEN);
+    jest.spyOn(tokenStorage, "getAccessToken").mockResolvedValue(ACCESS_TOKEN);
     jest.spyOn(authApi, "getCurrentUser").mockRejectedValue(error);
     const removeMock = jest.spyOn(tokenStorage, "removeAccessToken").mockResolvedValue(undefined);
 
@@ -136,7 +133,7 @@ describe("restoreSession", () => {
   ] as const)("preserves the token on %s", async (_label, makeError) => {
     const error = makeError();
 
-    jest.spyOn(tokenStorage, "getAccessToken").mockResolvedValue(TEST_ACCESS_TOKEN);
+    jest.spyOn(tokenStorage, "getAccessToken").mockResolvedValue(ACCESS_TOKEN);
     jest.spyOn(authApi, "getCurrentUser").mockRejectedValue(error);
     const removeMock = jest.spyOn(tokenStorage, "removeAccessToken").mockResolvedValue(undefined);
 
@@ -148,7 +145,7 @@ describe("restoreSession", () => {
     const error = new Error("Secure storage unavailable");
 
     jest.spyOn(tokenStorage, "getAccessToken").mockRejectedValue(error);
-    const userMock = jest.spyOn(authApi, "getCurrentUser").mockResolvedValue(makeCurrentUser());
+    const userMock = jest.spyOn(authApi, "getCurrentUser").mockResolvedValue(makeUserResponse());
     const removeMock = jest.spyOn(tokenStorage, "removeAccessToken").mockResolvedValue(undefined);
 
     await expect(restoreSession()).rejects.toBe(error);
@@ -159,7 +156,7 @@ describe("restoreSession", () => {
   it("propagates cleanup failure when a rejected token cannot be removed", async () => {
     const storageError = new Error("Secure storage unavailable");
 
-    jest.spyOn(tokenStorage, "getAccessToken").mockResolvedValue(TEST_ACCESS_TOKEN);
+    jest.spyOn(tokenStorage, "getAccessToken").mockResolvedValue(ACCESS_TOKEN);
     jest.spyOn(authApi, "getCurrentUser").mockRejectedValue(new ApiError(401));
     jest.spyOn(tokenStorage, "removeAccessToken").mockRejectedValue(storageError);
 

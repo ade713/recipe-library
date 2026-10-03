@@ -1,13 +1,6 @@
-import type { UserResponse } from "../../types/auth";
+import { makeUserResponse } from "@/test/fixtures/users";
+
 import { authReducer } from "../auth-state";
-
-const TEST_USER_ID = "test-user-id";
-const TEST_EMAIL = "test@example.com";
-
-const makeUserResponse = (): UserResponse => ({
-  id: TEST_USER_ID,
-  email: TEST_EMAIL,
-});
 
 describe("authReducer", () => {
   it("clears the previous error when restoration starts", () => {
