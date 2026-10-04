@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button, ScrollView, Text } from "react-native";
+import { Button, Linking, Pressable, ScrollView, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { RecipeDetailResponse } from "@/types/recipe";
@@ -12,7 +12,9 @@ const LOADING_RECIPE_TEXT = "Loading recipe...";
 const LOAD_RECIPE_ERROR_MESSAGE = "Unable to load recipe.";
 const NO_INGREDIENTS_TEXT = "No ingredients available";
 const NO_INSTRUCTIONS_TEXT = "No instructions available";
+const OPEN_LINK_ERROR_MESSAGE = "Unable to open original recipe. Please try again.";
 const RETRY_TEXT = "Retry";
+const SOURCE_LINK_TEXT = "Open original recipe";
 
 type RecipeDetailScreenProps = {
   recipeId: string;
@@ -23,6 +25,23 @@ export function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps) {
   const [loadingAttempt, setLoadingAttempt] = useState(0);
   const [loadRecipeError, setLoadRecipeError] = useState<string | null>(null);
   const [isLoadingRecipe, setIsLoadingRecipe] = useState(true);
+  const [openLinkError, setOpenLinkError] = useState<string | null>(null);
+
+  const handleOpenSourceLink = async (): Promise<void> => {
+    const sourceUrl = recipe === null ? null : recipe.source_url;
+
+    if (sourceUrl === null) {
+      return;
+    }
+
+    setOpenLinkError(null);
+
+    try {
+      await Linking.openURL(sourceUrl);
+    } catch {
+      setOpenLinkError(OPEN_LINK_ERROR_MESSAGE);
+    }
+  };
 
   const retryLoadingRecipe = (): void => {
     if (isLoadingRecipe) {
@@ -77,10 +96,20 @@ export function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps) {
   }
 
   if (recipe !== null) {
+    const sourceUrl = recipe.source_url;
+    const shouldDisplaySourceDomain = sourceUrl !== null && recipe.source_domain !== null;
+
     return (
       <SafeAreaView edges={["bottom"]} style={{ flex: 1 }}>
         <ScrollView>
           <Text>{recipe.title}</Text>
+          {shouldDisplaySourceDomain && <Text>{recipe.source_domain}</Text>}
+          {sourceUrl !== null && (
+            <Pressable accessibilityRole='link' onPress={handleOpenSourceLink}>
+              <Text>{SOURCE_LINK_TEXT}</Text>
+            </Pressable>
+          )}
+          {openLinkError && <Text>{openLinkError}</Text>}
           <Text>{INGREDIENTS_HEADER_TEXT}</Text>
           {recipe.ingredients.length === 0 ? (
             <Text>{NO_INGREDIENTS_TEXT}</Text>
