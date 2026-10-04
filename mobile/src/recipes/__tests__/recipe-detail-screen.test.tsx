@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react-native";
+import { Linking } from "react-native";
 
 import { makeRecipeDetailResponse } from "@/test/fixtures/recipes";
 
@@ -11,10 +12,15 @@ const LOAD_RECIPE_ERROR_MESSAGE = "Unable to load recipe.";
 const LOADING_RECIPE_TEXT = "Loading recipe...";
 const NO_INGREDIENTS_TEXT = "No ingredients available";
 const NO_INSTRUCTIONS_TEXT = "No instructions available";
+const OPEN_LINK_ERROR_MESSAGE = "Unable to open original recipe. Please try again.";
 const RECIPE_ID = "test_recipe_id";
 const RECIPE_TITLE = "Chicken Wings";
 const RETRY_TEXT = "Retry";
+const SOURCE_DOMAIN = "example.com";
+const SOURCE_LINK_TEXT = "Open original recipe";
+const SOURCE_URL = "https://example.com/recipe";
 const STORAGE_ERROR_MESSAGE = "Secure storage unavailable";
+const URL_ERROR_MESSAGE = "Cannot open URL";
 
 const renderRecipeDetailScreen = async () => {
   await render(<RecipeDetailScreen recipeId={RECIPE_ID} />);
@@ -197,5 +203,84 @@ describe("RecipeDetailScreen", () => {
 
     expect(await screen.findByText(NO_INSTRUCTIONS_TEXT)).toBeTruthy();
     expect(screen.getByText(recipe.title)).toBeTruthy();
+  });
+
+  it("shows the source domain when the recipe has a source URL", async () => {
+    const recipe = makeRecipeDetailResponse({
+      source_url: SOURCE_URL,
+      source_domain: SOURCE_DOMAIN,
+    });
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+
+    await renderRecipeDetailScreen();
+
+    expect(await screen.findByText(SOURCE_DOMAIN)).toBeTruthy();
+  });
+
+  it("hides the source attribution when no source URL is present", async () => {
+    const recipe = makeRecipeDetailResponse({
+      source_url: null,
+      source_domain: SOURCE_DOMAIN,
+    });
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+
+    await renderRecipeDetailScreen();
+
+    expect(await screen.findByText(recipe.title)).toBeTruthy();
+    expect(screen.queryByText(SOURCE_DOMAIN)).toBeNull();
+    expect(screen.queryByRole("link", { name: SOURCE_LINK_TEXT })).toBeNull();
+  });
+
+  it("opens the original recipe when the source link is pressed", async () => {
+    const recipe = makeRecipeDetailResponse({
+      source_url: SOURCE_URL,
+    });
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+    const openURLMock = jest.spyOn(Linking, "openURL").mockResolvedValue(undefined);
+
+    await renderRecipeDetailScreen();
+
+    const openUrlLink = await screen.findByRole("link", { name: SOURCE_LINK_TEXT });
+    await fireEvent.press(openUrlLink);
+
+    expect(openURLMock).toHaveBeenCalledWith(SOURCE_URL);
+  });
+
+  it("shows an error when the original recipe cannot be opened", async () => {
+    const error = new Error(URL_ERROR_MESSAGE);
+    const recipe = makeRecipeDetailResponse({
+      source_url: SOURCE_URL,
+    });
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+    jest.spyOn(Linking, "openURL").mockRejectedValue(error);
+
+    await renderRecipeDetailScreen();
+
+    await fireEvent.press(await screen.findByRole("link", { name: SOURCE_LINK_TEXT }));
+
+    expect(await screen.findByText(OPEN_LINK_ERROR_MESSAGE)).toBeTruthy();
+  });
+
+  it("clears the source-link error when opening is retried", async () => {
+    const error = new Error(URL_ERROR_MESSAGE);
+    const recipe = makeRecipeDetailResponse({
+      source_url: SOURCE_URL,
+    });
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+    const openURLMock = jest.spyOn(Linking, "openURL").mockRejectedValueOnce(error).mockResolvedValueOnce(undefined);
+
+    await renderRecipeDetailScreen();
+
+    await fireEvent.press(await screen.findByRole("link", { name: SOURCE_LINK_TEXT }));
+    await screen.findByText(OPEN_LINK_ERROR_MESSAGE);
+    await fireEvent.press(await screen.findByRole("link", { name: SOURCE_LINK_TEXT }));
+
+    expect(openURLMock).toHaveBeenCalledTimes(2);
+    expect(screen.queryByText(OPEN_LINK_ERROR_MESSAGE)).toBeNull();
   });
 });
