@@ -15,6 +15,7 @@ const NO_INSTRUCTIONS_TEXT = "No instructions available";
 const OPEN_LINK_ERROR_MESSAGE = "Unable to open original recipe. Please try again.";
 const RETRY_TEXT = "Retry";
 const SOURCE_LINK_TEXT = "Open original recipe";
+const TIPS_HEADER_TEXT = "Source tips";
 
 type RecipeDetailScreenProps = {
   recipeId: string;
@@ -128,6 +129,15 @@ export function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps) {
             <Text>{NO_INSTRUCTIONS_TEXT}</Text>
           ) : (
             recipe.steps.map((step) => <Text key={step.position}>{`${step.position}. ${step.instruction}`}</Text>)
+          )}
+
+          {recipe.tips.length > 0 && (
+            <>
+              <Text>{TIPS_HEADER_TEXT}</Text>
+              {recipe.tips.map((tip) => (
+                <Text key={tip.position}>{tip.tip}</Text>
+              ))}
+            </>
           )}
         </ScrollView>
       </SafeAreaView>
