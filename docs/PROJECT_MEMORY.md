@@ -77,7 +77,10 @@ Post-auth follow-up: audit test overlap and repeated frontend constants without 
 - The initial detail PR stopped at ingredients/instructions and empty states. Further detail presentation remains follow-up work. Conservative backend ingredient parsing remains required before scaling.
 - Source attribution is now implemented: the detail screen shows the source domain when both domain and URL are present, and an accessible “Open original recipe” link whenever a source URL exists. The link uses React Native Linking.openURL; failures show safe feedback, and retrying clears the previous error. Recipes without a source URL show no attribution.
 - Source-attribution tests cover domain display, hidden attribution, opening the original URL, failure feedback, and retry recovery. Android checks confirmed domain display, opening the correct original recipe, returning to the preserved detail screen, and hidden attribution for recipes without a source URL.
-- Shared typed recipe and user fixture builders are complete in merged PRs #60 and #61. The source-attribution PR stays focused on attribution, link behavior, and related tests and documentation.
+- Shared typed recipe and user fixture builders are complete in merged PRs #60 and #61. Source attribution is complete in merged PR #62.
+- The recipe detail screen now displays preparation, cooking, and total time directly from the API values. Each null value is hidden independently; zero remains visible as 0 mins. Total time is not calculated from prep and cook times.
+- Time-summary tests cover positive values, null values, and zero for all three fields. Android verification confirmed the displayed values, hidden missing times, and visible zero times.
+- Keep the time-summary PR focused on these three time fields and their tests and documentation. Additional detail features remain separate follow-ups.
 - User preference: keep PRs small and digestible, define scope up front, count test/doc size, and split adjacent features into follow-ups. Separate commits alone do not address oversized PRs; see AGENTS.md.
 
 ## UI exploration
