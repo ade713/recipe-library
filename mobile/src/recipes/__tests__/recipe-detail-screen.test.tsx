@@ -20,6 +20,7 @@ const SOURCE_DOMAIN = "example.com";
 const SOURCE_LINK_TEXT = "Open original recipe";
 const SOURCE_URL = "https://example.com/recipe";
 const STORAGE_ERROR_MESSAGE = "Secure storage unavailable";
+const TIPS_HEADER_TEXT = "Source tips";
 const URL_ERROR_MESSAGE = "Cannot open URL";
 
 const renderRecipeDetailScreen = async () => {
@@ -361,5 +362,38 @@ describe("RecipeDetailScreen", () => {
     } else {
       expect(await screen.findByText(expected)).toBeTruthy();
     }
+  });
+
+  it("displays the recipe source tips", async () => {
+    const tip1 = "This is a good food tip";
+    const tip2 = "This is another good food tip";
+    const recipe = makeRecipeDetailResponse({
+      tips: [
+        { position: 1, tip: tip1 },
+        { position: 2, tip: tip2 },
+      ],
+    });
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+
+    await renderRecipeDetailScreen();
+
+    expect(await screen.findByText(TIPS_HEADER_TEXT)).toBeTruthy();
+    expect(screen.getByText(tip1)).toBeTruthy();
+    expect(screen.getByText(tip2)).toBeTruthy();
+  });
+
+  it("hides the source tips section when no tips are available", async () => {
+    const recipe = makeRecipeDetailResponse({
+      tips: [],
+    });
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+
+    await renderRecipeDetailScreen();
+
+    await screen.findByText(recipe.title);
+
+    expect(screen.queryByText(TIPS_HEADER_TEXT)).toBeNull();
   });
 });
