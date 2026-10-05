@@ -80,7 +80,10 @@ Post-auth follow-up: audit test overlap and repeated frontend constants without 
 - Shared typed recipe and user fixture builders are complete in merged PRs #60 and #61. Source attribution is complete in merged PR #62.
 - The recipe detail screen now displays preparation, cooking, and total time directly from the API values. Each null value is hidden independently; zero remains visible as 0 mins. Total time is not calculated from prep and cook times.
 - Time-summary tests cover positive values, null values, and zero for all three fields. Android verification confirmed the displayed values, hidden missing times, and visible zero times.
-- Keep the time-summary PR focused on these three time fields and their tests and documentation. Additional detail features remain separate follow-ups.
+- The time summary is complete in merged PR #63.
+- The detail screen now shows an unnumbered Source tips section beneath instructions when tips are present. It renders each tip's text, uses position as the React key, and hides the entire section when tips is empty.
+- Source-tips tests cover rendering multiple tips and hiding the empty section. The user confirmed Android verification: tips and their heading display, the final tip is reachable above system navigation, and recipes without tips show no section heading.
+- Keep the source-tips PR focused on this section and its tests and documentation. Additional detail features remain separate follow-ups.
 - User preference: keep PRs small and digestible, define scope up front, count test/doc size, and split adjacent features into follow-ups. Separate commits alone do not address oversized PRs; see AGENTS.md.
 
 ## UI exploration
