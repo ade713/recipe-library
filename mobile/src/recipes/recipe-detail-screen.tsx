@@ -103,6 +103,7 @@ export function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps) {
       <SafeAreaView edges={["bottom"]} style={{ flex: 1 }}>
         <ScrollView>
           <Text>{recipe.title}</Text>
+
           {shouldDisplaySourceDomain && <Text>{recipe.source_domain}</Text>}
           {sourceUrl !== null && (
             <Pressable accessibilityRole='link' onPress={handleOpenSourceLink}>
@@ -110,12 +111,18 @@ export function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps) {
             </Pressable>
           )}
           {openLinkError && <Text>{openLinkError}</Text>}
+
+          {recipe.prep_time_minutes !== null && <Text>{`Prep: ${recipe.prep_time_minutes} mins`}</Text>}
+          {recipe.cook_time_minutes !== null && <Text>{`Cook: ${recipe.cook_time_minutes} mins`}</Text>}
+          {recipe.total_time_minutes !== null && <Text>{`Total: ${recipe.total_time_minutes} mins`}</Text>}
+
           <Text>{INGREDIENTS_HEADER_TEXT}</Text>
           {recipe.ingredients.length === 0 ? (
             <Text>{NO_INGREDIENTS_TEXT}</Text>
           ) : (
             recipe.ingredients.map((ingredient) => <Text key={ingredient.position}>{ingredient.original_text}</Text>)
           )}
+
           <Text>{INSTRUCTIONS_HEADER_TEXT}</Text>
           {recipe.steps.length === 0 ? (
             <Text>{NO_INSTRUCTIONS_TEXT}</Text>
