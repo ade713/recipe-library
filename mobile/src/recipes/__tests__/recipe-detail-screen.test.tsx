@@ -283,4 +283,83 @@ describe("RecipeDetailScreen", () => {
     expect(openURLMock).toHaveBeenCalledTimes(2);
     expect(screen.queryByText(OPEN_LINK_ERROR_MESSAGE)).toBeNull();
   });
+
+  it.each([
+    { field: "prep_time_minutes", value: 10, expected: "Prep: 10 mins" },
+    { field: "cook_time_minutes", value: 25, expected: "Cook: 25 mins" },
+    { field: "total_time_minutes", value: 35, expected: "Total: 35 mins" },
+  ])("displays the recipe $field", async ({ field, value, expected }) => {
+    const recipe = makeRecipeDetailResponse({
+      [field]: value,
+    });
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+
+    await renderRecipeDetailScreen();
+
+    expect(await screen.findByText(expected)).toBeTruthy();
+  });
+
+  it.each([
+    { value: null, expected: null },
+    { value: 0, expected: "Prep: 0 mins" },
+  ])("handles preparation time of $value", async ({ value, expected }) => {
+    const recipe = makeRecipeDetailResponse({
+      prep_time_minutes: value,
+    });
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+
+    await renderRecipeDetailScreen();
+
+    await screen.findByText(recipe.title);
+
+    if (expected === null) {
+      expect(screen.queryByText(/^Prep:/)).toBeNull();
+    } else {
+      expect(await screen.findByText(expected)).toBeTruthy();
+    }
+  });
+
+  it.each([
+    { value: null, expected: null },
+    { value: 0, expected: "Cook: 0 mins" },
+  ])("handles cooking time of $value", async ({ value, expected }) => {
+    const recipe = makeRecipeDetailResponse({
+      cook_time_minutes: value,
+    });
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+
+    await renderRecipeDetailScreen();
+
+    await screen.findByText(recipe.title);
+
+    if (expected === null) {
+      expect(screen.queryByText(/^Cook:/)).toBeNull();
+    } else {
+      expect(await screen.findByText(expected)).toBeTruthy();
+    }
+  });
+
+  it.each([
+    { value: null, expected: null },
+    { value: 0, expected: "Total: 0 mins" },
+  ])("handles total time of $value", async ({ value, expected }) => {
+    const recipe = makeRecipeDetailResponse({
+      total_time_minutes: value,
+    });
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+
+    await renderRecipeDetailScreen();
+
+    await screen.findByText(recipe.title);
+
+    if (expected === null) {
+      expect(screen.queryByText(/^Total:/)).toBeNull();
+    } else {
+      expect(await screen.findByText(expected)).toBeTruthy();
+    }
+  });
 });
