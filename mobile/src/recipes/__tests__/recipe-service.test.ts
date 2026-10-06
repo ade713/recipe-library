@@ -5,11 +5,11 @@ import * as recipesApi from "../../api/recipes";
 import * as tokenStorage from "../../auth/token-storage";
 import { loadRecipe, loadRecipes, updateRecipeFavorite } from "../recipe-service";
 
+const ACCESS_TOKEN = "test-access-token";
 const NETWORK_ERROR_MESSAGE = "Network unavailable";
 const RECIPE_ID = "test_recipe_id";
 const RECIPE_REQUEST_ERROR_MESSAGE = "Unexpected recipe request";
 const STORAGE_ERROR_MESSAGE = "Secure storage unavailable";
-const ACCESS_TOKEN = "test-access-token";
 const TOKEN_ERROR_MESSAGE = "No access token available";
 
 const makeRecipeListResponse = (): RecipeListResponse => {
