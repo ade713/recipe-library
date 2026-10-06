@@ -90,7 +90,11 @@ Post-auth follow-up: audit test overlap and repeated frontend constants without 
 - The mobile setRecipeFavorite API helper now sends an authenticated PATCH to /recipes/{recipe_id} with only the desired is_favorite boolean, returns the updated recipe, rejects an empty response, and preserves API/network failures. The shared API client supplies the JSON content-type header.
 - The updateRecipeFavorite service retrieves the stored token before calling the API helper. Missing tokens and storage failures prevent the request; API failures propagate unchanged. Tests cover both true and false through both layers, empty API responses, and failure paths.
 - The full mobile suite and TypeScript checks passed before the final test cleanup; the user confirmed the service tests remained green after removing unused variables and adding the false-state case.
-- Keep the favorite API/service PR focused on these helpers and their tests and documentation. The detail-screen favorite control, pending/error feedback, and library refresh behavior belong to follow-up UI work. Android verification will accompany that integration.
+- Favorite API/service support is complete in merged PR #66.
+- The detail screen now provides Add to favorites and Remove from favorites controls. It submits the desired state through updateRecipeFavorite and displays the returned recipe only after success. While saving, the button is disabled and the handler guards against duplicate requests. Failures preserve the saved state, show safe feedback, and re-enable the button; retrying clears the error.
+- Favorite-control tests cover adding, removing, pending protection, failure feedback, and successful retry. The full mobile suite passed with 179 tests across eighteen suites, and TypeScript passed; the user confirmed the final retry assertions also pass.
+- Android verification confirmed adding and removing favorites, persistence after reopening a recipe, safe failure feedback with the backend unavailable, and successful retry after restarting the backend.
+- Keep the favorite-control PR focused on the detail-screen interaction and related tests and documentation. Refreshing library cards after returning from detail is the next separate task; their favorite indicators can remain stale until the library reloads.
 - User preference: keep PRs small and digestible, define scope up front, count test/doc size, and split adjacent features into follow-ups. Separate commits alone do not address oversized PRs; see AGENTS.md.
 
 ## UI exploration
