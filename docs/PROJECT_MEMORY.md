@@ -83,7 +83,10 @@ Post-auth follow-up: audit test overlap and repeated frontend constants without 
 - The time summary is complete in merged PR #63.
 - The detail screen now shows an unnumbered Source tips section beneath instructions when tips are present. It renders each tip's text, uses position as the React key, and hides the entire section when tips is empty.
 - Source-tips tests cover rendering multiple tips and hiding the empty section. The user confirmed Android verification: tips and their heading display, the final tip is reachable above system navigation, and recipes without tips show no section heading.
-- Keep the source-tips PR focused on this section and its tests and documentation. Additional detail features remain separate follow-ups.
+- Source tips are complete in merged PR #64.
+- The detail screen now displays Servings: followed by base_servings when servings_unit is null, or Yield: followed by the quantity and unit when a unit is present. The API quantity string is preserved without numeric conversion. A null quantity hides the display even when a unit exists; zero remains visible.
+- Servings/yield tests cover a quantity without a unit, a quantity with a unit, a missing quantity, and zero servings. The user confirmed Android verification for these four cases.
+- Keep the servings/yield PR focused on display behavior and related tests and documentation. Portion scaling remains separate and requires conservative backend ingredient parsing first.
 - User preference: keep PRs small and digestible, define scope up front, count test/doc size, and split adjacent features into follow-ups. Separate commits alone do not address oversized PRs; see AGENTS.md.
 
 ## UI exploration
