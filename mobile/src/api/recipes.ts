@@ -37,3 +37,24 @@ export async function getRecipe(token: string, recipeId: string): Promise<Recipe
 
   return result;
 }
+
+/** Set the favorite status of a recipe. */
+export async function setRecipeFavorite(
+  token: string,
+  recipeId: string,
+  isFavorite: boolean,
+): Promise<RecipeDetailResponse> {
+  const result = await apiFetch<RecipeDetailResponse>(`${RECIPES_PATH}/${recipeId}`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ is_favorite: isFavorite }),
+  });
+
+  if (result === undefined) {
+    throw new Error(RECIPE_DETAIL_ERROR_MESSAGE);
+  }
+
+  return result;
+}

@@ -3,7 +3,7 @@ import type { RecipeListResponse } from "@/types/recipe";
 
 import * as client from "../client";
 import { ApiError } from "../errors";
-import { getRecipe, listRecipes } from "../recipes";
+import { getRecipe, listRecipes, setRecipeFavorite } from "../recipes";
 
 const BASE_SERVINGS = "4";
 const IMAGE_URL = "https://example.com/chicken-wings";
@@ -13,7 +13,7 @@ const RECIPE_ID = "test_recipe_id";
 const RECIPE_LIST_ERROR_MESSAGE = "Expected a recipe list response";
 const RECIPE_TITLE = "Chicken Wings";
 const RECIPES_PATH = "/recipes";
-const TEST_ACCESS_TOKEN = "test-access-token";
+const ACCESS_TOKEN = "test-access-token";
 const TIME_MINUTES = 35;
 
 describe("listRecipes", () => {
@@ -31,12 +31,12 @@ describe("listRecipes", () => {
 
     const requestMock = jest.spyOn(client, "apiFetch").mockResolvedValue(recipeListResponse);
 
-    const response = await listRecipes(TEST_ACCESS_TOKEN);
+    const response = await listRecipes(ACCESS_TOKEN);
 
     expect(response).toBe(recipeListResponse);
     expect(requestMock).toHaveBeenCalledWith(RECIPES_PATH, {
       method: "GET",
-      headers: { Authorization: `Bearer ${TEST_ACCESS_TOKEN}` },
+      headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
     });
   });
 
@@ -47,7 +47,7 @@ describe("listRecipes", () => {
 
     jest.spyOn(client, "apiFetch").mockResolvedValue(recipeListResponse);
 
-    const response = await listRecipes(TEST_ACCESS_TOKEN);
+    const response = await listRecipes(ACCESS_TOKEN);
 
     expect(response).toBe(recipeListResponse);
   });
@@ -55,7 +55,7 @@ describe("listRecipes", () => {
   it("rejects a missing recipe list response", async () => {
     jest.spyOn(client, "apiFetch").mockResolvedValue(undefined);
 
-    await expect(listRecipes(TEST_ACCESS_TOKEN)).rejects.toThrow(RECIPE_LIST_ERROR_MESSAGE);
+    await expect(listRecipes(ACCESS_TOKEN)).rejects.toThrow(RECIPE_LIST_ERROR_MESSAGE);
   });
 
   it.each([
@@ -64,7 +64,7 @@ describe("listRecipes", () => {
   ])("propagates API client failures: $label", async ({ error }) => {
     jest.spyOn(client, "apiFetch").mockRejectedValue(error);
 
-    await expect(listRecipes(TEST_ACCESS_TOKEN)).rejects.toBe(error);
+    await expect(listRecipes(ACCESS_TOKEN)).rejects.toBe(error);
   });
 });
 
@@ -72,12 +72,12 @@ describe("getRecipe", () => {
   it("rejects a missing recipe detail response", async () => {
     const requestMock = jest.spyOn(client, "apiFetch").mockResolvedValue(undefined);
 
-    await expect(getRecipe(TEST_ACCESS_TOKEN, RECIPE_ID)).rejects.toThrow(RECIPE_DETAIL_ERROR_MESSAGE);
+    await expect(getRecipe(ACCESS_TOKEN, RECIPE_ID)).rejects.toThrow(RECIPE_DETAIL_ERROR_MESSAGE);
 
     expect(requestMock).toHaveBeenCalledWith(`${RECIPES_PATH}/${RECIPE_ID}`, {
       method: "GET",
       headers: {
-        Authorization: `Bearer ${TEST_ACCESS_TOKEN}`,
+        Authorization: `Bearer ${ACCESS_TOKEN}`,
       },
     });
   });
@@ -93,7 +93,7 @@ describe("getRecipe", () => {
 
     jest.spyOn(client, "apiFetch").mockResolvedValue(recipe);
 
-    const result = await getRecipe(TEST_ACCESS_TOKEN, RECIPE_ID);
+    const result = await getRecipe(ACCESS_TOKEN, RECIPE_ID);
 
     expect(result).toBe(recipe);
   });
@@ -105,6 +105,42 @@ describe("getRecipe", () => {
   ])("propagates API client failures: $label", async ({ error }) => {
     jest.spyOn(client, "apiFetch").mockRejectedValue(error);
 
-    await expect(getRecipe(TEST_ACCESS_TOKEN, RECIPE_ID)).rejects.toBe(error);
+    await expect(getRecipe(ACCESS_TOKEN, RECIPE_ID)).rejects.toBe(error);
+  });
+});
+
+describe("setRecipeFavorite", () => {
+  it.each([true, false])("sets recipe favorite status to %s and returns the updated recipe", async (isFavorite) => {
+    const recipe = makeRecipeDetailResponse({
+      is_favorite: isFavorite,
+    });
+
+    const requestMock = jest.spyOn(client, "apiFetch").mockResolvedValue(recipe);
+
+    const result = await setRecipeFavorite(ACCESS_TOKEN, RECIPE_ID, isFavorite);
+
+    expect(requestMock).toHaveBeenCalledWith(`${RECIPES_PATH}/${RECIPE_ID}`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${ACCESS_TOKEN}`,
+      },
+      body: JSON.stringify({ is_favorite: isFavorite }),
+    });
+    expect(result).toBe(recipe);
+  });
+
+  it("rejects an empty favorite update response", async () => {
+    jest.spyOn(client, "apiFetch").mockResolvedValue(undefined);
+
+    await expect(setRecipeFavorite(ACCESS_TOKEN, RECIPE_ID, true)).rejects.toThrow(RECIPE_DETAIL_ERROR_MESSAGE);
+  });
+
+  it.each([
+    { label: "unauthorized", error: new ApiError(401) },
+    { label: "network failure", error: new Error(NETWORK_ERROR_MESSAGE) },
+  ])("propagates favorite update failure: $label", async ({ error }) => {
+    jest.spyOn(client, "apiFetch").mockRejectedValue(error);
+
+    await expect(setRecipeFavorite(ACCESS_TOKEN, RECIPE_ID, true)).rejects.toBe(error);
   });
 });

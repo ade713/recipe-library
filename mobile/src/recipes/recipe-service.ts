@@ -1,4 +1,4 @@
-import { getRecipe, listRecipes } from "@/api/recipes";
+import { getRecipe, listRecipes, setRecipeFavorite } from "@/api/recipes";
 import { getAccessToken } from "@/auth/token-storage";
 
 import type { RecipeDetailResponse, RecipeListResponse } from "@/types/recipe";
@@ -25,4 +25,15 @@ export async function loadRecipe(recipeId: string): Promise<RecipeDetailResponse
   }
 
   return getRecipe(accessToken, recipeId);
+}
+
+/** Update the favorite status of a recipe using the stored access token. */
+export async function updateRecipeFavorite(recipeId: string, isFavorite: boolean): Promise<RecipeDetailResponse> {
+  const accessToken = await getAccessToken();
+
+  if (accessToken === null) {
+    throw new Error(TOKEN_ERROR_MESSAGE);
+  }
+
+  return setRecipeFavorite(accessToken, recipeId, isFavorite);
 }
