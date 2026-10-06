@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react-native";
+import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { Linking } from "react-native";
 
 import { makeRecipeDetailResponse } from "@/test/fixtures/recipes";
@@ -6,21 +6,25 @@ import { makeRecipeDetailResponse } from "@/test/fixtures/recipes";
 import { RecipeDetailScreen } from "../recipe-detail-screen";
 import * as recipeService from "../recipe-service";
 
+const ADD_FAVORITE_TEXT = "Add to favorites";
 const INGREDIENTS_HEADER_TEXT = "Ingredients";
 const INSTRUCTIONS_HEADER_TEXT = "Instructions";
 const LOAD_RECIPE_ERROR_MESSAGE = "Unable to load recipe.";
 const LOADING_RECIPE_TEXT = "Loading recipe...";
+const NETWORK_ERROR_MESSAGE = "Network unavailable";
 const NO_INGREDIENTS_TEXT = "No ingredients available";
 const NO_INSTRUCTIONS_TEXT = "No instructions available";
 const OPEN_LINK_ERROR_MESSAGE = "Unable to open original recipe. Please try again.";
 const RECIPE_ID = "test_recipe_id";
 const RECIPE_TITLE = "Chicken Wings";
+const REMOVE_FAVORITE_TEXT = "Remove from favorites";
 const RETRY_TEXT = "Retry";
 const SOURCE_DOMAIN = "example.com";
 const SOURCE_LINK_TEXT = "Open original recipe";
 const SOURCE_URL = "https://example.com/recipe";
 const STORAGE_ERROR_MESSAGE = "Secure storage unavailable";
 const TIPS_HEADER_TEXT = "Source tips";
+const UPDATE_FAVORITE_ERROR_MESSAGE = "Unable to update favorite. Please try again.";
 const URL_ERROR_MESSAGE = "Cannot open URL";
 
 const renderRecipeDetailScreen = async () => {
@@ -449,5 +453,120 @@ describe("RecipeDetailScreen", () => {
     await renderRecipeDetailScreen();
 
     expect(await screen.findByText("Servings: 0")).toBeTruthy();
+  });
+
+  it("adds the recipe to favorites", async () => {
+    const recipe = makeRecipeDetailResponse({
+      is_favorite: false,
+    });
+    const updatedRecipe = makeRecipeDetailResponse({
+      is_favorite: true,
+    });
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+    const updateFavoriteMock = jest.spyOn(recipeService, "updateRecipeFavorite").mockResolvedValue(updatedRecipe);
+
+    await renderRecipeDetailScreen();
+
+    const favoriteButton = await screen.findByRole("button", { name: ADD_FAVORITE_TEXT });
+    await fireEvent.press(favoriteButton);
+
+    expect(updateFavoriteMock).toHaveBeenCalledWith(recipe.id, true);
+    expect(await screen.findByRole("button", { name: REMOVE_FAVORITE_TEXT })).toBeTruthy();
+  });
+
+  it("removes the recipe from favorites", async () => {
+    const recipe = makeRecipeDetailResponse({
+      is_favorite: true,
+    });
+    const updatedRecipe = makeRecipeDetailResponse({
+      is_favorite: false,
+    });
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+    const updateFavoriteMock = jest.spyOn(recipeService, "updateRecipeFavorite").mockResolvedValue(updatedRecipe);
+
+    await renderRecipeDetailScreen();
+
+    const favoriteButton = await screen.findByRole("button", { name: REMOVE_FAVORITE_TEXT });
+    await fireEvent.press(favoriteButton);
+
+    expect(updateFavoriteMock).toHaveBeenCalledWith(recipe.id, false);
+    expect(await screen.findByRole("button", { name: ADD_FAVORITE_TEXT })).toBeTruthy();
+  });
+
+  it("disables the favorite control while an update is pending", async () => {
+    const recipe = makeRecipeDetailResponse({
+      is_favorite: false,
+    });
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+    const updateFavoriteMock = jest
+      .spyOn(recipeService, "updateRecipeFavorite")
+      .mockImplementation(() => new Promise(() => {}));
+
+    await renderRecipeDetailScreen();
+
+    const favoriteButton = await screen.findByRole("button", { name: ADD_FAVORITE_TEXT });
+    await act(async () => {
+      void fireEvent.press(favoriteButton);
+    });
+
+    expect(favoriteButton).toBeDisabled();
+
+    await fireEvent.press(favoriteButton);
+
+    expect(updateFavoriteMock).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("button", { name: REMOVE_FAVORITE_TEXT })).toBeNull();
+  });
+
+  it("shows feedback and preserves the favorite status when updating fails", async () => {
+    const error = new Error(NETWORK_ERROR_MESSAGE);
+    const recipe = makeRecipeDetailResponse({
+      is_favorite: false,
+    });
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+    jest.spyOn(recipeService, "updateRecipeFavorite").mockRejectedValue(error);
+
+    await renderRecipeDetailScreen();
+
+    const favoriteButton = await screen.findByRole("button", { name: ADD_FAVORITE_TEXT });
+    await fireEvent.press(favoriteButton);
+
+    expect(await screen.findByText(UPDATE_FAVORITE_ERROR_MESSAGE)).toBeTruthy();
+    expect(favoriteButton).toBeEnabled();
+    expect(screen.queryByRole("button", { name: REMOVE_FAVORITE_TEXT })).toBeNull();
+  });
+
+  it("clears the favorite error after a successful retry", async () => {
+    const error = new Error(NETWORK_ERROR_MESSAGE);
+    const recipe = makeRecipeDetailResponse({
+      is_favorite: false,
+    });
+    const updatedRecipe = makeRecipeDetailResponse({
+      is_favorite: true,
+    });
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+    const updateFavoriteMock = jest
+      .spyOn(recipeService, "updateRecipeFavorite")
+      .mockRejectedValueOnce(error)
+      .mockResolvedValueOnce(updatedRecipe);
+
+    await renderRecipeDetailScreen();
+
+    const favoriteButton = await screen.findByRole("button", { name: ADD_FAVORITE_TEXT });
+    await fireEvent.press(favoriteButton);
+    await screen.findByText(UPDATE_FAVORITE_ERROR_MESSAGE);
+    await fireEvent.press(favoriteButton);
+
+    const removeFavoriteButton = await screen.findByRole("button", { name: REMOVE_FAVORITE_TEXT });
+
+    expect(removeFavoriteButton).toBeEnabled();
+    expect(screen.queryByText(UPDATE_FAVORITE_ERROR_MESSAGE)).toBeNull();
+    expect(updateFavoriteMock).toHaveBeenCalledTimes(2);
+    expect(updateFavoriteMock).toHaveBeenNthCalledWith(1, recipe.id, true);
+    expect(updateFavoriteMock).toHaveBeenNthCalledWith(2, recipe.id, true);
   });
 });
