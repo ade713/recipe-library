@@ -116,6 +116,12 @@ export function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps) {
           {recipe.prep_time_minutes !== null && <Text>{`Prep: ${recipe.prep_time_minutes} mins`}</Text>}
           {recipe.cook_time_minutes !== null && <Text>{`Cook: ${recipe.cook_time_minutes} mins`}</Text>}
           {recipe.total_time_minutes !== null && <Text>{`Total: ${recipe.total_time_minutes} mins`}</Text>}
+          {recipe.base_servings !== null &&
+            (recipe.servings_unit !== null ? (
+              <Text>{`Yield: ${recipe.base_servings} ${recipe.servings_unit}`}</Text>
+            ) : (
+              <Text>{`Servings: ${recipe.base_servings}`}</Text>
+            ))}
 
           <Text>{INGREDIENTS_HEADER_TEXT}</Text>
           {recipe.ingredients.length === 0 ? (

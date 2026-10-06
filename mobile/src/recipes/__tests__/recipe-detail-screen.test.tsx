@@ -396,4 +396,58 @@ describe("RecipeDetailScreen", () => {
 
     expect(screen.queryByText(TIPS_HEADER_TEXT)).toBeNull();
   });
+
+  it("displays the recipe servings", async () => {
+    const recipe = makeRecipeDetailResponse({
+      base_servings: "4",
+      servings_unit: null,
+    });
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+
+    await renderRecipeDetailScreen();
+
+    expect(await screen.findByText("Servings: 4")).toBeTruthy();
+  });
+
+  it("displays the recipe yield with its unit", async () => {
+    const recipe = makeRecipeDetailResponse({
+      base_servings: "12",
+      servings_unit: "cookies",
+    });
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+
+    await renderRecipeDetailScreen();
+
+    expect(await screen.findByText("Yield: 12 cookies")).toBeTruthy();
+  });
+
+  it("hides servings and yield when the quantity is missing", async () => {
+    const recipe = makeRecipeDetailResponse({
+      base_servings: null,
+      servings_unit: "cookies",
+    });
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+
+    await renderRecipeDetailScreen();
+
+    await screen.findByText(recipe.title);
+
+    expect(screen.queryByText(/^(Servings|Yield):/)).toBeNull();
+  });
+
+  it("displays zero servings", async () => {
+    const recipe = makeRecipeDetailResponse({
+      base_servings: "0",
+      servings_unit: null,
+    });
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+
+    await renderRecipeDetailScreen();
+
+    expect(await screen.findByText("Servings: 0")).toBeTruthy();
+  });
 });
