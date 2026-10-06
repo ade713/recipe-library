@@ -86,7 +86,11 @@ Post-auth follow-up: audit test overlap and repeated frontend constants without 
 - Source tips are complete in merged PR #64.
 - The detail screen now displays Servings: followed by base_servings when servings_unit is null, or Yield: followed by the quantity and unit when a unit is present. The API quantity string is preserved without numeric conversion. A null quantity hides the display even when a unit exists; zero remains visible.
 - Servings/yield tests cover a quantity without a unit, a quantity with a unit, a missing quantity, and zero servings. The user confirmed Android verification for these four cases.
-- Keep the servings/yield PR focused on display behavior and related tests and documentation. Portion scaling remains separate and requires conservative backend ingredient parsing first.
+- Servings/yield display is complete in merged PR #65. Portion scaling remains separate and requires conservative backend ingredient parsing first.
+- The mobile setRecipeFavorite API helper now sends an authenticated PATCH to /recipes/{recipe_id} with only the desired is_favorite boolean, returns the updated recipe, rejects an empty response, and preserves API/network failures. The shared API client supplies the JSON content-type header.
+- The updateRecipeFavorite service retrieves the stored token before calling the API helper. Missing tokens and storage failures prevent the request; API failures propagate unchanged. Tests cover both true and false through both layers, empty API responses, and failure paths.
+- The full mobile suite and TypeScript checks passed before the final test cleanup; the user confirmed the service tests remained green after removing unused variables and adding the false-state case.
+- Keep the favorite API/service PR focused on these helpers and their tests and documentation. The detail-screen favorite control, pending/error feedback, and library refresh behavior belong to follow-up UI work. Android verification will accompany that integration.
 - User preference: keep PRs small and digestible, define scope up front, count test/doc size, and split adjacent features into follow-ups. Separate commits alone do not address oversized PRs; see AGENTS.md.
 
 ## UI exploration
