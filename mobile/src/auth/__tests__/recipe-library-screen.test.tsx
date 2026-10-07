@@ -1,4 +1,5 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { renderRouter } from "expo-router/testing-library";
 import { router } from "expo-router";
 
 import { makeRecipeSummary } from "@/test/fixtures/recipes";
@@ -12,6 +13,7 @@ import * as session from "../session";
 
 const BASE_SERVINGS = "4";
 const IMAGE_URL = "https://example.com/chicken-wings";
+const INDEX_PATH = "/";
 const LOAD_RECIPES_ERROR_MESSAGE = "Unable to load recipes.";
 const LOADING_RECIPES_MESSAGE = "Loading recipes...";
 const NO_RECIPES_MESSAGE = "No saved recipes yet.";
@@ -30,10 +32,15 @@ const makeRecipeListResponse = (items: RecipeSummary[] = []): RecipeListResponse
 });
 
 const renderRecipeLibraryScreen = async () => {
-  await render(
-    <AuthProvider>
-      <RecipeLibraryScreen />
-    </AuthProvider>,
+  await renderRouter(
+    {
+      index: () => (
+        <AuthProvider>
+          <RecipeLibraryScreen />
+        </AuthProvider>
+      ),
+    },
+    { initialUrl: INDEX_PATH },
   );
 };
 

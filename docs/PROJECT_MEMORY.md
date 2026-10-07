@@ -94,7 +94,11 @@ Post-auth follow-up: audit test overlap and repeated frontend constants without 
 - The detail screen now provides Add to favorites and Remove from favorites controls. It submits the desired state through updateRecipeFavorite and displays the returned recipe only after success. While saving, the button is disabled and the handler guards against duplicate requests. Failures preserve the saved state, show safe feedback, and re-enable the button; retrying clears the error.
 - Favorite-control tests cover adding, removing, pending protection, failure feedback, and successful retry. The full mobile suite passed with 179 tests across eighteen suites, and TypeScript passed; the user confirmed the final retry assertions also pass.
 - Android verification confirmed adding and removing favorites, persistence after reopening a recipe, safe failure feedback with the backend unavailable, and successful retry after restarting the backend.
-- Keep the favorite-control PR focused on the detail-screen interaction and related tests and documentation. Refreshing library cards after returning from detail is the next separate task; their favorite indicators can remain stale until the library reloads.
+- The detail-screen favorite control is complete in merged PR #67.
+- The library now reloads recipes on focus, including when returning from detail, so cards reflect saved favorite changes. useFocusEffect wraps a useCallback whose loadingAttempt dependency preserves retry behavior without restarting requests on every render. Cleanup ignores late results after blur or a replaced attempt; it does not cancel requests.
+- A navigation regression test verifies an initially non-favorite card becomes a favorite after returning from detail. Library-screen tests now use renderRouter to supply real navigation context while preserving loading, retry, and sign-out coverage. The user confirmed the full mobile suite and final navigation test pass; TypeScript checking passes.
+- Android verification confirmed favorite indicators appear and disappear after returning from detail, a failed refresh shows feedback when the backend is unavailable, and Retry recovers after the backend restarts.
+- Keep the library-focus-refresh PR focused on this loading lifecycle, test setup, and related documentation.
 - User preference: keep PRs small and digestible, define scope up front, count test/doc size, and split adjacent features into follow-ups. Separate commits alone do not address oversized PRs; see AGENTS.md.
 
 ## UI exploration
