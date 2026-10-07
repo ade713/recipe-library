@@ -1,4 +1,5 @@
-import { fireEvent, screen } from "@testing-library/react-native";
+import { act, fireEvent, screen } from "@testing-library/react-native";
+import { router } from "expo-router";
 import { renderRouter } from "expo-router/testing-library";
 import type { ReactElement } from "react";
 import { Text } from "react-native";
@@ -18,6 +19,7 @@ import { RegisterScreen } from "../register-screen";
 const CREATE_ACCOUNT_TEXT = "Create account";
 const EMAIL = "test@example.com";
 const INDEX_PATH = "/";
+const FAVORITE_TEXT = "Favorite";
 const LIBRARY_TEXT = "Library route";
 const LOADING_RECIPE_TEXT = "Loading recipe...";
 const LOGIN_PATH = "/login";
@@ -201,5 +203,41 @@ describe("AppNavigator", () => {
 
     expect(await screen.findByText(LOADING_RECIPE_TEXT)).toBeTruthy();
     expect(loadMock).toHaveBeenCalledWith(RECIPE_ID);
+  });
+
+  it("refreshes recipe favorites when returning to the library", async () => {
+    const user = makeUserResponse();
+    const recipe = makeRecipeSummary();
+    const favoriteRecipe = makeRecipeSummary({
+      is_favorite: true,
+    });
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(user);
+    jest
+      .spyOn(recipeService, "loadRecipes")
+      .mockResolvedValueOnce({
+        items: [recipe],
+      })
+      .mockResolvedValue({
+        items: [favoriteRecipe],
+      });
+
+    await renderRouteNavigation(INDEX_PATH, {
+      index: RecipeLibraryScreen,
+    });
+
+    const recipeButton = await screen.findByRole("button", { name: `Open ${recipe.title}` });
+
+    expect(screen.queryByText(FAVORITE_TEXT)).toBeNull();
+
+    await fireEvent.press(recipeButton);
+
+    expect(await screen.findByText(RECIPE_DETAIL_TEXT)).toBeTruthy();
+
+    await act(async () => {
+      router.back();
+    });
+
+    expect(await screen.findByText(FAVORITE_TEXT)).toBeTruthy();
   });
 });

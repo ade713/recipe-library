@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Button, FlatList, StyleSheet, Text } from "react-native";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 
 import { apiFetch } from "@/api/client";
 import { loadRecipes } from "@/recipes/recipe-service";
@@ -73,36 +73,38 @@ export default function RecipeLibraryScreen() {
     setLoadingAttempt((attempt) => attempt + 1);
   };
 
-  useEffect(() => {
-    let active = true;
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
 
-    setIsLoadingRecipes(true);
-    setLoadingRecipesError(null);
+      setIsLoadingRecipes(true);
+      setLoadingRecipesError(null);
 
-    const getRecipes = async (): Promise<void> => {
-      try {
-        const result = await loadRecipes();
+      const getRecipes = async (): Promise<void> => {
+        try {
+          const result = await loadRecipes();
 
-        if (active) {
-          setRecipes(result.items);
+          if (active) {
+            setRecipes(result.items);
+          }
+        } catch {
+          if (active) {
+            setLoadingRecipesError(LOAD_RECIPES_ERROR_MESSAGE);
+          }
+        } finally {
+          if (active) {
+            setIsLoadingRecipes(false);
+          }
         }
-      } catch {
-        if (active) {
-          setLoadingRecipesError(LOAD_RECIPES_ERROR_MESSAGE);
-        }
-      } finally {
-        if (active) {
-          setIsLoadingRecipes(false);
-        }
-      }
-    };
+      };
 
-    void getRecipes();
+      void getRecipes();
 
-    return () => {
-      active = false;
-    };
-  }, [loadingAttempt]);
+      return () => {
+        active = false;
+      };
+    }, [loadingAttempt]),
+  );
 
   const shouldDisplayNoRecipesMessage = !isLoadingRecipes && loadingRecipesError === null && recipes.length === 0;
 
