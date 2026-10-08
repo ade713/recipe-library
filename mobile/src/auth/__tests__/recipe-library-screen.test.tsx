@@ -23,6 +23,9 @@ const RECIPE_LIST_ERROR_MESSAGE = "Expected a recipe list response";
 const RECIPE_TITLE = "Chicken Wings";
 const RECIPE_TITLE_2 = "Honey Garlic Chicken Wings";
 const RETRY_TEXT = "Retry";
+const SEARCH_BUTTON_TITLE = "Search";
+const SEARCH_QUERY = "chicken";
+const SEARCH_RECIPES_TEXT = "Search recipes";
 const SIGN_OUT_ERROR_MESSAGE = "Unable to sign out. Please try again.";
 const STORAGE_ERROR_MESSAGE = "Secure storage unavailable";
 const TIME_MINUTES = 35;
@@ -229,5 +232,164 @@ describe("RecipeLibraryScreen", () => {
       pathname: "/recipes/[id]",
       params: { id: recipe.id },
     });
+  });
+
+  it("loads matching recipes when a search is submitted", async () => {
+    const user = makeUserResponse();
+    const recipe = makeRecipeSummary();
+    const otherRecipe = makeRecipeSummary({
+      id: RECIPE_ID_2,
+      title: "Other Good Recipe",
+    });
+    const recipeList = makeRecipeListResponse([recipe, otherRecipe]);
+    const searchRecipeList = makeRecipeListResponse([recipe]);
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(user);
+    const recipesMock = jest
+      .spyOn(recipeService, "loadRecipes")
+      .mockResolvedValueOnce(recipeList)
+      .mockResolvedValueOnce(searchRecipeList);
+
+    await renderRecipeLibraryScreen();
+
+    await fireEvent.changeText(await screen.findByLabelText(SEARCH_RECIPES_TEXT), SEARCH_QUERY);
+    await fireEvent.press(screen.getByRole("button", { name: SEARCH_BUTTON_TITLE }));
+
+    expect(recipesMock).toHaveBeenCalledWith({ query: SEARCH_QUERY });
+    expect(await screen.findByText(recipe.title)).toBeTruthy();
+    expect(screen.queryByText(otherRecipe.title)).toBeNull();
+  });
+
+  it("does not search until the query is submitted", async () => {
+    const user = makeUserResponse();
+    const recipe = makeRecipeSummary({
+      title: "Apple Pie",
+    });
+    const recipeList = makeRecipeListResponse([recipe]);
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(user);
+    const recipesMock = jest.spyOn(recipeService, "loadRecipes").mockResolvedValue(recipeList);
+
+    await renderRecipeLibraryScreen();
+
+    await fireEvent.changeText(await screen.findByLabelText(SEARCH_RECIPES_TEXT), SEARCH_QUERY);
+
+    expect(recipesMock).toHaveBeenCalledTimes(1);
+    expect(screen.getByText(recipe.title)).toBeTruthy();
+  });
+
+  it.each(["", "   "])("restores all recipes when input is %p", async (input) => {
+    const user = makeUserResponse();
+    const recipe = makeRecipeSummary();
+    const otherRecipe = makeRecipeSummary({
+      id: RECIPE_ID_2,
+      title: "Other Good Recipe",
+    });
+    const recipeList = makeRecipeListResponse([recipe, otherRecipe]);
+    const searchRecipeList = makeRecipeListResponse([recipe]);
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(user);
+    const recipesMock = jest
+      .spyOn(recipeService, "loadRecipes")
+      .mockResolvedValueOnce(recipeList)
+      .mockResolvedValueOnce(searchRecipeList)
+      .mockResolvedValueOnce(recipeList);
+
+    await renderRecipeLibraryScreen();
+
+    await fireEvent.changeText(await screen.findByLabelText(SEARCH_RECIPES_TEXT), SEARCH_QUERY);
+    await fireEvent.press(screen.getByRole("button", { name: SEARCH_BUTTON_TITLE }));
+    await screen.findByText(recipe.title);
+
+    expect(screen.queryByText(otherRecipe.title)).toBeNull();
+
+    await fireEvent.changeText(await screen.findByLabelText(SEARCH_RECIPES_TEXT), input);
+    await fireEvent.press(screen.getByRole("button", { name: SEARCH_BUTTON_TITLE }));
+
+    expect(recipesMock).toHaveBeenLastCalledWith({ query: "" });
+    expect(await screen.findByText(otherRecipe.title)).toBeTruthy();
+  });
+
+  it("shows search-specific feedback when no recipes match", async () => {
+    const user = makeUserResponse();
+    const recipe = makeRecipeSummary();
+    const recipeList = makeRecipeListResponse([recipe]);
+    const searchRecipeList = makeRecipeListResponse();
+    const noRecipesSearchText = "No recipes match your search.";
+    const noSavedRecipesText = "No saved recipes yet.";
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(user);
+    jest.spyOn(recipeService, "loadRecipes").mockResolvedValueOnce(recipeList).mockResolvedValueOnce(searchRecipeList);
+
+    await renderRecipeLibraryScreen();
+
+    await fireEvent.changeText(await screen.findByLabelText(SEARCH_RECIPES_TEXT), "no result search");
+    await fireEvent.press(screen.getByRole("button", { name: SEARCH_BUTTON_TITLE }));
+
+    expect(await screen.findByText(noRecipesSearchText)).toBeTruthy();
+    expect(screen.queryByText(noSavedRecipesText)).toBeNull();
+  });
+
+  it("retries the submitted search after loading fails", async () => {
+    const error = new Error(LOAD_RECIPES_ERROR_MESSAGE);
+    const user = makeUserResponse();
+    const recipe = makeRecipeSummary();
+    const otherRecipe = makeRecipeSummary({
+      id: RECIPE_ID_2,
+      title: "Other Good Soup Recipe",
+    });
+    const recipeList = makeRecipeListResponse([recipe, otherRecipe]);
+    const searchRecipeList = makeRecipeListResponse([recipe]);
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(user);
+    const recipesMock = jest
+      .spyOn(recipeService, "loadRecipes")
+      .mockResolvedValueOnce(recipeList)
+      .mockRejectedValueOnce(error)
+      .mockResolvedValueOnce(searchRecipeList);
+
+    await renderRecipeLibraryScreen();
+
+    await fireEvent.changeText(await screen.findByLabelText(SEARCH_RECIPES_TEXT), SEARCH_QUERY);
+    await fireEvent.press(screen.getByRole("button", { name: SEARCH_BUTTON_TITLE }));
+    await screen.findByText(LOAD_RECIPES_ERROR_MESSAGE);
+    await fireEvent.changeText(await screen.findByLabelText(SEARCH_RECIPES_TEXT), "soup");
+
+    await fireEvent.press(screen.getByRole("button", { name: RETRY_TEXT }));
+
+    await waitFor(() => {
+      expect(recipesMock).toHaveBeenCalledTimes(3);
+    });
+
+    expect(recipesMock).toHaveBeenLastCalledWith({ query: SEARCH_QUERY });
+
+    expect(await screen.findByText(recipe.title)).toBeTruthy();
+    expect(screen.queryByText(LOAD_RECIPES_ERROR_MESSAGE)).toBeNull();
+  });
+
+  it("trims search input before submitting", async () => {
+    const user = makeUserResponse();
+    const recipe = makeRecipeSummary();
+    const recipeList = makeRecipeListResponse([recipe]);
+    const untrimmedInput = "  chicken  ";
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(user);
+    const recipesMock = jest
+      .spyOn(recipeService, "loadRecipes")
+      .mockResolvedValueOnce(recipeList)
+      .mockResolvedValueOnce(recipeList);
+
+    await renderRecipeLibraryScreen();
+
+    await screen.findByText(recipe.title);
+
+    await fireEvent.changeText(await screen.findByLabelText(SEARCH_RECIPES_TEXT), untrimmedInput);
+    await fireEvent.press(screen.getByRole("button", { name: SEARCH_BUTTON_TITLE }));
+
+    await waitFor(() => {
+      expect(recipesMock).toHaveBeenCalledTimes(2);
+    });
+
+    expect(recipesMock).toHaveBeenLastCalledWith({ query: SEARCH_QUERY });
   });
 });

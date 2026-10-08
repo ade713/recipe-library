@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Button, FlatList, StyleSheet, Text } from "react-native";
+import { Button, FlatList, StyleSheet, Text, TextInput } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 
 import { apiFetch } from "@/api/client";
@@ -13,10 +13,12 @@ type HealthResponse = {
   status: string;
 };
 
-const LOADING_RECIPES_MESSAGE = "Loading recipes...";
 const LOAD_RECIPES_ERROR_MESSAGE = "Unable to load recipes.";
+const LOADING_RECIPES_MESSAGE = "Loading recipes...";
 const NO_RECIPES_MESSAGE = "No saved recipes yet.";
+const NO_RECIPES_SEARCH_MESSAGE = "No recipes match your search.";
 const RETRY_TEXT = "Retry";
+const SEARCH_RECIPES_TEXT = "Search recipes";
 const SIGN_OUT_ERROR_MESSAGE = "Unable to sign out. Please try again.";
 
 export default function RecipeLibraryScreen() {
@@ -28,6 +30,8 @@ export default function RecipeLibraryScreen() {
   const [loadingAttempt, setLoadingAttempt] = useState(0);
   const [loadingRecipesError, setLoadingRecipesError] = useState<string | null>(null);
   const [apiStatus, setApiStatus] = useState("Not checked");
+  const [searchText, setSearchText] = useState("");
+  const [submittedQuery, setSubmittedQuery] = useState("");
 
   const checkAPI = async (): Promise<void> => {
     setApiStatus("Checking...");
@@ -62,6 +66,10 @@ export default function RecipeLibraryScreen() {
     }
   };
 
+  const handleSubmitSearch = (): void => {
+    setSubmittedQuery(searchText.trim());
+  };
+
   const retryLoadingRecipes = (): void => {
     if (isLoadingRecipes) {
       return;
@@ -82,7 +90,7 @@ export default function RecipeLibraryScreen() {
 
       const getRecipes = async (): Promise<void> => {
         try {
-          const result = await loadRecipes();
+          const result = await loadRecipes({ query: submittedQuery });
 
           if (active) {
             setRecipes(result.items);
@@ -103,7 +111,7 @@ export default function RecipeLibraryScreen() {
       return () => {
         active = false;
       };
-    }, [loadingAttempt]),
+    }, [loadingAttempt, submittedQuery]),
   );
 
   const shouldDisplayNoRecipesMessage = !isLoadingRecipes && loadingRecipesError === null && recipes.length === 0;
@@ -112,7 +120,11 @@ export default function RecipeLibraryScreen() {
     <SafeAreaView edges={["bottom"]} style={styles.container}>
       <Text>Your recipe library.</Text>
 
-      {shouldDisplayNoRecipesMessage && <Text>{NO_RECIPES_MESSAGE}</Text>}
+      <TextInput accessibilityLabel={SEARCH_RECIPES_TEXT} value={searchText} onChangeText={setSearchText} />
+      <Button title='Search' onPress={handleSubmitSearch} />
+
+      {shouldDisplayNoRecipesMessage &&
+        (submittedQuery.length > 0 ? <Text>{NO_RECIPES_SEARCH_MESSAGE}</Text> : <Text>{NO_RECIPES_MESSAGE}</Text>)}
 
       {loadingRecipesError && (
         <>
