@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from "@testing-library/react-native";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { router } from "expo-router";
 import { renderRouter } from "expo-router/testing-library";
 import type { ReactElement } from "react";
@@ -239,5 +239,52 @@ describe("AppNavigator", () => {
     });
 
     expect(await screen.findByText(FAVORITE_TEXT)).toBeTruthy();
+  });
+
+  it("preserves the submitted search when returning to the library", async () => {
+    const user = makeUserResponse();
+    const recipe = makeRecipeSummary();
+    const otherRecipe = makeRecipeSummary({
+      id: "other-recipe-id",
+      title: "Other Good Recipe",
+    });
+    const searchRecipesText = "Search recipes";
+    const searchQuery = "chicken";
+    const searchButtonText = "Search";
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(user);
+    const recipesMock = jest
+      .spyOn(recipeService, "loadRecipes")
+      .mockResolvedValueOnce({
+        items: [recipe, otherRecipe],
+      })
+      .mockResolvedValueOnce({
+        items: [recipe],
+      })
+      .mockResolvedValueOnce({
+        items: [recipe],
+      });
+
+    await renderRouteNavigation(INDEX_PATH, {
+      index: RecipeLibraryScreen,
+    });
+
+    await fireEvent.changeText(await screen.findByLabelText(searchRecipesText), searchQuery);
+    await fireEvent.press(await screen.findByRole("button", { name: searchButtonText }));
+    await screen.findByText(recipe.title);
+    await fireEvent.changeText(await screen.findByLabelText(searchRecipesText), "soup");
+
+    await fireEvent.press(screen.getByRole("button", { name: `Open ${recipe.title}` }));
+    await screen.findByText(RECIPE_DETAIL_TEXT);
+
+    await act(async () => {
+      router.back();
+    });
+
+    await waitFor(() => {
+      expect(recipesMock).toHaveBeenCalledTimes(3);
+    });
+
+    expect(recipesMock).toHaveBeenLastCalledWith({ query: searchQuery });
   });
 });
