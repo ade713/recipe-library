@@ -98,7 +98,11 @@ Post-auth follow-up: audit test overlap and repeated frontend constants without 
 - The library now reloads recipes on focus, including when returning from detail, so cards reflect saved favorite changes. useFocusEffect wraps a useCallback whose loadingAttempt dependency preserves retry behavior without restarting requests on every render. Cleanup ignores late results after blur or a replaced attempt; it does not cancel requests.
 - A navigation regression test verifies an initially non-favorite card becomes a favorite after returning from detail. Library-screen tests now use renderRouter to supply real navigation context while preserving loading, retry, and sign-out coverage. The user confirmed the full mobile suite and final navigation test pass; TypeScript checking passes.
 - Android verification confirmed favorite indicators appear and disappear after returning from detail, a failed refresh shows feedback when the backend is unavailable, and Retry recovers after the backend restarts.
-- Keep the library-focus-refresh PR focused on this loading lifecycle, test setup, and related documentation.
+- Library focus refresh is complete in merged PR #68.
+- Mobile recipe search API/service support is implemented. listRecipes accepts optional ListRecipesOptions with a query field, encodes it as the backend q parameter using URLSearchParams, and omits the query string for missing or empty queries. Nonempty query text is passed through without trimming; special characters are encoded safely.
+- loadRecipes reuses the exported ListRecipesOptions type and forwards options after retrieving the stored token. Existing authentication, response validation, and error propagation behavior is preserved.
+- Search tests cover a query containing spaces, empty input, special-character encoding, and service forwarding. The full mobile suite passed with 184 tests across eighteen suites, and TypeScript passed before the final shared-type and test-grouping cleanup.
+- Keep the search API/service PR focused on request options and related tests and documentation. The library search input and its UI behavior belong to the next separate PR; Android verification will accompany that integration.
 - User preference: keep PRs small and digestible, define scope up front, count test/doc size, and split adjacent features into follow-ups. Separate commits alone do not address oversized PRs; see AGENTS.md.
 
 ## UI exploration

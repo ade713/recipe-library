@@ -66,6 +66,58 @@ describe("listRecipes", () => {
 
     await expect(listRecipes(ACCESS_TOKEN)).rejects.toBe(error);
   });
+
+  it("requests recipes matching a search query", async () => {
+    const recipeList: RecipeListResponse = {
+      items: [makeRecipeSummary()],
+    };
+
+    const requestMock = jest.spyOn(client, "apiFetch").mockResolvedValue(recipeList);
+
+    const result = await listRecipes(ACCESS_TOKEN, { query: "chicken soup" });
+
+    expect(requestMock).toHaveBeenCalledWith(`${RECIPES_PATH}?q=chicken+soup`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${ACCESS_TOKEN}`,
+      },
+    });
+    expect(result).toBe(recipeList);
+  });
+
+  it("requests all recipes when the search query is empty", async () => {
+    const recipeList: RecipeListResponse = {
+      items: [makeRecipeSummary()],
+    };
+
+    const requestMock = jest.spyOn(client, "apiFetch").mockResolvedValue(recipeList);
+
+    await listRecipes(ACCESS_TOKEN, { query: "" });
+
+    expect(requestMock).toHaveBeenCalledWith(RECIPES_PATH, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${ACCESS_TOKEN}`,
+      },
+    });
+  });
+
+  it("encodes special characters in the search query", async () => {
+    const recipeList: RecipeListResponse = {
+      items: [makeRecipeSummary()],
+    };
+
+    const requestMock = jest.spyOn(client, "apiFetch").mockResolvedValue(recipeList);
+
+    await listRecipes(ACCESS_TOKEN, { query: "mac & cheese" });
+
+    expect(requestMock).toHaveBeenCalledWith(`${RECIPES_PATH}?q=mac+%26+cheese`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${ACCESS_TOKEN}`,
+      },
+    });
+  });
 });
 
 describe("getRecipe", () => {
