@@ -1,4 +1,5 @@
 import { getRecipe, listRecipes, setRecipeFavorite } from "@/api/recipes";
+import type { ListRecipesOptions } from "@/api/recipes";
 import { getAccessToken } from "@/auth/token-storage";
 
 import type { RecipeDetailResponse, RecipeListResponse } from "@/types/recipe";
@@ -6,14 +7,14 @@ import type { RecipeDetailResponse, RecipeListResponse } from "@/types/recipe";
 const TOKEN_ERROR_MESSAGE = "No access token available";
 
 /** Load recipe summaries using the stored access token. */
-export async function loadRecipes(): Promise<RecipeListResponse> {
+export async function loadRecipes(options: ListRecipesOptions = {}): Promise<RecipeListResponse> {
   const accessToken = await getAccessToken();
 
   if (accessToken === null) {
     throw new Error(TOKEN_ERROR_MESSAGE);
   }
 
-  return listRecipes(accessToken);
+  return listRecipes(accessToken, options);
 }
 
 /** Load a single recipe using the stored access token. */

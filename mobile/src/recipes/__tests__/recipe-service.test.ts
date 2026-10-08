@@ -1,5 +1,5 @@
 import type { RecipeListResponse } from "@/types/recipe";
-import { makeRecipeDetailResponse } from "@/test/fixtures/recipes";
+import { makeRecipeDetailResponse, makeRecipeSummary } from "@/test/fixtures/recipes";
 
 import * as recipesApi from "../../api/recipes";
 import * as tokenStorage from "../../auth/token-storage";
@@ -27,7 +27,7 @@ describe("loadRecipes", () => {
 
     const response = await loadRecipes();
 
-    expect(recipesMock).toHaveBeenCalledWith(ACCESS_TOKEN);
+    expect(recipesMock).toHaveBeenCalledWith(ACCESS_TOKEN, {});
     expect(response).toBe(recipeListResponse);
   });
 
@@ -59,6 +59,21 @@ describe("loadRecipes", () => {
     jest.spyOn(recipesApi, "listRecipes").mockRejectedValue(error);
 
     await expect(loadRecipes()).rejects.toBe(error);
+  });
+
+  it("loads matching recipes using the stored access token", async () => {
+    const recipeList = {
+      items: [makeRecipeSummary()],
+    };
+    const searchOptions = { query: "chicken soup" };
+
+    jest.spyOn(tokenStorage, "getAccessToken").mockResolvedValue(ACCESS_TOKEN);
+    const requestMock = jest.spyOn(recipesApi, "listRecipes").mockResolvedValue(recipeList);
+
+    const result = await loadRecipes(searchOptions);
+
+    expect(requestMock).toHaveBeenCalledWith(ACCESS_TOKEN, searchOptions);
+    expect(result).toBe(recipeList);
   });
 });
 
