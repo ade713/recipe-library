@@ -118,6 +118,47 @@ describe("listRecipes", () => {
       },
     });
   });
+
+  it.each([true, false])("requests recipes with the favorite filter %s", async (favorite) => {
+    const recipeList: RecipeListResponse = {
+      items: [makeRecipeSummary()],
+    };
+
+    const requestMock = jest.spyOn(client, "apiFetch").mockResolvedValue(recipeList);
+
+    const result = await listRecipes(ACCESS_TOKEN, { favorite });
+
+    expect(requestMock).toHaveBeenCalledWith(`${RECIPES_PATH}?favorite=${favorite}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${ACCESS_TOKEN}`,
+      },
+    });
+    expect(result).toBe(recipeList);
+  });
+
+  it("combines a search query with the favorite filter", async () => {
+    const favoriteRecipe = makeRecipeSummary({
+      id: "favorite-recipe-id",
+      title: "Chicken Soup Recipe",
+      is_favorite: true,
+    });
+    const recipeList: RecipeListResponse = {
+      items: [favoriteRecipe],
+    };
+
+    const requestMock = jest.spyOn(client, "apiFetch").mockResolvedValue(recipeList);
+
+    const result = await listRecipes(ACCESS_TOKEN, { query: "chicken soup", favorite: true });
+
+    expect(requestMock).toHaveBeenCalledWith(`${RECIPES_PATH}?q=chicken+soup&favorite=true`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${ACCESS_TOKEN}`,
+      },
+    });
+    expect(result).toBe(recipeList);
+  });
 });
 
 describe("getRecipe", () => {
