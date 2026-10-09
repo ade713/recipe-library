@@ -7,15 +7,19 @@ const RECIPE_LIST_ERROR_MESSAGE = "Expected a recipe list response";
 const RECIPE_DETAIL_ERROR_MESSAGE = "Expected a recipe detail response";
 
 export type ListRecipesOptions = {
+  favorite?: boolean;
   query?: string;
 };
 
 /** Fetch the authenticated user's recipe summaries. */
 export async function listRecipes(token: string, options: ListRecipesOptions = {}): Promise<RecipeListResponse> {
-  const { query } = options;
+  const { query, favorite } = options;
   const params = new URLSearchParams();
   if (query !== undefined && query.length > 0) {
     params.set("q", query);
+  }
+  if (favorite !== undefined) {
+    params.set("favorite", String(favorite));
   }
 
   const queryString = params.toString();
