@@ -241,40 +241,51 @@ describe("AppNavigator", () => {
     expect(await screen.findByText(FAVORITE_TEXT)).toBeTruthy();
   });
 
-  it("preserves the submitted search when returning to the library", async () => {
+  it("preserves the submitted search and favorite filter when returning to the library", async () => {
     const user = makeUserResponse();
     const recipe = makeRecipeSummary();
     const otherRecipe = makeRecipeSummary({
       id: "other-recipe-id",
       title: "Other Good Recipe",
     });
+    const favoriteRecipe = makeRecipeSummary({
+      id: "favorite-recipe-id",
+      title: "Favorite Chicken Recipe",
+      is_favorite: true,
+    });
     const searchRecipesText = "Search recipes";
     const searchQuery = "chicken";
     const searchButtonText = "Search";
+    const favoritesButtonTitle = "Favorites";
 
     jest.spyOn(session, "restoreSession").mockResolvedValue(user);
     const recipesMock = jest
       .spyOn(recipeService, "loadRecipes")
       .mockResolvedValueOnce({
-        items: [recipe, otherRecipe],
+        items: [recipe, otherRecipe, favoriteRecipe],
       })
       .mockResolvedValueOnce({
-        items: [recipe],
+        items: [favoriteRecipe],
       })
       .mockResolvedValueOnce({
-        items: [recipe],
+        items: [favoriteRecipe],
+      })
+      .mockResolvedValueOnce({
+        items: [favoriteRecipe],
       });
 
     await renderRouteNavigation(INDEX_PATH, {
       index: RecipeLibraryScreen,
     });
 
+    await fireEvent.press(screen.getByRole("button", { name: favoritesButtonTitle }));
+    await screen.findByText(favoriteRecipe.title);
     await fireEvent.changeText(await screen.findByLabelText(searchRecipesText), searchQuery);
     await fireEvent.press(await screen.findByRole("button", { name: searchButtonText }));
-    await screen.findByText(recipe.title);
+    await screen.findByText(favoriteRecipe.title);
     await fireEvent.changeText(await screen.findByLabelText(searchRecipesText), "soup");
 
-    await fireEvent.press(screen.getByRole("button", { name: `Open ${recipe.title}` }));
+    await fireEvent.press(screen.getByRole("button", { name: `Open ${favoriteRecipe.title}` }));
     await screen.findByText(RECIPE_DETAIL_TEXT);
 
     await act(async () => {
@@ -282,9 +293,9 @@ describe("AppNavigator", () => {
     });
 
     await waitFor(() => {
-      expect(recipesMock).toHaveBeenCalledTimes(3);
+      expect(recipesMock).toHaveBeenCalledTimes(4);
     });
 
-    expect(recipesMock).toHaveBeenLastCalledWith({ query: searchQuery });
+    expect(recipesMock).toHaveBeenLastCalledWith({ query: searchQuery, favorite: true });
   });
 });
