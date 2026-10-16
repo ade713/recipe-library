@@ -149,15 +149,32 @@ describe("listRecipes", () => {
 
     const requestMock = jest.spyOn(client, "apiFetch").mockResolvedValue(recipeList);
 
-    const result = await listRecipes(ACCESS_TOKEN, { query: "chicken soup", favorite: true });
+    const result = await listRecipes(ACCESS_TOKEN, { query: "chicken soup", favorite: true, sort: "time" });
 
-    expect(requestMock).toHaveBeenCalledWith(`${RECIPES_PATH}?q=chicken+soup&favorite=true`, {
+    expect(requestMock).toHaveBeenCalledWith(`${RECIPES_PATH}?q=chicken+soup&favorite=true&sort=time`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${ACCESS_TOKEN}`,
       },
     });
     expect(result).toBe(recipeList);
+  });
+
+  it.each(["recent", "title", "time"] as const)("requests recipes sorted by %s", async (sort) => {
+    const recipeList: RecipeListResponse = {
+      items: [makeRecipeSummary()],
+    };
+
+    const requestMock = jest.spyOn(client, "apiFetch").mockResolvedValue(recipeList);
+
+    await listRecipes(ACCESS_TOKEN, { sort });
+
+    expect(requestMock).toHaveBeenCalledWith(`${RECIPES_PATH}?sort=${sort}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${ACCESS_TOKEN}`,
+      },
+    });
   });
 });
 
