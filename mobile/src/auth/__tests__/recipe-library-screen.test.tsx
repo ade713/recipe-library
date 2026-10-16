@@ -31,6 +31,12 @@ const SEARCH_BUTTON_TITLE = "Search";
 const SEARCH_QUERY = "chicken";
 const SEARCH_RECIPES_TEXT = "Search recipes";
 const SIGN_OUT_ERROR_MESSAGE = "Unable to sign out. Please try again.";
+const SORT_RECENT = "recent";
+const SORT_RECENT_BUTTON_TITLE = "Newest";
+const SORT_TIME = "time";
+const SORT_TIME_BUTTON_TITLE = "Shortest time";
+const SORT_TITLE = "title";
+const SORT_TITLE_AZ_BUTTON_TITLE = "Title A–Z";
 const STORAGE_ERROR_MESSAGE = "Secure storage unavailable";
 const TIME_MINUTES = 35;
 
@@ -259,7 +265,7 @@ describe("RecipeLibraryScreen", () => {
     await fireEvent.changeText(await screen.findByLabelText(SEARCH_RECIPES_TEXT), SEARCH_QUERY);
     await fireEvent.press(screen.getByRole("button", { name: SEARCH_BUTTON_TITLE }));
 
-    expect(recipesMock).toHaveBeenCalledWith({ query: SEARCH_QUERY });
+    expect(recipesMock).toHaveBeenCalledWith({ query: SEARCH_QUERY, sort: SORT_RECENT });
     expect(await screen.findByText(recipe.title)).toBeTruthy();
     expect(screen.queryByText(otherRecipe.title)).toBeNull();
   });
@@ -310,7 +316,7 @@ describe("RecipeLibraryScreen", () => {
     await fireEvent.changeText(await screen.findByLabelText(SEARCH_RECIPES_TEXT), input);
     await fireEvent.press(screen.getByRole("button", { name: SEARCH_BUTTON_TITLE }));
 
-    expect(recipesMock).toHaveBeenLastCalledWith({ query: "" });
+    expect(recipesMock).toHaveBeenLastCalledWith({ query: "", sort: SORT_RECENT });
     expect(await screen.findByText(otherRecipe.title)).toBeTruthy();
   });
 
@@ -333,7 +339,7 @@ describe("RecipeLibraryScreen", () => {
     expect(screen.queryByText(noSavedRecipesText)).toBeNull();
   });
 
-  it("preserves the submitted search and favorite filter when retrying", async () => {
+  it("preserves submitted search, favorite filter, and sorting when retrying", async () => {
     const error = new Error(LOAD_RECIPES_ERROR_MESSAGE);
     const user = makeUserResponse();
     const recipe = makeRecipeSummary();
@@ -349,18 +355,23 @@ describe("RecipeLibraryScreen", () => {
     const recipeList = makeRecipeListResponse([recipe, otherRecipe, favoriteRecipe]);
     const favoriteRecipeList = makeRecipeListResponse([favoriteRecipe]);
     const searchRecipeList = makeRecipeListResponse([favoriteRecipe]);
+    const sortedRecipeList = makeRecipeListResponse([favoriteRecipe]);
 
     jest.spyOn(session, "restoreSession").mockResolvedValue(user);
     const recipesMock = jest
       .spyOn(recipeService, "loadRecipes")
       .mockResolvedValueOnce(recipeList)
       .mockResolvedValueOnce(favoriteRecipeList)
+      .mockResolvedValueOnce(sortedRecipeList)
       .mockRejectedValueOnce(error)
       .mockResolvedValueOnce(searchRecipeList);
 
     await renderRecipeLibraryScreen();
 
     await fireEvent.press(await screen.findByText(FAVORITES_BUTTON_TITLE));
+    await screen.findByText(favoriteRecipe.title);
+
+    await fireEvent.press(await screen.findByText(SORT_TITLE_AZ_BUTTON_TITLE));
     await screen.findByText(favoriteRecipe.title);
 
     await fireEvent.changeText(await screen.findByLabelText(SEARCH_RECIPES_TEXT), SEARCH_QUERY);
@@ -371,10 +382,10 @@ describe("RecipeLibraryScreen", () => {
     await fireEvent.press(screen.getByRole("button", { name: RETRY_TEXT }));
 
     await waitFor(() => {
-      expect(recipesMock).toHaveBeenCalledTimes(4);
+      expect(recipesMock).toHaveBeenCalledTimes(5);
     });
 
-    expect(recipesMock).toHaveBeenLastCalledWith({ query: SEARCH_QUERY, favorite: true });
+    expect(recipesMock).toHaveBeenLastCalledWith({ query: SEARCH_QUERY, favorite: true, sort: SORT_TITLE });
 
     expect(await screen.findByText(favoriteRecipe.title)).toBeTruthy();
     expect(screen.queryByText(LOAD_RECIPES_ERROR_MESSAGE)).toBeNull();
@@ -403,7 +414,7 @@ describe("RecipeLibraryScreen", () => {
       expect(recipesMock).toHaveBeenCalledTimes(2);
     });
 
-    expect(recipesMock).toHaveBeenLastCalledWith({ query: SEARCH_QUERY });
+    expect(recipesMock).toHaveBeenLastCalledWith({ query: SEARCH_QUERY, sort: SORT_RECENT });
   });
 
   it("shows favorite recipes when Favorites is selected", async () => {
@@ -430,7 +441,7 @@ describe("RecipeLibraryScreen", () => {
     expect(screen.getByRole("button", { name: FAVORITES_BUTTON_TITLE })).not.toBeSelected();
     await fireEvent.press(screen.getByRole("button", { name: FAVORITES_BUTTON_TITLE }));
 
-    expect(recipesMock).toHaveBeenLastCalledWith({ query: "", favorite: true });
+    expect(recipesMock).toHaveBeenLastCalledWith({ query: "", favorite: true, sort: SORT_RECENT });
     expect(await screen.findByText(favoriteRecipe.title)).toBeTruthy();
     expect(screen.getByRole("button", { name: ALL_BUTTON_TITLE })).not.toBeSelected();
     expect(screen.getByRole("button", { name: FAVORITES_BUTTON_TITLE })).toBeSelected();
@@ -465,7 +476,7 @@ describe("RecipeLibraryScreen", () => {
     await fireEvent.press(screen.getByRole("button", { name: ALL_BUTTON_TITLE }));
 
     await screen.findByText(recipe.title);
-    expect(recipesMock).toHaveBeenLastCalledWith({ query: "" });
+    expect(recipesMock).toHaveBeenLastCalledWith({ query: "", sort: SORT_RECENT });
   });
 
   it("preserves the submitted search when Favorites is selected", async () => {
@@ -495,7 +506,7 @@ describe("RecipeLibraryScreen", () => {
     await fireEvent.press(screen.getByRole("button", { name: FAVORITES_BUTTON_TITLE }));
     await screen.findByText(favoriteRecipe.title);
 
-    expect(recipesMock).toHaveBeenLastCalledWith({ query: SEARCH_QUERY, favorite: true });
+    expect(recipesMock).toHaveBeenLastCalledWith({ query: SEARCH_QUERY, favorite: true, sort: SORT_RECENT });
     expect(screen.queryByText(recipe.title)).toBeNull();
   });
 
@@ -549,6 +560,91 @@ describe("RecipeLibraryScreen", () => {
 
     expect(await screen.findByText(NO_RECIPES_SEARCH_MESSAGE)).toBeTruthy();
     expect(screen.queryByText(NO_FAVORITE_RECIPES_MESSAGE)).toBeNull();
-    expect(recipesMock).toHaveBeenLastCalledWith({ query: nonexistentQuery, favorite: true });
+    expect(recipesMock).toHaveBeenLastCalledWith({ query: nonexistentQuery, favorite: true, sort: SORT_RECENT });
+  });
+
+  it("requests title ordering when Title A-Z is selected", async () => {
+    const user = makeUserResponse();
+    const recipe = makeRecipeSummary();
+    const anotherRecipe = makeRecipeSummary({
+      id: RECIPE_ID_2,
+      title: "Another Good Recipe",
+    });
+    const recipeList = makeRecipeListResponse([recipe, anotherRecipe]);
+    const titleOrderedRecipeList = makeRecipeListResponse([anotherRecipe, recipe]);
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(user);
+    const recipesMock = jest
+      .spyOn(recipeService, "loadRecipes")
+      .mockResolvedValueOnce(recipeList)
+      .mockResolvedValue(titleOrderedRecipeList);
+
+    await renderRecipeLibraryScreen();
+
+    const sortRecentButton = await screen.findByRole("button", { name: `Sort by: ${SORT_RECENT_BUTTON_TITLE}` });
+    expect(sortRecentButton).toBeSelected();
+    const sortTitleButton = await screen.findByRole("button", { name: `Sort by: ${SORT_TITLE_AZ_BUTTON_TITLE}` });
+    expect(sortTitleButton).not.toBeSelected();
+    await fireEvent.press(sortTitleButton);
+
+    expect(recipesMock).toHaveBeenLastCalledWith({ query: "", sort: "title" });
+    expect(await screen.findByText(anotherRecipe.title)).toBeTruthy();
+    expect(sortTitleButton).toBeSelected();
+    expect(sortRecentButton).not.toBeSelected();
+  });
+
+  it("requests time ordering when Shortest time is selected", async () => {
+    const user = makeUserResponse();
+    const recipe = makeRecipeSummary();
+    const anotherRecipe = makeRecipeSummary({
+      id: RECIPE_ID_2,
+      title: "Another Good Recipe",
+    });
+    const recipeList = makeRecipeListResponse([recipe, anotherRecipe]);
+    const timeOrderedRecipeList = makeRecipeListResponse([anotherRecipe, recipe]);
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(user);
+    const recipesMock = jest
+      .spyOn(recipeService, "loadRecipes")
+      .mockResolvedValueOnce(recipeList)
+      .mockResolvedValueOnce(timeOrderedRecipeList);
+
+    await renderRecipeLibraryScreen();
+
+    await screen.findByText(recipe.title);
+    await fireEvent.press(screen.getByRole("button", { name: `Sort by: ${SORT_TIME_BUTTON_TITLE}` }));
+
+    expect(recipesMock).toHaveBeenLastCalledWith({ query: "", sort: SORT_TIME });
+  });
+
+  it("restores recent ordering when Newest is selected", async () => {
+    const user = makeUserResponse();
+    const recipe = makeRecipeSummary();
+    const anotherRecipe = makeRecipeSummary({
+      id: RECIPE_ID_2,
+      title: "Another Good Recipe",
+    });
+    const recipeList = makeRecipeListResponse([recipe, anotherRecipe]);
+    const titleOrderedRecipeList = makeRecipeListResponse([anotherRecipe, recipe]);
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(user);
+    const recipesMock = jest
+      .spyOn(recipeService, "loadRecipes")
+      .mockResolvedValueOnce(recipeList)
+      .mockResolvedValueOnce(titleOrderedRecipeList)
+      .mockResolvedValueOnce(recipeList);
+
+    await renderRecipeLibraryScreen();
+
+    await fireEvent.press(await screen.findByRole("button", { name: `Sort by: ${SORT_TITLE_AZ_BUTTON_TITLE}` }));
+    await screen.findByText(anotherRecipe.title);
+    await fireEvent.press(screen.getByRole("button", { name: `Sort by: ${SORT_RECENT_BUTTON_TITLE}` }));
+    await screen.findByText(recipe.title);
+
+    await waitFor(() => {
+      expect(recipesMock).toHaveBeenCalledTimes(3);
+    });
+
+    expect(recipesMock).toHaveBeenLastCalledWith({ query: "", sort: SORT_RECENT });
   });
 });
