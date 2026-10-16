@@ -61,11 +61,11 @@ describe("loadRecipes", () => {
     await expect(loadRecipes()).rejects.toBe(error);
   });
 
-  it("loads recipes using the stored token and supplied filters", async () => {
+  it("loads recipes using the stored token and supplied options", async () => {
     const recipeList = {
       items: [makeRecipeSummary({ is_favorite: true })],
     };
-    const options = { query: "chicken soup", favorite: true };
+    const options = { query: "chicken soup", favorite: true, sort: "time" as const };
 
     jest.spyOn(tokenStorage, "getAccessToken").mockResolvedValue(ACCESS_TOKEN);
     const requestMock = jest.spyOn(recipesApi, "listRecipes").mockResolvedValue(recipeList);

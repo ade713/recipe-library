@@ -9,17 +9,21 @@ const RECIPE_DETAIL_ERROR_MESSAGE = "Expected a recipe detail response";
 export type ListRecipesOptions = {
   favorite?: boolean;
   query?: string;
+  sort?: "recent" | "title" | "time";
 };
 
 /** Fetch the authenticated user's recipe summaries. */
 export async function listRecipes(token: string, options: ListRecipesOptions = {}): Promise<RecipeListResponse> {
-  const { query, favorite } = options;
+  const { query, favorite, sort } = options;
   const params = new URLSearchParams();
   if (query !== undefined && query.length > 0) {
     params.set("q", query);
   }
   if (favorite !== undefined) {
     params.set("favorite", String(favorite));
+  }
+  if (sort !== undefined) {
+    params.set("sort", sort);
   }
 
   const queryString = params.toString();
