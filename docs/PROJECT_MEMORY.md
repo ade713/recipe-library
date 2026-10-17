@@ -125,7 +125,11 @@ Post-auth follow-up: audit test overlap and repeated frontend constants without 
 - Library sorting controls are complete in merged PR #74.
 - Mobile maximum-total-time request support is implemented. ListRecipesOptions accepts optional maxTotalTime, which listRecipes serializes as max_total_time. An explicit undefined check preserves zero as a valid value; omission leaves results unrestricted by time. The existing loadRecipes service forwards the shared options unchanged.
 - API tests cover positive and zero limits, and the existing combined-options and service-forwarding tests now include the time limit. The full mobile suite passed with 208 tests across eighteen suites, and TypeScript passed.
-- Keep the maximum-time API/service PR focused on request support and related tests and documentation. The library time-filter UI and Android verification belong to the next separate PR. Additional filters, selected-button styling, and broader library-screen cleanup remain separate follow-ups.
+- Maximum-time API/service support is complete in merged PR #75.
+- The library now offers Any time and 30 min or less controls. Any time omits maxTotalTime; the limited view sends 30. Search, Favorites, sorting, retry, and focus refresh retain the active time limit. Empty feedback prioritizes submitted search, then an active time filter, then Favorites, then an empty saved library.
+- Time controls use Pressable with accessible selected state and a darker selected background. Related Favorites, sorting, and time controls are grouped into wrapping rows to leave more room for recipes.
+- Existing retry and navigation tests now include the time limit. Screen tests cover applying and removing it, selected state, and empty-filter feedback. Final checks passed with 211 tests across eighteen suites and TypeScript passing. The user confirmed Android checks for time filtering, restoration, combined options, navigation/retry, empty feedback, and the layout changes.
+- Keep this PR focused on time filtering, its selected styling, and the agreed row grouping. The next separate PR applies consistent selected styling to Favorites and sorting controls, extracting a shared control only if the repeated structure warrants it.
 - User preference: keep PRs small and digestible, define scope up front, count test/doc size, and split adjacent features into follow-ups. Separate commits alone do not address oversized PRs; see AGENTS.md.
 
 ## UI exploration
