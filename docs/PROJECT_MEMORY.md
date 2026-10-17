@@ -122,7 +122,10 @@ Post-auth follow-up: audit test overlap and repeated frontend constants without 
 - Sort controls expose accessible selected state and labels prefixed with Sort by:. Visible selected-button styling is deferred to the styling pass by agreement; no additional sort-status text is required.
 - Tests cover sort requests, switching back to Newest, and accessible selection. Existing retry and navigation tests were extended to include sorting rather than duplicated. The full mobile suite passed with 206 tests across eighteen suites, and TypeScript passed; the user confirmed the subsequent mock-sequencing, request-count, and accessibility-label changes remain green.
 - Android emulator verification confirmed alphabetical, shortest-time (unknown times last), and newest ordering; search/Favorites preservation; sorting on return from detail; and backend-failure retry recovery. These checks used an emulator rather than a physical phone.
-- Keep this PR focused on library sorting controls and related tests and documentation. Additional filters, selected-button styling, and broader library-screen cleanup remain separate follow-ups.
+- Library sorting controls are complete in merged PR #74.
+- Mobile maximum-total-time request support is implemented. ListRecipesOptions accepts optional maxTotalTime, which listRecipes serializes as max_total_time. An explicit undefined check preserves zero as a valid value; omission leaves results unrestricted by time. The existing loadRecipes service forwards the shared options unchanged.
+- API tests cover positive and zero limits, and the existing combined-options and service-forwarding tests now include the time limit. The full mobile suite passed with 208 tests across eighteen suites, and TypeScript passed.
+- Keep the maximum-time API/service PR focused on request support and related tests and documentation. The library time-filter UI and Android verification belong to the next separate PR. Additional filters, selected-button styling, and broader library-screen cleanup remain separate follow-ups.
 - User preference: keep PRs small and digestible, define scope up front, count test/doc size, and split adjacent features into follow-ups. Separate commits alone do not address oversized PRs; see AGENTS.md.
 
 ## UI exploration
