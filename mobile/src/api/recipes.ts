@@ -8,13 +8,14 @@ const RECIPE_DETAIL_ERROR_MESSAGE = "Expected a recipe detail response";
 
 export type ListRecipesOptions = {
   favorite?: boolean;
+  maxTotalTime?: number;
   query?: string;
   sort?: "recent" | "title" | "time";
 };
 
 /** Fetch the authenticated user's recipe summaries. */
 export async function listRecipes(token: string, options: ListRecipesOptions = {}): Promise<RecipeListResponse> {
-  const { query, favorite, sort } = options;
+  const { query, favorite, sort, maxTotalTime } = options;
   const params = new URLSearchParams();
   if (query !== undefined && query.length > 0) {
     params.set("q", query);
@@ -24,6 +25,9 @@ export async function listRecipes(token: string, options: ListRecipesOptions = {
   }
   if (sort !== undefined) {
     params.set("sort", sort);
+  }
+  if (maxTotalTime !== undefined) {
+    params.set("max_total_time", String(maxTotalTime));
   }
 
   const queryString = params.toString();

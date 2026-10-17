@@ -65,7 +65,7 @@ describe("loadRecipes", () => {
     const recipeList = {
       items: [makeRecipeSummary({ is_favorite: true })],
     };
-    const options = { query: "chicken soup", favorite: true, sort: "time" as const };
+    const options = { query: "chicken soup", favorite: true, sort: "time" as const, maxTotalTime: 30 };
 
     jest.spyOn(tokenStorage, "getAccessToken").mockResolvedValue(ACCESS_TOKEN);
     const requestMock = jest.spyOn(recipesApi, "listRecipes").mockResolvedValue(recipeList);
