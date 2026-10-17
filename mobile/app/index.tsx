@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Button, FlatList, StyleSheet, Text, TextInput } from "react-native";
+import { Button, FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 
 import { apiFetch } from "@/api/client";
@@ -159,50 +159,65 @@ export default function RecipeLibraryScreen() {
     <SafeAreaView edges={["bottom"]} style={styles.container}>
       <Text>Your recipe library.</Text>
 
-      <Button
-        title={ALL_BUTTON_TEXT}
-        accessibilityState={{ selected: !favoritesOnly }}
-        onPress={() => setFavoritesOnly(false)}
-      />
-      <Button
-        title={FAVORITES_BUTTON_TEXT}
-        accessibilityState={{ selected: favoritesOnly }}
-        onPress={() => setFavoritesOnly(true)}
-      />
+      <View style={styles.buttonsContainer}>
+        <Button
+          title={ALL_BUTTON_TEXT}
+          accessibilityState={{ selected: !favoritesOnly }}
+          onPress={() => setFavoritesOnly(false)}
+        />
+        <Button
+          title={FAVORITES_BUTTON_TEXT}
+          accessibilityState={{ selected: favoritesOnly }}
+          onPress={() => setFavoritesOnly(true)}
+        />
+      </View>
       <Text>{`Showing: ${favoritesOnly ? FAVORITES_BUTTON_TEXT : ALL_BUTTON_TEXT}`}</Text>
 
       <TextInput accessibilityLabel={SEARCH_RECIPES_TEXT} value={searchText} onChangeText={setSearchText} />
       <Button title={SEARCH_BUTTON_TITLE} onPress={handleSubmitSearch} />
 
-      <Button
-        title={SORT_RECENT_BUTTON_TITLE}
-        accessibilityLabel={`Sort by: ${SORT_RECENT_BUTTON_TITLE}`}
-        accessibilityState={{ selected: sort === SORT_RECENT }}
-        onPress={() => setSort(SORT_RECENT)}
-      />
-      <Button
-        title={SORT_TITLE_AZ_BUTTON_TITLE}
-        accessibilityLabel={`Sort by: ${SORT_TITLE_AZ_BUTTON_TITLE}`}
-        accessibilityState={{ selected: sort === SORT_TITLE }}
-        onPress={() => setSort(SORT_TITLE)}
-      />
-      <Button
-        title={SORT_TIME_BUTTON_TITLE}
-        accessibilityLabel={`Sort by: ${SORT_TIME_BUTTON_TITLE}`}
-        accessibilityState={{ selected: sort === SORT_TIME }}
-        onPress={() => setSort(SORT_TIME)}
-      />
+      <View style={styles.buttonsContainer}>
+        <Button
+          title={SORT_RECENT_BUTTON_TITLE}
+          accessibilityLabel={`Sort by: ${SORT_RECENT_BUTTON_TITLE}`}
+          accessibilityState={{ selected: sort === SORT_RECENT }}
+          onPress={() => setSort(SORT_RECENT)}
+        />
+        <Button
+          title={SORT_TITLE_AZ_BUTTON_TITLE}
+          accessibilityLabel={`Sort by: ${SORT_TITLE_AZ_BUTTON_TITLE}`}
+          accessibilityState={{ selected: sort === SORT_TITLE }}
+          onPress={() => setSort(SORT_TITLE)}
+        />
+        <Button
+          title={SORT_TIME_BUTTON_TITLE}
+          accessibilityLabel={`Sort by: ${SORT_TIME_BUTTON_TITLE}`}
+          accessibilityState={{ selected: sort === SORT_TIME }}
+          onPress={() => setSort(SORT_TIME)}
+        />
+      </View>
 
-      <Button
-        title={FILTER_ANY_TIME_TITLE}
-        accessibilityState={{ selected: maxTotalTime === undefined }}
-        onPress={() => setMaxTotalTime(undefined)}
-      />
-      <Button
-        title={FILTER_MAX_TOTAL_TIME_TITLE}
-        accessibilityState={{ selected: maxTotalTime === FILTER_MAX_TOTAL_TIME_VALUE }}
-        onPress={() => setMaxTotalTime(FILTER_MAX_TOTAL_TIME_VALUE)}
-      />
+      <View style={styles.buttonsContainer}>
+        <Pressable
+          accessibilityRole='button'
+          accessibilityState={{ selected: maxTotalTime === undefined }}
+          onPress={() => setMaxTotalTime(undefined)}
+          style={[styles.timeFilterButton, maxTotalTime === undefined && styles.timeFilterButtonSelected]}
+        >
+          <Text style={styles.buttonTitle}>{FILTER_ANY_TIME_TITLE}</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole='button'
+          accessibilityState={{ selected: maxTotalTime === FILTER_MAX_TOTAL_TIME_VALUE }}
+          onPress={() => setMaxTotalTime(FILTER_MAX_TOTAL_TIME_VALUE)}
+          style={[
+            styles.timeFilterButton,
+            maxTotalTime === FILTER_MAX_TOTAL_TIME_VALUE && styles.timeFilterButtonSelected,
+          ]}
+        >
+          <Text style={styles.buttonTitle}>{FILTER_MAX_TOTAL_TIME_TITLE}</Text>
+        </Pressable>
+      </View>
 
       {shouldDisplayNoRecipesMessage && <Text>{getNoRecipesMessage()}</Text>}
 
@@ -247,5 +262,28 @@ const styles = StyleSheet.create({
     padding: 24,
     gap: 12,
     backgroundColor: "#fff",
+  },
+  timeFilterButton: {
+    backgroundColor: "#2196F3",
+    borderRadius: 2,
+    padding: 4,
+    elevation: 4,
+  },
+  timeFilterButtonSelected: {
+    backgroundColor: "#135080",
+  },
+  buttonTitle: {
+    color: "#fff",
+    fontWeight: 500,
+    margin: 8,
+    textAlign: "center",
+    textTransform: "uppercase",
+    overflow: "hidden",
+  },
+  buttonsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 8,
   },
 });
