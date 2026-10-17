@@ -170,8 +170,15 @@ export default function RecipeLibraryScreen() {
       </View>
       <Text>{`Showing: ${favoritesOnly ? FAVORITES_BUTTON_TEXT : ALL_BUTTON_TEXT}`}</Text>
 
-      <TextInput accessibilityLabel={SEARCH_RECIPES_TEXT} value={searchText} onChangeText={setSearchText} />
-      <Button title={SEARCH_BUTTON_TITLE} onPress={handleSubmitSearch} />
+      <View style={styles.searchBar}>
+        <TextInput
+          accessibilityLabel={SEARCH_RECIPES_TEXT}
+          value={searchText}
+          onChangeText={setSearchText}
+          style={styles.searchInput}
+        />
+        <Button title={SEARCH_BUTTON_TITLE} onPress={handleSubmitSearch} />
+      </View>
 
       <View style={styles.buttonsContainer}>
         <RecipeOptionButton
@@ -256,5 +263,18 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     justifyContent: "center",
     gap: 8,
+  },
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  searchInput: {
+    flex: 1,
+    minWidth: 0,
+    borderRadius: 2,
+    borderColor: "#2196F3",
+    borderWidth: 1,
+    borderStyle: "solid",
   },
 });
