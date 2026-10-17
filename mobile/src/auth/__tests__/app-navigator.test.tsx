@@ -241,7 +241,15 @@ describe("AppNavigator", () => {
     expect(await screen.findByText(FAVORITE_TEXT)).toBeTruthy();
   });
 
-  it("preserves submitted search, favorite filter, and sorting when returning to the library", async () => {
+  it("preserves submitted search, filters, and sorting when returning to the library", async () => {
+    const searchRecipesText = "Search recipes";
+    const searchQuery = "chicken";
+    const searchButtonText = "Search";
+    const favoritesButtonTitle = "Favorites";
+    const sortTitle = "title";
+    const sortTitleAZButtonTitle = "Title A–Z";
+    const filterMaxTotalTimeTitle = "30 min or less";
+    const totalTime = 30;
     const user = makeUserResponse();
     const recipe = makeRecipeSummary();
     const otherRecipe = makeRecipeSummary({
@@ -252,19 +260,17 @@ describe("AppNavigator", () => {
       id: "favorite-recipe-id",
       title: "Favorite Chicken Recipe",
       is_favorite: true,
+      total_time_minutes: totalTime,
     });
-    const searchRecipesText = "Search recipes";
-    const searchQuery = "chicken";
-    const searchButtonText = "Search";
-    const favoritesButtonTitle = "Favorites";
-    const sortTitle = "title";
-    const sortTitleAZButtonTitle = "Title A–Z";
 
     jest.spyOn(session, "restoreSession").mockResolvedValue(user);
     const recipesMock = jest
       .spyOn(recipeService, "loadRecipes")
       .mockResolvedValueOnce({
         items: [recipe, otherRecipe, favoriteRecipe],
+      })
+      .mockResolvedValueOnce({
+        items: [favoriteRecipe],
       })
       .mockResolvedValueOnce({
         items: [favoriteRecipe],
@@ -287,6 +293,8 @@ describe("AppNavigator", () => {
     await screen.findByText(favoriteRecipe.title);
     await fireEvent.press(screen.getByRole("button", { name: `Sort by: ${sortTitleAZButtonTitle}` }));
     await screen.findByText(favoriteRecipe.title);
+    await fireEvent.press(screen.getByRole("button", { name: filterMaxTotalTimeTitle }));
+    await screen.findByText(favoriteRecipe.title);
     await fireEvent.changeText(await screen.findByLabelText(searchRecipesText), searchQuery);
     await fireEvent.press(await screen.findByRole("button", { name: searchButtonText }));
     await screen.findByText(favoriteRecipe.title);
@@ -300,9 +308,14 @@ describe("AppNavigator", () => {
     });
 
     await waitFor(() => {
-      expect(recipesMock).toHaveBeenCalledTimes(5);
+      expect(recipesMock).toHaveBeenCalledTimes(6);
     });
 
-    expect(recipesMock).toHaveBeenLastCalledWith({ query: searchQuery, favorite: true, sort: sortTitle });
+    expect(recipesMock).toHaveBeenLastCalledWith({
+      query: searchQuery,
+      favorite: true,
+      sort: sortTitle,
+      maxTotalTime: totalTime,
+    });
   });
 });

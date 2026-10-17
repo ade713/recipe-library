@@ -14,13 +14,18 @@ import * as session from "../session";
 const ALL_BUTTON_TITLE = "All";
 const BASE_SERVINGS = "4";
 const FAVORITES_BUTTON_TITLE = "Favorites";
+const FILTER_ANY_TIME_TITLE = "Any time";
+const FILTER_MAX_TOTAL_TIME_TITLE = "30 min or less";
 const IMAGE_URL = "https://example.com/chicken-wings";
 const INDEX_PATH = "/";
 const LOAD_RECIPES_ERROR_MESSAGE = "Unable to load recipes.";
 const LOADING_RECIPES_MESSAGE = "Loading recipes...";
+const LONG_TOTAL_TIME = 45;
+const MAX_TOTAL_TIME = 30;
 const NO_FAVORITE_RECIPES_MESSAGE = "No favorite saved recipes yet.";
-const NO_RECIPES_MESSAGE = "No saved recipes yet.";
+const NO_RECIPES_SAVED_MESSAGE = "No saved recipes yet.";
 const NO_RECIPES_SEARCH_MESSAGE = "No recipes match your search.";
+const NO_RECIPES_FILTER_MESSAGE = "No recipes match your filters.";
 const RECIPE_ID = "test_recipe_id";
 const RECIPE_ID_2 = "test_recipe_id_2";
 const RECIPE_LIST_ERROR_MESSAGE = "Expected a recipe list response";
@@ -110,7 +115,7 @@ describe("RecipeLibraryScreen", () => {
 
     expect(await screen.findByText(LOADING_RECIPES_MESSAGE)).toBeTruthy();
     expect(recipesMock).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText(NO_RECIPES_MESSAGE)).toBeNull();
+    expect(screen.queryByText(NO_RECIPES_SAVED_MESSAGE)).toBeNull();
   });
 
   it("shows safe feedback when loading recipes fails", async () => {
@@ -125,7 +130,7 @@ describe("RecipeLibraryScreen", () => {
     expect(await screen.findByText(LOAD_RECIPES_ERROR_MESSAGE)).toBeTruthy();
     expect(screen.queryByText(RECIPE_LIST_ERROR_MESSAGE)).toBeNull();
     expect(screen.queryByText(LOADING_RECIPES_MESSAGE)).toBeNull();
-    expect(screen.queryByText(NO_RECIPES_MESSAGE)).toBeNull();
+    expect(screen.queryByText(NO_RECIPES_SAVED_MESSAGE)).toBeNull();
   });
 
   it("displays loaded recipe summaries", async () => {
@@ -155,7 +160,7 @@ describe("RecipeLibraryScreen", () => {
     expect(await screen.findByText(RECIPE_TITLE)).toBeTruthy();
     expect(screen.getByText(RECIPE_TITLE_2)).toBeTruthy();
     expect(screen.queryByText(LOADING_RECIPES_MESSAGE)).toBeNull();
-    expect(screen.queryByText(NO_RECIPES_MESSAGE)).toBeNull();
+    expect(screen.queryByText(NO_RECIPES_SAVED_MESSAGE)).toBeNull();
     expect(screen.getAllByText("35 min")).toHaveLength(2);
     expect(screen.getAllByText("Servings: 4")).toHaveLength(2);
   });
@@ -169,7 +174,7 @@ describe("RecipeLibraryScreen", () => {
 
     await renderRecipeLibraryScreen();
 
-    expect(await screen.findByText(NO_RECIPES_MESSAGE)).toBeTruthy();
+    expect(await screen.findByText(NO_RECIPES_SAVED_MESSAGE)).toBeTruthy();
     expect(screen.queryByText(LOADING_RECIPES_MESSAGE)).toBeNull();
     expect(screen.queryByText(LOAD_RECIPES_ERROR_MESSAGE)).toBeNull();
   });
@@ -214,7 +219,7 @@ describe("RecipeLibraryScreen", () => {
 
     expect(await screen.findByText(LOADING_RECIPES_MESSAGE)).toBeTruthy();
     expect(screen.queryByText(LOAD_RECIPES_ERROR_MESSAGE)).toBeNull();
-    expect(screen.queryByText(NO_RECIPES_MESSAGE)).toBeNull();
+    expect(screen.queryByText(NO_RECIPES_SAVED_MESSAGE)).toBeNull();
     expect(screen.queryByRole("button", { name: RETRY_TEXT })).toBeNull();
     expect(recipeMock).toHaveBeenCalledTimes(2);
   });
@@ -339,10 +344,12 @@ describe("RecipeLibraryScreen", () => {
     expect(screen.queryByText(noSavedRecipesText)).toBeNull();
   });
 
-  it("preserves submitted search, favorite filter, and sorting when retrying", async () => {
+  it("preserves submitted search, filters, and sorting when retrying", async () => {
     const error = new Error(LOAD_RECIPES_ERROR_MESSAGE);
     const user = makeUserResponse();
-    const recipe = makeRecipeSummary();
+    const recipe = makeRecipeSummary({
+      total_time_minutes: LONG_TOTAL_TIME,
+    });
     const otherRecipe = makeRecipeSummary({
       id: RECIPE_ID_2,
       title: "Other Good Soup Recipe",
@@ -351,11 +358,13 @@ describe("RecipeLibraryScreen", () => {
       id: "favorite-recipe-id",
       title: "Favorite Chicken Recipe",
       is_favorite: true,
+      total_time_minutes: MAX_TOTAL_TIME,
     });
     const recipeList = makeRecipeListResponse([recipe, otherRecipe, favoriteRecipe]);
     const favoriteRecipeList = makeRecipeListResponse([favoriteRecipe]);
     const searchRecipeList = makeRecipeListResponse([favoriteRecipe]);
     const sortedRecipeList = makeRecipeListResponse([favoriteRecipe]);
+    const timeRecipeList = makeRecipeListResponse([favoriteRecipe]);
 
     jest.spyOn(session, "restoreSession").mockResolvedValue(user);
     const recipesMock = jest
@@ -363,6 +372,7 @@ describe("RecipeLibraryScreen", () => {
       .mockResolvedValueOnce(recipeList)
       .mockResolvedValueOnce(favoriteRecipeList)
       .mockResolvedValueOnce(sortedRecipeList)
+      .mockResolvedValueOnce(timeRecipeList)
       .mockRejectedValueOnce(error)
       .mockResolvedValueOnce(searchRecipeList);
 
@@ -370,8 +380,9 @@ describe("RecipeLibraryScreen", () => {
 
     await fireEvent.press(await screen.findByText(FAVORITES_BUTTON_TITLE));
     await screen.findByText(favoriteRecipe.title);
-
     await fireEvent.press(await screen.findByText(SORT_TITLE_AZ_BUTTON_TITLE));
+    await screen.findByText(favoriteRecipe.title);
+    await fireEvent.press(await screen.findByRole("button", { name: FILTER_MAX_TOTAL_TIME_TITLE }));
     await screen.findByText(favoriteRecipe.title);
 
     await fireEvent.changeText(await screen.findByLabelText(SEARCH_RECIPES_TEXT), SEARCH_QUERY);
@@ -382,10 +393,15 @@ describe("RecipeLibraryScreen", () => {
     await fireEvent.press(screen.getByRole("button", { name: RETRY_TEXT }));
 
     await waitFor(() => {
-      expect(recipesMock).toHaveBeenCalledTimes(5);
+      expect(recipesMock).toHaveBeenCalledTimes(6);
     });
 
-    expect(recipesMock).toHaveBeenLastCalledWith({ query: SEARCH_QUERY, favorite: true, sort: SORT_TITLE });
+    expect(recipesMock).toHaveBeenLastCalledWith({
+      query: SEARCH_QUERY,
+      favorite: true,
+      sort: SORT_TITLE,
+      maxTotalTime: MAX_TOTAL_TIME,
+    });
 
     expect(await screen.findByText(favoriteRecipe.title)).toBeTruthy();
     expect(screen.queryByText(LOAD_RECIPES_ERROR_MESSAGE)).toBeNull();
@@ -527,7 +543,7 @@ describe("RecipeLibraryScreen", () => {
     await fireEvent.press(screen.getByRole("button", { name: FAVORITES_BUTTON_TITLE }));
 
     expect(await screen.findByText(NO_FAVORITE_RECIPES_MESSAGE)).toBeTruthy();
-    expect(screen.queryByText(NO_RECIPES_MESSAGE)).toBeNull();
+    expect(screen.queryByText(NO_RECIPES_SAVED_MESSAGE)).toBeNull();
   });
 
   it("shows search feedback when no favorites match the submitted query", async () => {
@@ -646,5 +662,99 @@ describe("RecipeLibraryScreen", () => {
     });
 
     expect(recipesMock).toHaveBeenLastCalledWith({ query: "", sort: SORT_RECENT });
+  });
+
+  it("requests recipes taking 30 minutes or less when selected", async () => {
+    const user = makeUserResponse();
+    const recipe = makeRecipeSummary({
+      total_time_minutes: LONG_TOTAL_TIME,
+    });
+    const timeRecipe = makeRecipeSummary({
+      id: RECIPE_ID_2,
+      title: "Timely Good Recipe",
+      total_time_minutes: MAX_TOTAL_TIME,
+    });
+    const recipeList = makeRecipeListResponse([recipe, timeRecipe]);
+    const timeRecipeList = makeRecipeListResponse([timeRecipe]);
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(user);
+    const recipesMock = jest
+      .spyOn(recipeService, "loadRecipes")
+      .mockResolvedValueOnce(recipeList)
+      .mockResolvedValueOnce(timeRecipeList);
+
+    await renderRecipeLibraryScreen();
+
+    await screen.findByText(recipe.title);
+    const filterAnyTimeButton = screen.getByRole("button", { name: FILTER_ANY_TIME_TITLE });
+    const filterMaxTotalTimeButton = screen.getByRole("button", { name: FILTER_MAX_TOTAL_TIME_TITLE });
+    expect(filterAnyTimeButton).toBeSelected();
+    expect(filterMaxTotalTimeButton).not.toBeSelected();
+
+    await fireEvent.press(screen.getByRole("button", { name: FILTER_MAX_TOTAL_TIME_TITLE }));
+
+    expect(recipesMock).toHaveBeenCalledWith({ query: "", sort: SORT_RECENT, maxTotalTime: MAX_TOTAL_TIME });
+    expect(await screen.findByText(timeRecipe.title)).toBeTruthy();
+    expect(screen.queryByText(recipe.title)).toBeNull();
+    expect(filterMaxTotalTimeButton).toBeSelected();
+    expect(filterAnyTimeButton).not.toBeSelected();
+  });
+
+  it("restores recipes without a time limit when Any time is selected", async () => {
+    const user = makeUserResponse();
+    const recipe = makeRecipeSummary({
+      total_time_minutes: LONG_TOTAL_TIME,
+    });
+    const timeRecipe = makeRecipeSummary({
+      id: RECIPE_ID_2,
+      title: "Timely Good Recipe",
+      total_time_minutes: MAX_TOTAL_TIME,
+    });
+    const recipeList = makeRecipeListResponse([recipe, timeRecipe]);
+    const timeRecipeList = makeRecipeListResponse([timeRecipe]);
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(user);
+    const recipesMock = jest
+      .spyOn(recipeService, "loadRecipes")
+      .mockResolvedValueOnce(recipeList)
+      .mockResolvedValueOnce(timeRecipeList)
+      .mockResolvedValueOnce(recipeList);
+
+    await renderRecipeLibraryScreen();
+
+    await fireEvent.press(await screen.findByRole("button", { name: FILTER_MAX_TOTAL_TIME_TITLE }));
+    expect(await screen.findByText(timeRecipe.title)).toBeTruthy();
+    expect(screen.queryByText(recipe.title)).toBeNull();
+
+    await fireEvent.press(screen.getByRole("button", { name: FILTER_ANY_TIME_TITLE }));
+    await screen.findByText(recipe.title);
+
+    await waitFor(() => {
+      expect(recipesMock).toHaveBeenCalledTimes(3);
+    });
+
+    expect(recipesMock).toHaveBeenLastCalledWith({ query: "", sort: SORT_RECENT });
+  });
+
+  it("shows filter feedback when no recipes meet the time limit", async () => {
+    const user = makeUserResponse();
+    const recipe = makeRecipeSummary({
+      total_time_minutes: LONG_TOTAL_TIME,
+    });
+    const recipeList = makeRecipeListResponse([recipe]);
+    const emptyTimeRecipeList = makeRecipeListResponse();
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(user);
+    jest
+      .spyOn(recipeService, "loadRecipes")
+      .mockResolvedValueOnce(recipeList)
+      .mockResolvedValueOnce(emptyTimeRecipeList);
+
+    await renderRecipeLibraryScreen();
+
+    await fireEvent.press(await screen.findByRole("button", { name: FILTER_MAX_TOTAL_TIME_TITLE }));
+
+    expect(await screen.findByText(NO_RECIPES_FILTER_MESSAGE)).toBeTruthy();
+    expect(screen.queryByText(NO_RECIPES_SAVED_MESSAGE)).toBeNull();
   });
 });

@@ -16,10 +16,14 @@ type HealthResponse = {
 
 const ALL_BUTTON_TEXT = "All";
 const FAVORITES_BUTTON_TEXT = "Favorites";
+const FILTER_ANY_TIME_TITLE = "Any time";
+const FILTER_MAX_TOTAL_TIME_TITLE = "30 min or less";
+const FILTER_MAX_TOTAL_TIME_VALUE = 30;
 const LOAD_RECIPES_ERROR_MESSAGE = "Unable to load recipes.";
 const LOADING_RECIPES_MESSAGE = "Loading recipes...";
 const NO_FAVORITE_RECIPES_MESSAGE = "No favorite saved recipes yet.";
-const NO_RECIPES_MESSAGE = "No saved recipes yet.";
+const NO_RECIPES_FILTER_MESSAGE = "No recipes match your filters.";
+const NO_RECIPES_SAVED_MESSAGE = "No saved recipes yet.";
 const NO_RECIPES_SEARCH_MESSAGE = "No recipes match your search.";
 const RETRY_BUTTON_TITLE = "Retry";
 const SEARCH_BUTTON_TITLE = "Search";
@@ -46,6 +50,7 @@ export default function RecipeLibraryScreen() {
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [sort, setSort] = useState<"recent" | "title" | "time">(SORT_RECENT);
+  const [maxTotalTime, setMaxTotalTime] = useState<number | undefined>(undefined);
 
   const checkAPI = async (): Promise<void> => {
     setApiStatus("Checking...");
@@ -108,6 +113,9 @@ export default function RecipeLibraryScreen() {
           if (favoritesOnly) {
             options.favorite = true;
           }
+          if (maxTotalTime !== undefined) {
+            options.maxTotalTime = maxTotalTime;
+          }
 
           const result = await loadRecipes(options);
 
@@ -130,10 +138,22 @@ export default function RecipeLibraryScreen() {
       return () => {
         active = false;
       };
-    }, [loadingAttempt, submittedQuery, favoritesOnly, sort]),
+    }, [loadingAttempt, submittedQuery, favoritesOnly, sort, maxTotalTime]),
   );
 
   const shouldDisplayNoRecipesMessage = !isLoadingRecipes && loadingRecipesError === null && recipes.length === 0;
+
+  const getNoRecipesMessage = (): string => {
+    if (submittedQuery.length > 0) {
+      return NO_RECIPES_SEARCH_MESSAGE;
+    } else if (maxTotalTime !== undefined) {
+      return NO_RECIPES_FILTER_MESSAGE;
+    } else if (favoritesOnly) {
+      return NO_FAVORITE_RECIPES_MESSAGE;
+    } else {
+      return NO_RECIPES_SAVED_MESSAGE;
+    }
+  };
 
   return (
     <SafeAreaView edges={["bottom"]} style={styles.container}>
@@ -173,14 +193,18 @@ export default function RecipeLibraryScreen() {
         onPress={() => setSort(SORT_TIME)}
       />
 
-      {shouldDisplayNoRecipesMessage &&
-        (submittedQuery.length > 0 ? (
-          <Text>{NO_RECIPES_SEARCH_MESSAGE}</Text>
-        ) : favoritesOnly ? (
-          <Text>{NO_FAVORITE_RECIPES_MESSAGE}</Text>
-        ) : (
-          <Text>{NO_RECIPES_MESSAGE}</Text>
-        ))}
+      <Button
+        title={FILTER_ANY_TIME_TITLE}
+        accessibilityState={{ selected: maxTotalTime === undefined }}
+        onPress={() => setMaxTotalTime(undefined)}
+      />
+      <Button
+        title={FILTER_MAX_TOTAL_TIME_TITLE}
+        accessibilityState={{ selected: maxTotalTime === FILTER_MAX_TOTAL_TIME_VALUE }}
+        onPress={() => setMaxTotalTime(FILTER_MAX_TOTAL_TIME_VALUE)}
+      />
+
+      {shouldDisplayNoRecipesMessage && <Text>{getNoRecipesMessage()}</Text>}
 
       {loadingRecipesError && (
         <>
