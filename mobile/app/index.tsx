@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Button, FlatList, StyleSheet, Text, TextInput } from "react-native";
+import { Button, FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 
 import { apiFetch } from "@/api/client";
@@ -16,10 +16,14 @@ type HealthResponse = {
 
 const ALL_BUTTON_TEXT = "All";
 const FAVORITES_BUTTON_TEXT = "Favorites";
+const FILTER_ANY_TIME_TITLE = "Any time";
+const FILTER_MAX_TOTAL_TIME_TITLE = "30 min or less";
+const FILTER_MAX_TOTAL_TIME_VALUE = 30;
 const LOAD_RECIPES_ERROR_MESSAGE = "Unable to load recipes.";
 const LOADING_RECIPES_MESSAGE = "Loading recipes...";
 const NO_FAVORITE_RECIPES_MESSAGE = "No favorite saved recipes yet.";
-const NO_RECIPES_MESSAGE = "No saved recipes yet.";
+const NO_RECIPES_FILTER_MESSAGE = "No recipes match your filters.";
+const NO_RECIPES_SAVED_MESSAGE = "No saved recipes yet.";
 const NO_RECIPES_SEARCH_MESSAGE = "No recipes match your search.";
 const RETRY_BUTTON_TITLE = "Retry";
 const SEARCH_BUTTON_TITLE = "Search";
@@ -46,6 +50,7 @@ export default function RecipeLibraryScreen() {
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [sort, setSort] = useState<"recent" | "title" | "time">(SORT_RECENT);
+  const [maxTotalTime, setMaxTotalTime] = useState<number | undefined>(undefined);
 
   const checkAPI = async (): Promise<void> => {
     setApiStatus("Checking...");
@@ -108,6 +113,9 @@ export default function RecipeLibraryScreen() {
           if (favoritesOnly) {
             options.favorite = true;
           }
+          if (maxTotalTime !== undefined) {
+            options.maxTotalTime = maxTotalTime;
+          }
 
           const result = await loadRecipes(options);
 
@@ -130,57 +138,88 @@ export default function RecipeLibraryScreen() {
       return () => {
         active = false;
       };
-    }, [loadingAttempt, submittedQuery, favoritesOnly, sort]),
+    }, [loadingAttempt, submittedQuery, favoritesOnly, sort, maxTotalTime]),
   );
 
   const shouldDisplayNoRecipesMessage = !isLoadingRecipes && loadingRecipesError === null && recipes.length === 0;
+
+  const getNoRecipesMessage = (): string => {
+    if (submittedQuery.length > 0) {
+      return NO_RECIPES_SEARCH_MESSAGE;
+    } else if (maxTotalTime !== undefined) {
+      return NO_RECIPES_FILTER_MESSAGE;
+    } else if (favoritesOnly) {
+      return NO_FAVORITE_RECIPES_MESSAGE;
+    } else {
+      return NO_RECIPES_SAVED_MESSAGE;
+    }
+  };
 
   return (
     <SafeAreaView edges={["bottom"]} style={styles.container}>
       <Text>Your recipe library.</Text>
 
-      <Button
-        title={ALL_BUTTON_TEXT}
-        accessibilityState={{ selected: !favoritesOnly }}
-        onPress={() => setFavoritesOnly(false)}
-      />
-      <Button
-        title={FAVORITES_BUTTON_TEXT}
-        accessibilityState={{ selected: favoritesOnly }}
-        onPress={() => setFavoritesOnly(true)}
-      />
+      <View style={styles.buttonsContainer}>
+        <Button
+          title={ALL_BUTTON_TEXT}
+          accessibilityState={{ selected: !favoritesOnly }}
+          onPress={() => setFavoritesOnly(false)}
+        />
+        <Button
+          title={FAVORITES_BUTTON_TEXT}
+          accessibilityState={{ selected: favoritesOnly }}
+          onPress={() => setFavoritesOnly(true)}
+        />
+      </View>
       <Text>{`Showing: ${favoritesOnly ? FAVORITES_BUTTON_TEXT : ALL_BUTTON_TEXT}`}</Text>
 
       <TextInput accessibilityLabel={SEARCH_RECIPES_TEXT} value={searchText} onChangeText={setSearchText} />
       <Button title={SEARCH_BUTTON_TITLE} onPress={handleSubmitSearch} />
 
-      <Button
-        title={SORT_RECENT_BUTTON_TITLE}
-        accessibilityLabel={`Sort by: ${SORT_RECENT_BUTTON_TITLE}`}
-        accessibilityState={{ selected: sort === SORT_RECENT }}
-        onPress={() => setSort(SORT_RECENT)}
-      />
-      <Button
-        title={SORT_TITLE_AZ_BUTTON_TITLE}
-        accessibilityLabel={`Sort by: ${SORT_TITLE_AZ_BUTTON_TITLE}`}
-        accessibilityState={{ selected: sort === SORT_TITLE }}
-        onPress={() => setSort(SORT_TITLE)}
-      />
-      <Button
-        title={SORT_TIME_BUTTON_TITLE}
-        accessibilityLabel={`Sort by: ${SORT_TIME_BUTTON_TITLE}`}
-        accessibilityState={{ selected: sort === SORT_TIME }}
-        onPress={() => setSort(SORT_TIME)}
-      />
+      <View style={styles.buttonsContainer}>
+        <Button
+          title={SORT_RECENT_BUTTON_TITLE}
+          accessibilityLabel={`Sort by: ${SORT_RECENT_BUTTON_TITLE}`}
+          accessibilityState={{ selected: sort === SORT_RECENT }}
+          onPress={() => setSort(SORT_RECENT)}
+        />
+        <Button
+          title={SORT_TITLE_AZ_BUTTON_TITLE}
+          accessibilityLabel={`Sort by: ${SORT_TITLE_AZ_BUTTON_TITLE}`}
+          accessibilityState={{ selected: sort === SORT_TITLE }}
+          onPress={() => setSort(SORT_TITLE)}
+        />
+        <Button
+          title={SORT_TIME_BUTTON_TITLE}
+          accessibilityLabel={`Sort by: ${SORT_TIME_BUTTON_TITLE}`}
+          accessibilityState={{ selected: sort === SORT_TIME }}
+          onPress={() => setSort(SORT_TIME)}
+        />
+      </View>
 
-      {shouldDisplayNoRecipesMessage &&
-        (submittedQuery.length > 0 ? (
-          <Text>{NO_RECIPES_SEARCH_MESSAGE}</Text>
-        ) : favoritesOnly ? (
-          <Text>{NO_FAVORITE_RECIPES_MESSAGE}</Text>
-        ) : (
-          <Text>{NO_RECIPES_MESSAGE}</Text>
-        ))}
+      <View style={styles.buttonsContainer}>
+        <Pressable
+          accessibilityRole='button'
+          accessibilityState={{ selected: maxTotalTime === undefined }}
+          onPress={() => setMaxTotalTime(undefined)}
+          style={[styles.timeFilterButton, maxTotalTime === undefined && styles.timeFilterButtonSelected]}
+        >
+          <Text style={styles.buttonTitle}>{FILTER_ANY_TIME_TITLE}</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole='button'
+          accessibilityState={{ selected: maxTotalTime === FILTER_MAX_TOTAL_TIME_VALUE }}
+          onPress={() => setMaxTotalTime(FILTER_MAX_TOTAL_TIME_VALUE)}
+          style={[
+            styles.timeFilterButton,
+            maxTotalTime === FILTER_MAX_TOTAL_TIME_VALUE && styles.timeFilterButtonSelected,
+          ]}
+        >
+          <Text style={styles.buttonTitle}>{FILTER_MAX_TOTAL_TIME_TITLE}</Text>
+        </Pressable>
+      </View>
+
+      {shouldDisplayNoRecipesMessage && <Text>{getNoRecipesMessage()}</Text>}
 
       {loadingRecipesError && (
         <>
@@ -223,5 +262,28 @@ const styles = StyleSheet.create({
     padding: 24,
     gap: 12,
     backgroundColor: "#fff",
+  },
+  timeFilterButton: {
+    backgroundColor: "#2196F3",
+    borderRadius: 2,
+    padding: 4,
+    elevation: 4,
+  },
+  timeFilterButtonSelected: {
+    backgroundColor: "#135080",
+  },
+  buttonTitle: {
+    color: "#fff",
+    fontWeight: 500,
+    margin: 8,
+    textAlign: "center",
+    textTransform: "uppercase",
+    overflow: "hidden",
+  },
+  buttonsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 8,
   },
 });
