@@ -137,7 +137,7 @@ describe("listRecipes", () => {
     expect(result).toBe(recipeList);
   });
 
-  it("combines a search query with the favorite filter", async () => {
+  it("combines search, filters, and sorting", async () => {
     const favoriteRecipe = makeRecipeSummary({
       id: "favorite-recipe-id",
       title: "Chicken Soup Recipe",
@@ -149,9 +149,15 @@ describe("listRecipes", () => {
 
     const requestMock = jest.spyOn(client, "apiFetch").mockResolvedValue(recipeList);
 
-    const result = await listRecipes(ACCESS_TOKEN, { query: "chicken soup", favorite: true, sort: "time" });
+    const result = await listRecipes(ACCESS_TOKEN, {
+      query: "chicken soup",
+      favorite: true,
+      sort: "time",
+      maxTotalTime: 30,
+    });
 
-    expect(requestMock).toHaveBeenCalledWith(`${RECIPES_PATH}?q=chicken+soup&favorite=true&sort=time`, {
+    const urlString = `${RECIPES_PATH}?q=chicken+soup&favorite=true&sort=time&max_total_time=30`;
+    expect(requestMock).toHaveBeenCalledWith(urlString, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${ACCESS_TOKEN}`,
@@ -170,6 +176,23 @@ describe("listRecipes", () => {
     await listRecipes(ACCESS_TOKEN, { sort });
 
     expect(requestMock).toHaveBeenCalledWith(`${RECIPES_PATH}?sort=${sort}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${ACCESS_TOKEN}`,
+      },
+    });
+  });
+
+  it.each([30, 0])("requests recipes within the maximum total time of %s", async (maxTotalTime) => {
+    const recipeList: RecipeListResponse = {
+      items: [makeRecipeSummary()],
+    };
+
+    const requestMock = jest.spyOn(client, "apiFetch").mockResolvedValue(recipeList);
+
+    await listRecipes(ACCESS_TOKEN, { maxTotalTime });
+
+    expect(requestMock).toHaveBeenCalledWith(`${RECIPES_PATH}?max_total_time=${maxTotalTime}`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${ACCESS_TOKEN}`,
