@@ -18,8 +18,8 @@ import { RegisterScreen } from "../register-screen";
 
 const CREATE_ACCOUNT_TEXT = "Create account";
 const EMAIL = "test@example.com";
-const INDEX_PATH = "/";
 const FAVORITE_TEXT = "Favorite";
+const INDEX_PATH = "/";
 const LIBRARY_TEXT = "Library route";
 const LOADING_RECIPE_TEXT = "Loading recipe...";
 const LOGIN_PATH = "/login";
@@ -241,7 +241,7 @@ describe("AppNavigator", () => {
     expect(await screen.findByText(FAVORITE_TEXT)).toBeTruthy();
   });
 
-  it("preserves the submitted search and favorite filter when returning to the library", async () => {
+  it("preserves submitted search, favorite filter, and sorting when returning to the library", async () => {
     const user = makeUserResponse();
     const recipe = makeRecipeSummary();
     const otherRecipe = makeRecipeSummary({
@@ -257,12 +257,17 @@ describe("AppNavigator", () => {
     const searchQuery = "chicken";
     const searchButtonText = "Search";
     const favoritesButtonTitle = "Favorites";
+    const sortTitle = "title";
+    const sortTitleAZButtonTitle = "Title A–Z";
 
     jest.spyOn(session, "restoreSession").mockResolvedValue(user);
     const recipesMock = jest
       .spyOn(recipeService, "loadRecipes")
       .mockResolvedValueOnce({
         items: [recipe, otherRecipe, favoriteRecipe],
+      })
+      .mockResolvedValueOnce({
+        items: [favoriteRecipe],
       })
       .mockResolvedValueOnce({
         items: [favoriteRecipe],
@@ -280,6 +285,8 @@ describe("AppNavigator", () => {
 
     await fireEvent.press(screen.getByRole("button", { name: favoritesButtonTitle }));
     await screen.findByText(favoriteRecipe.title);
+    await fireEvent.press(screen.getByRole("button", { name: `Sort by: ${sortTitleAZButtonTitle}` }));
+    await screen.findByText(favoriteRecipe.title);
     await fireEvent.changeText(await screen.findByLabelText(searchRecipesText), searchQuery);
     await fireEvent.press(await screen.findByRole("button", { name: searchButtonText }));
     await screen.findByText(favoriteRecipe.title);
@@ -293,9 +300,9 @@ describe("AppNavigator", () => {
     });
 
     await waitFor(() => {
-      expect(recipesMock).toHaveBeenCalledTimes(4);
+      expect(recipesMock).toHaveBeenCalledTimes(5);
     });
 
-    expect(recipesMock).toHaveBeenLastCalledWith({ query: searchQuery, favorite: true });
+    expect(recipesMock).toHaveBeenLastCalledWith({ query: searchQuery, favorite: true, sort: sortTitle });
   });
 });

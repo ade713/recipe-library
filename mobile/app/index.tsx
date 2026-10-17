@@ -26,6 +26,12 @@ const SEARCH_BUTTON_TITLE = "Search";
 const SEARCH_RECIPES_TEXT = "Search recipes";
 const SIGN_OUT_BUTTON_TITLE = "Sign out";
 const SIGN_OUT_ERROR_MESSAGE = "Unable to sign out. Please try again.";
+const SORT_RECENT = "recent";
+const SORT_RECENT_BUTTON_TITLE = "Newest";
+const SORT_TIME = "time";
+const SORT_TIME_BUTTON_TITLE = "Shortest time";
+const SORT_TITLE = "title";
+const SORT_TITLE_AZ_BUTTON_TITLE = "Title A–Z";
 
 export default function RecipeLibraryScreen() {
   const { signOut } = useAuth();
@@ -39,6 +45,7 @@ export default function RecipeLibraryScreen() {
   const [searchText, setSearchText] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [sort, setSort] = useState<"recent" | "title" | "time">(SORT_RECENT);
 
   const checkAPI = async (): Promise<void> => {
     setApiStatus("Checking...");
@@ -97,7 +104,7 @@ export default function RecipeLibraryScreen() {
 
       const getRecipes = async (): Promise<void> => {
         try {
-          const options: ListRecipesOptions = { query: submittedQuery };
+          const options: ListRecipesOptions = { query: submittedQuery, sort };
           if (favoritesOnly) {
             options.favorite = true;
           }
@@ -123,7 +130,7 @@ export default function RecipeLibraryScreen() {
       return () => {
         active = false;
       };
-    }, [loadingAttempt, submittedQuery, favoritesOnly]),
+    }, [loadingAttempt, submittedQuery, favoritesOnly, sort]),
   );
 
   const shouldDisplayNoRecipesMessage = !isLoadingRecipes && loadingRecipesError === null && recipes.length === 0;
@@ -146,6 +153,25 @@ export default function RecipeLibraryScreen() {
 
       <TextInput accessibilityLabel={SEARCH_RECIPES_TEXT} value={searchText} onChangeText={setSearchText} />
       <Button title={SEARCH_BUTTON_TITLE} onPress={handleSubmitSearch} />
+
+      <Button
+        title={SORT_RECENT_BUTTON_TITLE}
+        accessibilityLabel={`Sort by: ${SORT_RECENT_BUTTON_TITLE}`}
+        accessibilityState={{ selected: sort === SORT_RECENT }}
+        onPress={() => setSort(SORT_RECENT)}
+      />
+      <Button
+        title={SORT_TITLE_AZ_BUTTON_TITLE}
+        accessibilityLabel={`Sort by: ${SORT_TITLE_AZ_BUTTON_TITLE}`}
+        accessibilityState={{ selected: sort === SORT_TITLE }}
+        onPress={() => setSort(SORT_TITLE)}
+      />
+      <Button
+        title={SORT_TIME_BUTTON_TITLE}
+        accessibilityLabel={`Sort by: ${SORT_TIME_BUTTON_TITLE}`}
+        accessibilityState={{ selected: sort === SORT_TIME }}
+        onPress={() => setSort(SORT_TIME)}
+      />
 
       {shouldDisplayNoRecipesMessage &&
         (submittedQuery.length > 0 ? (
