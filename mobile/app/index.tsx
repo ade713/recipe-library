@@ -1,14 +1,15 @@
 import { useCallback, useState } from "react";
-import { Button, FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Button, FlatList, StyleSheet, Text, TextInput, View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 
 import { apiFetch } from "@/api/client";
 import { loadRecipes } from "@/recipes/recipe-service";
-import type { RecipeSummary } from "@/types/recipe";
+import { RecipeOptionButton } from "@/recipes/recipe-option-button";
 import { RecipeSummaryCard } from "@/recipes/recipe-summary-card";
-import { useAuth } from "@/auth/auth-provider";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuth } from "@/auth/auth-provider";
 import type { ListRecipesOptions } from "@/api/recipes";
+import type { RecipeSummary } from "@/types/recipe";
 
 type HealthResponse = {
   status: string;
@@ -160,63 +161,57 @@ export default function RecipeLibraryScreen() {
       <Text>Your recipe library.</Text>
 
       <View style={styles.buttonsContainer}>
-        <Button
-          title={ALL_BUTTON_TEXT}
-          accessibilityState={{ selected: !favoritesOnly }}
-          onPress={() => setFavoritesOnly(false)}
-        />
-        <Button
-          title={FAVORITES_BUTTON_TEXT}
-          accessibilityState={{ selected: favoritesOnly }}
+        <RecipeOptionButton label={ALL_BUTTON_TEXT} selected={!favoritesOnly} onPress={() => setFavoritesOnly(false)} />
+        <RecipeOptionButton
+          label={FAVORITES_BUTTON_TEXT}
+          selected={favoritesOnly}
           onPress={() => setFavoritesOnly(true)}
         />
       </View>
       <Text>{`Showing: ${favoritesOnly ? FAVORITES_BUTTON_TEXT : ALL_BUTTON_TEXT}`}</Text>
 
-      <TextInput accessibilityLabel={SEARCH_RECIPES_TEXT} value={searchText} onChangeText={setSearchText} />
-      <Button title={SEARCH_BUTTON_TITLE} onPress={handleSubmitSearch} />
+      <View style={styles.searchBar}>
+        <TextInput
+          accessibilityLabel={SEARCH_RECIPES_TEXT}
+          value={searchText}
+          onChangeText={setSearchText}
+          style={styles.searchInput}
+        />
+        <Button title={SEARCH_BUTTON_TITLE} onPress={handleSubmitSearch} />
+      </View>
 
       <View style={styles.buttonsContainer}>
-        <Button
-          title={SORT_RECENT_BUTTON_TITLE}
+        <RecipeOptionButton
           accessibilityLabel={`Sort by: ${SORT_RECENT_BUTTON_TITLE}`}
-          accessibilityState={{ selected: sort === SORT_RECENT }}
+          label={SORT_RECENT_BUTTON_TITLE}
+          selected={sort === SORT_RECENT}
           onPress={() => setSort(SORT_RECENT)}
         />
-        <Button
-          title={SORT_TITLE_AZ_BUTTON_TITLE}
+        <RecipeOptionButton
           accessibilityLabel={`Sort by: ${SORT_TITLE_AZ_BUTTON_TITLE}`}
-          accessibilityState={{ selected: sort === SORT_TITLE }}
+          label={SORT_TITLE_AZ_BUTTON_TITLE}
+          selected={sort === SORT_TITLE}
           onPress={() => setSort(SORT_TITLE)}
         />
-        <Button
-          title={SORT_TIME_BUTTON_TITLE}
+        <RecipeOptionButton
           accessibilityLabel={`Sort by: ${SORT_TIME_BUTTON_TITLE}`}
-          accessibilityState={{ selected: sort === SORT_TIME }}
+          label={SORT_TIME_BUTTON_TITLE}
+          selected={sort === SORT_TIME}
           onPress={() => setSort(SORT_TIME)}
         />
       </View>
 
       <View style={styles.buttonsContainer}>
-        <Pressable
-          accessibilityRole='button'
-          accessibilityState={{ selected: maxTotalTime === undefined }}
+        <RecipeOptionButton
+          label={FILTER_ANY_TIME_TITLE}
+          selected={maxTotalTime === undefined}
           onPress={() => setMaxTotalTime(undefined)}
-          style={[styles.timeFilterButton, maxTotalTime === undefined && styles.timeFilterButtonSelected]}
-        >
-          <Text style={styles.buttonTitle}>{FILTER_ANY_TIME_TITLE}</Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole='button'
-          accessibilityState={{ selected: maxTotalTime === FILTER_MAX_TOTAL_TIME_VALUE }}
+        />
+        <RecipeOptionButton
+          label={FILTER_MAX_TOTAL_TIME_TITLE}
+          selected={maxTotalTime === FILTER_MAX_TOTAL_TIME_VALUE}
           onPress={() => setMaxTotalTime(FILTER_MAX_TOTAL_TIME_VALUE)}
-          style={[
-            styles.timeFilterButton,
-            maxTotalTime === FILTER_MAX_TOTAL_TIME_VALUE && styles.timeFilterButtonSelected,
-          ]}
-        >
-          <Text style={styles.buttonTitle}>{FILTER_MAX_TOTAL_TIME_TITLE}</Text>
-        </Pressable>
+        />
       </View>
 
       {shouldDisplayNoRecipesMessage && <Text>{getNoRecipesMessage()}</Text>}
@@ -263,27 +258,23 @@ const styles = StyleSheet.create({
     gap: 12,
     backgroundColor: "#fff",
   },
-  timeFilterButton: {
-    backgroundColor: "#2196F3",
-    borderRadius: 2,
-    padding: 4,
-    elevation: 4,
-  },
-  timeFilterButtonSelected: {
-    backgroundColor: "#135080",
-  },
-  buttonTitle: {
-    color: "#fff",
-    fontWeight: 500,
-    margin: 8,
-    textAlign: "center",
-    textTransform: "uppercase",
-    overflow: "hidden",
-  },
   buttonsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "center",
     gap: 8,
+  },
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  searchInput: {
+    flex: 1,
+    minWidth: 0,
+    borderRadius: 2,
+    borderColor: "#2196F3",
+    borderWidth: 1,
+    borderStyle: "solid",
   },
 });
