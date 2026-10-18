@@ -3,7 +3,7 @@ import type { RecipeListResponse } from "@/types/recipe";
 
 import * as client from "../client";
 import { ApiError } from "../errors";
-import { getRecipe, listRecipes, setRecipeFavorite } from "../recipes";
+import { createRecipe, getRecipe, listRecipes, setRecipeFavorite } from "../recipes";
 
 const BASE_SERVINGS = "4";
 const IMAGE_URL = "https://example.com/chicken-wings";
@@ -275,5 +275,37 @@ describe("setRecipeFavorite", () => {
     jest.spyOn(client, "apiFetch").mockRejectedValue(error);
 
     await expect(setRecipeFavorite(ACCESS_TOKEN, RECIPE_ID, true)).rejects.toBe(error);
+  });
+});
+
+describe("createRecipe", () => {
+  it("creates a recipe and returns the saved recipe", async () => {
+    const payload = {
+      title: RECIPE_TITLE,
+    };
+    const recipe = makeRecipeDetailResponse();
+
+    const requestMock = jest.spyOn(client, "apiFetch").mockResolvedValue(recipe);
+
+    const result = await createRecipe(ACCESS_TOKEN, payload);
+
+    expect(requestMock).toHaveBeenCalledWith(RECIPES_PATH, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${ACCESS_TOKEN}`,
+      },
+      body: JSON.stringify(payload),
+    });
+    expect(result).toBe(recipe);
+  });
+
+  it("rejects an empty recipe creation response", async () => {
+    const payload = {
+      title: RECIPE_TITLE,
+    };
+
+    jest.spyOn(client, "apiFetch").mockResolvedValue(undefined);
+
+    await expect(createRecipe(ACCESS_TOKEN, payload)).rejects.toThrow(RECIPE_DETAIL_ERROR_MESSAGE);
   });
 });

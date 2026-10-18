@@ -83,3 +83,7 @@ export type RecipeTip = {
   position: number;
   tip: string;
 };
+
+export type RecipeCreateRequest = {
+  title: string;
+};
