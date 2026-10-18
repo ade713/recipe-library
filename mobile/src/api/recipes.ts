@@ -1,10 +1,10 @@
-import type { RecipeDetailResponse, RecipeListResponse } from "@/types/recipe";
+import type { RecipeCreateRequest, RecipeDetailResponse, RecipeListResponse } from "@/types/recipe";
 
 import { apiFetch } from "./client";
 
-const RECIPES_PATH = "/recipes";
-const RECIPE_LIST_ERROR_MESSAGE = "Expected a recipe list response";
 const RECIPE_DETAIL_ERROR_MESSAGE = "Expected a recipe detail response";
+const RECIPE_LIST_ERROR_MESSAGE = "Expected a recipe list response";
+const RECIPES_PATH = "/recipes";
 
 export type ListRecipesOptions = {
   favorite?: boolean;
@@ -75,6 +75,23 @@ export async function setRecipeFavorite(
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({ is_favorite: isFavorite }),
+  });
+
+  if (result === undefined) {
+    throw new Error(RECIPE_DETAIL_ERROR_MESSAGE);
+  }
+
+  return result;
+}
+
+/** Create a recipe for the authenticated user */
+export async function createRecipe(token: string, payload: RecipeCreateRequest): Promise<RecipeDetailResponse> {
+  const result = await apiFetch<RecipeDetailResponse>(RECIPES_PATH, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
   });
 
   if (result === undefined) {
