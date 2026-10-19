@@ -137,7 +137,11 @@ Post-auth follow-up: audit test overlap and repeated frontend constants without 
 - Mobile manual recipe creation API/service support is implemented. RecipeCreateRequest currently contains only title. createRecipe sends an authenticated POST to /recipes, returns RecipeDetailResponse, and rejects an empty response. The backend supplies the saved ID and default fields, including empty ingredient, step, and tip lists.
 - saveRecipe retrieves the stored access token before calling createRecipe. Missing credentials and storage failures prevent the request; API failures propagate unchanged. The backend remains responsible for validating tokens and enforcing authorization.
 - API tests cover request serialization and the saved response contract; service tests cover token coordination, missing tokens, storage failures, and API failures. The full mobile suite passed with 221 tests across nineteen suites, and TypeScript passed.
-- Keep the creation API/service PR focused on title-only request support and related tests and documentation. The next separate milestone adds the manual creation form; extend RecipeCreateRequest alongside supported form fields. Android verification will accompany UI integration.
+- Title-only creation API/service support is complete in merged PR #78. Extend RecipeCreateRequest alongside supported form fields.
+- RecipeCreateForm collects a recipe title and delegates saving to an asynchronous onSubmit callback. It rejects empty and whitespace-only titles, clears validation feedback on a valid submission, and disables saving while a submission is pending.
+- Failed submissions show retry feedback and preserve the entered title. Successful retries clear the error, and the pending state resets after either outcome. Tests cover submission, blank-title validation, validation recovery, duplicate-submission prevention, failure feedback, and successful retry.
+- The full mobile suite passed with 228 tests across twenty suites, and TypeScript passed. The user reviewed the separation between form input handling and service coordination, and why pending state resets in finally.
+- Keep this PR focused on the reusable title-only form and its tests. Screen routing, saveRecipe integration, navigation after saving, and Android verification belong in the next separate milestone.
 - User preference: keep PRs small and digestible, define scope up front, count test/doc size, and split adjacent features into follow-ups. Separate commits alone do not address oversized PRs; see AGENTS.md.
 
 ## UI exploration
