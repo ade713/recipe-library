@@ -1,22 +1,24 @@
-import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, waitFor } from "@testing-library/react-native";
 import { router } from "expo-router";
-import { renderRouter } from "expo-router/testing-library";
-import type { ReactElement } from "react";
+import { renderRouter, screen } from "expo-router/testing-library";
 import { Text } from "react-native";
+import type { ReactElement } from "react";
 
 import { makeRecipeSummary } from "@/test/fixtures/recipes";
 import { makeUserResponse } from "@/test/fixtures/users";
 import * as recipeService from "@/recipes/recipe-service";
 
-import RootLayout from "../../../app/_layout";
-import RecipeLibraryScreen from "../../../app/index";
-import RecipeDetailRoute from "../../../app/recipes/[id]";
-import * as auth from "../../api/auth";
-import * as session from "../session";
 import { LoginScreen } from "../login-screen";
 import { RegisterScreen } from "../register-screen";
+import * as auth from "../../api/auth";
+import * as session from "../session";
+import RecipeDetailRoute from "../../../app/recipes/[id]";
+import RecipeLibraryScreen from "../../../app/index";
+import RootLayout from "../../../app/_layout";
 
 const CREATE_ACCOUNT_TEXT = "Create account";
+const CREATE_RECIPE_PATH = "/recipes/new";
+const CREATE_RECIPE_TEXT = "Create recipe route";
 const EMAIL = "test@example.com";
 const FAVORITE_TEXT = "Favorite";
 const INDEX_PATH = "/";
@@ -33,6 +35,7 @@ const REGISTER_TEXT = "Registration route";
 const SIGN_IN_TEXT = "Sign in";
 
 type RouteOptions = {
+  createRecipe?: () => ReactElement;
   detail?: () => ReactElement | null;
   index?: () => ReactElement;
   login?: () => ReactElement;
@@ -42,15 +45,17 @@ type RouteOptions = {
 const renderRouteNavigation = async (
   initialUrl: string,
   {
+    createRecipe = () => <Text>{CREATE_RECIPE_TEXT}</Text>,
     detail = () => <Text>{RECIPE_DETAIL_TEXT}</Text>,
     index = () => <Text>{LIBRARY_TEXT}</Text>,
     login = () => <Text>{LOGIN_TEXT}</Text>,
     register = () => <Text>{REGISTER_TEXT}</Text>,
   }: RouteOptions = {},
 ) => {
-  await renderRouter(
+  const navigation = renderRouter(
     {
       _layout: RootLayout,
+      "recipes/new/index": createRecipe,
       index,
       login,
       register,
@@ -58,6 +63,10 @@ const renderRouteNavigation = async (
     },
     { initialUrl },
   );
+
+  await navigation;
+
+  return { navigation };
 };
 
 describe("AppNavigator", () => {
@@ -318,4 +327,32 @@ describe("AppNavigator", () => {
       maxTotalTime: totalTime,
     });
   });
+
+  it("opens recipe creation from the library", async () => {
+    const createRecipeButtonText = "Create recipe";
+    const user = makeUserResponse();
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(user);
+    jest.spyOn(recipeService, "loadRecipes").mockResolvedValue({
+      items: [],
+    });
+
+    await renderRouteNavigation(INDEX_PATH, {
+      index: RecipeLibraryScreen,
+    });
+
+    await fireEvent.press(await screen.findByRole("button", { name: createRecipeButtonText }));
+
+    expect(await screen.findByText(CREATE_RECIPE_TEXT)).toBeTruthy();
+  });
+
+  it("redirects signed-out users from recipe creation to login", async () => {
+    jest.spyOn(session, "restoreSession").mockResolvedValue(null);
+
+    await renderRouteNavigation(CREATE_RECIPE_PATH);
+
+    expect(await screen.findByText(LOGIN_TEXT)).toBeTruthy();
+    expect(screen.queryByText(CREATE_RECIPE_TEXT)).toBeNull();
+  });
+
 });
