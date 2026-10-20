@@ -1,22 +1,25 @@
-import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, waitFor } from "@testing-library/react-native";
 import { router } from "expo-router";
-import { renderRouter } from "expo-router/testing-library";
-import type { ReactElement } from "react";
+import { renderRouter, screen } from "expo-router/testing-library";
 import { Text } from "react-native";
+import type { ReactElement } from "react";
 
-import { makeRecipeSummary } from "@/test/fixtures/recipes";
+import { makeRecipeDetailResponse, makeRecipeSummary } from "@/test/fixtures/recipes";
 import { makeUserResponse } from "@/test/fixtures/users";
 import * as recipeService from "@/recipes/recipe-service";
 
-import RootLayout from "../../../app/_layout";
-import RecipeLibraryScreen from "../../../app/index";
-import RecipeDetailRoute from "../../../app/recipes/[id]";
-import * as auth from "../../api/auth";
-import * as session from "../session";
 import { LoginScreen } from "../login-screen";
 import { RegisterScreen } from "../register-screen";
+import * as auth from "../../api/auth";
+import * as session from "../session";
+import NewRecipeScreen from "../../../app/recipes/new";
+import RecipeDetailRoute from "../../../app/recipes/[id]";
+import RecipeLibraryScreen from "../../../app/index";
+import RootLayout from "../../../app/_layout";
 
 const CREATE_ACCOUNT_TEXT = "Create account";
+const CREATE_RECIPE_PATH = "/recipes/new";
+const CREATE_RECIPE_TEXT = "Create recipe route";
 const EMAIL = "test@example.com";
 const FAVORITE_TEXT = "Favorite";
 const INDEX_PATH = "/";
@@ -28,11 +31,15 @@ const PASSWORD = "testPassword1";
 const RECIPE_DETAIL_PATH = "/recipes/recipe-1";
 const RECIPE_DETAIL_TEXT = "Recipe detail route";
 const RECIPE_ID = "recipe-1";
+const RECIPE_TITLE = "Chicken Soup";
+const RECIPE_TITLE_LABEL = "Recipe title";
 const REGISTER_PATH = "/register";
 const REGISTER_TEXT = "Registration route";
+const SAVE_RECIPE_TEXT = "Save recipe";
 const SIGN_IN_TEXT = "Sign in";
 
 type RouteOptions = {
+  createRecipe?: () => ReactElement;
   detail?: () => ReactElement | null;
   index?: () => ReactElement;
   login?: () => ReactElement;
@@ -42,15 +49,17 @@ type RouteOptions = {
 const renderRouteNavigation = async (
   initialUrl: string,
   {
+    createRecipe = () => <Text>{CREATE_RECIPE_TEXT}</Text>,
     detail = () => <Text>{RECIPE_DETAIL_TEXT}</Text>,
     index = () => <Text>{LIBRARY_TEXT}</Text>,
     login = () => <Text>{LOGIN_TEXT}</Text>,
     register = () => <Text>{REGISTER_TEXT}</Text>,
   }: RouteOptions = {},
 ) => {
-  await renderRouter(
+  const navigation = renderRouter(
     {
       _layout: RootLayout,
+      "recipes/new/index": createRecipe,
       index,
       login,
       register,
@@ -58,6 +67,10 @@ const renderRouteNavigation = async (
     },
     { initialUrl },
   );
+
+  await navigation;
+
+  return { navigation };
 };
 
 describe("AppNavigator", () => {
@@ -317,5 +330,72 @@ describe("AppNavigator", () => {
       sort: sortTitle,
       maxTotalTime: totalTime,
     });
+  });
+
+  it("opens recipe creation from the library", async () => {
+    const createRecipeButtonText = "Create recipe";
+    const user = makeUserResponse();
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(user);
+    jest.spyOn(recipeService, "loadRecipes").mockResolvedValue({
+      items: [],
+    });
+
+    await renderRouteNavigation(INDEX_PATH, {
+      index: RecipeLibraryScreen,
+    });
+
+    await fireEvent.press(await screen.findByRole("button", { name: createRecipeButtonText }));
+
+    expect(await screen.findByText(CREATE_RECIPE_TEXT)).toBeTruthy();
+  });
+
+  it("redirects signed-out users from recipe creation to login", async () => {
+    jest.spyOn(session, "restoreSession").mockResolvedValue(null);
+
+    await renderRouteNavigation(CREATE_RECIPE_PATH);
+
+    expect(await screen.findByText(LOGIN_TEXT)).toBeTruthy();
+    expect(screen.queryByText(CREATE_RECIPE_TEXT)).toBeNull();
+  });
+
+  it("saves a new recipe and opens its detail screen", async () => {
+    const recipe = makeRecipeDetailResponse({ title: RECIPE_TITLE });
+    const user = makeUserResponse();
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(user);
+    const saveMock = jest.spyOn(recipeService, "saveRecipe").mockResolvedValue(recipe);
+
+    const { navigation } = await renderRouteNavigation(CREATE_RECIPE_PATH, {
+      createRecipe: NewRecipeScreen,
+    });
+
+    await fireEvent.changeText(await screen.findByLabelText(RECIPE_TITLE_LABEL), recipe.title);
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_RECIPE_TEXT }));
+
+    expect(saveMock).toHaveBeenCalledWith({ title: recipe.title });
+    expect(await screen.findByText(RECIPE_DETAIL_TEXT)).toBeTruthy();
+    expect(navigation.getPathname()).toBe(`/recipes/${recipe.id}`);
+  });
+
+  it("stays on recipe creation when saving fails", async () => {
+    const NETWORK_ERROR_MESSAGE = "Network failure";
+    const user = makeUserResponse();
+    const error = new Error(NETWORK_ERROR_MESSAGE);
+    const saveErrorMessage = "Unable to save recipe. Please try again.";
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(user);
+    jest.spyOn(recipeService, "saveRecipe").mockRejectedValue(error);
+
+    const { navigation } = await renderRouteNavigation(CREATE_RECIPE_PATH, {
+      createRecipe: NewRecipeScreen,
+    });
+
+    await fireEvent.changeText(await screen.findByLabelText(RECIPE_TITLE_LABEL), RECIPE_TITLE);
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_RECIPE_TEXT }));
+
+    await screen.findByText(saveErrorMessage);
+
+    expect(navigation.getPathname()).toBe(CREATE_RECIPE_PATH);
   });
 });

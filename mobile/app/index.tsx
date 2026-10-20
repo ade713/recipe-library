@@ -16,6 +16,7 @@ type HealthResponse = {
 };
 
 const ALL_BUTTON_TEXT = "All";
+const CREATE_RECIPE_BUTTON_TITLE = "Create recipe";
 const FAVORITES_BUTTON_TEXT = "Favorites";
 const FILTER_ANY_TIME_TITLE = "Any time";
 const FILTER_MAX_TOTAL_TIME_TITLE = "30 min or less";
@@ -159,6 +160,8 @@ export default function RecipeLibraryScreen() {
   return (
     <SafeAreaView edges={["bottom"]} style={styles.container}>
       <Text>Your recipe library.</Text>
+
+      <Button title={CREATE_RECIPE_BUTTON_TITLE} onPress={() => router.push("/recipes/new")} />
 
       <View style={styles.buttonsContainer}>
         <RecipeOptionButton label={ALL_BUTTON_TEXT} selected={!favoritesOnly} onPress={() => setFavoritesOnly(false)} />

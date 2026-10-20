@@ -141,7 +141,12 @@ Post-auth follow-up: audit test overlap and repeated frontend constants without 
 - RecipeCreateForm collects a recipe title and delegates saving to an asynchronous onSubmit callback. It rejects empty and whitespace-only titles, clears validation feedback on a valid submission, and disables saving while a submission is pending.
 - Failed submissions show retry feedback and preserve the entered title. Successful retries clear the error, and the pending state resets after either outcome. Tests cover submission, blank-title validation, validation recovery, duplicate-submission prevention, failure feedback, and successful retry.
 - The full mobile suite passed with 228 tests across twenty suites, and TypeScript passed. The user reviewed the separation between form input handling and service coordination, and why pending state resets in finally.
-- Keep this PR focused on the reusable title-only form and its tests. Screen routing, saveRecipe integration, navigation after saving, and Android verification belong in the next separate milestone.
+- The reusable title-only form is complete in merged PR #79.
+- The library now provides a Create recipe button leading to /recipes/new, registered in the authenticated navigation group. Signed-out users opening the creation route are redirected to login.
+- The creation screen renders RecipeCreateForm with bottom safe-area protection and delegates submission to saveRecipe. After success, router.replace opens detail using the saved recipe ID, so Back returns to the library instead of the completed form. Save failures propagate to the form and leave the user on the creation screen.
+- Navigation tests cover the library entry point, signed-out access, saving and opening the returned recipe ID, and remaining on creation after failure. Existing form tests continue to cover validation, pending state, and retry without duplicating those checks at the navigation layer.
+- The full mobile suite passed with 232 tests across twenty suites, and TypeScript passed. The user confirmed Android checks for keyboard usability, blank-title validation, successful creation and detail navigation, returning to the refreshed library, and failure/retry recovery after restarting the backend.
+- Keep this PR focused on title-only creation screen integration. Additional form fields remain separate follow-up milestones; extend RecipeCreateRequest alongside each supported field.
 - User preference: keep PRs small and digestible, define scope up front, count test/doc size, and split adjacent features into follow-ups. Separate commits alone do not address oversized PRs; see AGENTS.md.
 
 ## UI exploration
