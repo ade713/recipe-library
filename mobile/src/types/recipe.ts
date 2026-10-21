@@ -86,4 +86,8 @@ export type RecipeTip = {
 
 export type RecipeCreateRequest = {
   title: string;
+  ingredients?: {
+    position: number;
+    original_text: string;
+  }[];
 };

@@ -1,3 +1,5 @@
+import { KeyboardAvoidingView, ScrollView, StyleSheet } from "react-native";
+import { useHeaderHeight } from "expo-router/react-navigation";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useRouter } from "expo-router";
@@ -6,6 +8,7 @@ import { saveRecipe } from "@/recipes/recipe-service";
 import type { RecipeCreateRequest } from "@/types/recipe";
 
 export default function NewRecipeScreen() {
+  const headerHeight = useHeaderHeight();
   const router = useRouter();
 
   const handleSaveRecipe = async (values: RecipeCreateRequest) => {
@@ -14,8 +17,18 @@ export default function NewRecipeScreen() {
   };
 
   return (
-    <SafeAreaView edges={["bottom"]}>
-      <RecipeCreateForm onSubmit={handleSaveRecipe} />
+    <SafeAreaView edges={["bottom"]} style={styles.container}>
+      <KeyboardAvoidingView behavior='padding' keyboardVerticalOffset={headerHeight} style={styles.container}>
+        <ScrollView keyboardShouldPersistTaps='handled'>
+          <RecipeCreateForm onSubmit={handleSaveRecipe} />
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});
