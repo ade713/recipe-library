@@ -5,6 +5,7 @@ import * as client from "../client";
 import { ApiError } from "../errors";
 import { createRecipe, getRecipe, listRecipes, setRecipeFavorite } from "../recipes";
 
+const ACCESS_TOKEN = "test-access-token";
 const BASE_SERVINGS = "4";
 const IMAGE_URL = "https://example.com/chicken-wings";
 const NETWORK_ERROR_MESSAGE = "Network unavailable";
@@ -13,7 +14,6 @@ const RECIPE_ID = "test_recipe_id";
 const RECIPE_LIST_ERROR_MESSAGE = "Expected a recipe list response";
 const RECIPE_TITLE = "Chicken Wings";
 const RECIPES_PATH = "/recipes";
-const ACCESS_TOKEN = "test-access-token";
 const TIME_MINUTES = 35;
 
 describe("listRecipes", () => {
@@ -280,8 +280,10 @@ describe("setRecipeFavorite", () => {
 
 describe("createRecipe", () => {
   it("creates a recipe and returns the saved recipe", async () => {
+    const ingredient = "2 cups flour";
     const payload = {
       title: RECIPE_TITLE,
+      ingredients: [{ position: 1, original_text: ingredient }],
     };
     const recipe = makeRecipeDetailResponse();
 
