@@ -1,7 +1,8 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Button, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { RecipeFormTextRow } from "./recipe-form-text-row";
+import { useFormTextRows } from "./use-form-text-rows";
 
 const ADD_INGREDIENT_LABEL = "Add ingredient";
 const ADD_STEP_LABEL = "Add step";
@@ -11,11 +12,6 @@ const REMOVE_STEP_LABEL = "Remove step";
 const SAVE_BUTTON_LABEL = "Save recipe";
 const SAVE_RECIPE_ERROR_MESSAGE = "Unable to save recipe. Please try again.";
 const TITLE_INPUT_LABEL = "Recipe title";
-
-type FormTextRow = {
-  id: number;
-  text: string;
-};
 
 type RecipeCreateFormValues = {
   title: string;
@@ -37,40 +33,18 @@ export function RecipeCreateForm({ onSubmit }: RecipeCreateFormProps) {
   const [title, setTitle] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [ingredients, setIngredients] = useState<FormTextRow[]>([{ id: 0, text: "" }]);
-  const [steps, setSteps] = useState<FormTextRow[]>([{ id: 0, text: "" }]);
-  const ingredientRowId = useRef(0);
-  const stepRowId = useRef(0);
-
-  const handleAddIngredient = () => {
-    ingredientRowId.current++;
-    const newRow = { id: ingredientRowId.current, text: "" };
-    setIngredients((currentRows) => [...currentRows, newRow]);
-  };
-
-  const handleAddStep = () => {
-    stepRowId.current++;
-    const newRow = { id: stepRowId.current, text: "" };
-    setSteps((currentRows) => [...currentRows, newRow]);
-  };
-
-  const handleRemoveIngredient = (removeRowId: number) => {
-    setIngredients((currentRows) => currentRows.filter((row) => row.id !== removeRowId));
-  };
-
-  const handleRemoveStep = (removeRowId: number) => {
-    setSteps((currentRows) => currentRows.filter((row) => row.id !== removeRowId));
-  };
-
-  const handleChangeIngredient = (editedRowId: number, newText: string): void => {
-    setIngredients((currentRows) =>
-      currentRows.map((row) => (row.id === editedRowId ? { ...row, text: newText } : row)),
-    );
-  };
-
-  const handleChangeStep = (editedRowId: number, newText: string): void => {
-    setSteps((currentRows) => currentRows.map((row) => (row.id === editedRowId ? { ...row, text: newText } : row)));
-  };
+  const {
+    rows: ingredients,
+    addRow: handleAddIngredient,
+    removeRow: handleRemoveIngredient,
+    updateRow: handleChangeIngredient,
+  } = useFormTextRows();
+  const {
+    rows: steps,
+    addRow: handleAddStep,
+    removeRow: handleRemoveStep,
+    updateRow: handleChangeStep,
+  } = useFormTextRows();
 
   const handleSubmit = async (): Promise<void> => {
     if (isSubmitting) {
