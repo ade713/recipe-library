@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react-nativ
 import { RecipeCreateForm } from "../recipe-create-form";
 
 const ADD_INGREDIENT_LABEL = "Add ingredient";
+const ADD_STEP_LABEL = "Add step";
 const ENTER_TITLE_ERROR_MESSAGE = "Enter a recipe title.";
 const INGREDIENT_1 = "2 cups flour";
 const INGREDIENT_2 = "1 cup milk";
@@ -11,6 +12,10 @@ const NETWORK_ERROR_MESSAGE = "Network failure";
 const RECIPE_TITLE = "Chicken Soup";
 const SAVE_BUTTON_LABEL = "Save recipe";
 const SAVE_RECIPE_ERROR_MESSAGE = "Unable to save recipe. Please try again.";
+const STEP_1 = "Mix the ingredients.";
+const STEP_2 = "Bake for 20 minutes.";
+const STEP_LABEL_1 = "Step 1";
+const STEP_LABEL_2 = "Step 2";
 const TITLE_INPUT_LABEL = "Recipe title";
 
 const renderRecipeCreateForm = async (onSubmit: () => Promise<void>) => {
@@ -26,7 +31,7 @@ describe("RecipeCreateForm", () => {
     await fireEvent.changeText(await screen.findByLabelText(TITLE_INPUT_LABEL), RECIPE_TITLE);
     await fireEvent.press(await screen.findByRole("button", { name: SAVE_BUTTON_LABEL }));
 
-    expect(onSubmit).toHaveBeenCalledWith({ title: RECIPE_TITLE, ingredients: [] });
+    expect(onSubmit).toHaveBeenCalledWith({ title: RECIPE_TITLE, ingredients: [], steps: [] });
   });
 
   it.each(["", "   "])("rejects a blank recipe title: %p", async (title) => {
@@ -52,7 +57,7 @@ describe("RecipeCreateForm", () => {
     await fireEvent.changeText(await screen.findByLabelText(TITLE_INPUT_LABEL), RECIPE_TITLE);
     await fireEvent.press(saveButton);
 
-    expect(onSubmit).toHaveBeenCalledWith({ title: RECIPE_TITLE, ingredients: [] });
+    expect(onSubmit).toHaveBeenCalledWith({ title: RECIPE_TITLE, ingredients: [], steps: [] });
     expect(screen.queryByText(ENTER_TITLE_ERROR_MESSAGE)).toBeNull();
   });
 
@@ -101,17 +106,20 @@ describe("RecipeCreateForm", () => {
 
     await fireEvent.changeText(await screen.findByLabelText(TITLE_INPUT_LABEL), RECIPE_TITLE);
     await fireEvent.changeText(screen.getByLabelText(INGREDIENT_INPUT_LABEL_1), INGREDIENT_1);
+    await fireEvent.changeText(screen.getByLabelText(STEP_LABEL_1), STEP_1);
     const saveButton = await screen.findByRole("button", { name: SAVE_BUTTON_LABEL });
     await fireEvent.press(saveButton);
     await screen.findByText(SAVE_RECIPE_ERROR_MESSAGE);
 
     expect(screen.getByLabelText(INGREDIENT_INPUT_LABEL_1)).toHaveDisplayValue(INGREDIENT_1);
+    expect(screen.getByLabelText(STEP_LABEL_1)).toHaveDisplayValue(STEP_1);
     await fireEvent.press(saveButton);
 
     expect(onSubmit).toHaveBeenCalledTimes(2);
     expect(onSubmit).toHaveBeenLastCalledWith({
       title: RECIPE_TITLE,
       ingredients: [{ position: 1, original_text: INGREDIENT_1 }],
+      steps: [{ position: 1, instruction: STEP_1 }],
     });
     expect(screen.queryByText(SAVE_RECIPE_ERROR_MESSAGE)).toBeNull();
     expect(saveButton).toBeEnabled();
@@ -134,6 +142,7 @@ describe("RecipeCreateForm", () => {
         { position: 1, original_text: INGREDIENT_1 },
         { position: 2, original_text: INGREDIENT_2 },
       ],
+      steps: [],
     });
   });
 
@@ -162,6 +171,7 @@ describe("RecipeCreateForm", () => {
         { position: 1, original_text: INGREDIENT_1 },
         { position: 2, original_text: INGREDIENT_2 },
       ],
+      steps: [],
     });
   });
 
@@ -196,6 +206,7 @@ describe("RecipeCreateForm", () => {
         { position: 1, original_text: ingredient1 },
         { position: 2, original_text: ingredient3 },
       ],
+      steps: [],
     });
   });
 
@@ -218,6 +229,117 @@ describe("RecipeCreateForm", () => {
     expect(onSubmit).toHaveBeenCalledWith({
       title: RECIPE_TITLE,
       ingredients: [{ position: 1, original_text: INGREDIENT_1 }],
+      steps: [],
+    });
+  });
+
+  it("submits added steps in their entered order", async () => {
+    const onSubmit = jest.fn().mockResolvedValue(undefined);
+
+    await renderRecipeCreateForm(onSubmit);
+
+    await fireEvent.changeText(screen.getByLabelText(TITLE_INPUT_LABEL), RECIPE_TITLE);
+    await fireEvent.changeText(screen.getByLabelText(STEP_LABEL_1), STEP_1);
+    await fireEvent.press(screen.getByRole("button", { name: ADD_STEP_LABEL }));
+    await fireEvent.changeText(screen.getByLabelText(STEP_LABEL_2), STEP_2);
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_BUTTON_LABEL }));
+
+    expect(onSubmit).toHaveBeenCalledWith({
+      title: RECIPE_TITLE,
+      ingredients: [],
+      steps: [
+        { position: 1, instruction: STEP_1 },
+        { position: 2, instruction: STEP_2 },
+      ],
+    });
+  });
+
+  it("trims steps and skips blank rows while preserving instruction line breaks", async () => {
+    const multilineStep = `${STEP_1}\nStir until smooth.`;
+    const stepLabel3 = "Step 3";
+    const stepLabel4 = "Step 4";
+
+    const onSubmit = jest.fn().mockResolvedValue(undefined);
+
+    await renderRecipeCreateForm(onSubmit);
+
+    await fireEvent.changeText(screen.getByLabelText(TITLE_INPUT_LABEL), RECIPE_TITLE);
+    await fireEvent.changeText(screen.getByLabelText(STEP_LABEL_1), `  ${multilineStep}  `);
+    const addStepButton = screen.getByRole("button", { name: ADD_STEP_LABEL });
+    await fireEvent.press(addStepButton);
+    await fireEvent.changeText(screen.getByLabelText(STEP_LABEL_2), "   ");
+    await fireEvent.press(addStepButton);
+    await fireEvent.changeText(screen.getByLabelText(stepLabel3), "");
+    await fireEvent.press(addStepButton);
+    await fireEvent.changeText(screen.getByLabelText(stepLabel4), `  ${STEP_2}   `);
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_BUTTON_LABEL }));
+
+    expect(onSubmit).toHaveBeenCalledWith({
+      title: RECIPE_TITLE,
+      ingredients: [],
+      steps: [
+        { position: 1, instruction: multilineStep },
+        { position: 2, instruction: STEP_2 },
+      ],
+    });
+  });
+
+  it("removes a step and submits the remaining instructions in order", async () => {
+    const step1 = "Mix.";
+    const step2 = "Rest.";
+    const step3 = "Bake.";
+    const stepLabel3 = "Step 3";
+    const removeStepLabel = "Remove step 2";
+
+    const onSubmit = jest.fn().mockResolvedValue(undefined);
+
+    await renderRecipeCreateForm(onSubmit);
+
+    await fireEvent.changeText(screen.getByLabelText(TITLE_INPUT_LABEL), RECIPE_TITLE);
+    await fireEvent.changeText(screen.getByLabelText(STEP_LABEL_1), step1);
+    const addStepButton = screen.getByRole("button", { name: ADD_STEP_LABEL });
+    await fireEvent.press(addStepButton);
+    await fireEvent.changeText(screen.getByLabelText(STEP_LABEL_2), step2);
+    await fireEvent.press(addStepButton);
+    await fireEvent.changeText(screen.getByLabelText(stepLabel3), step3);
+
+    await fireEvent.press(screen.getByRole("button", { name: removeStepLabel }));
+
+    expect(screen.getByLabelText(STEP_LABEL_2)).toHaveDisplayValue(step3);
+    expect(screen.queryByLabelText(stepLabel3)).toBeNull();
+
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_BUTTON_LABEL }));
+
+    expect(onSubmit).toHaveBeenCalledWith({
+      title: RECIPE_TITLE,
+      ingredients: [],
+      steps: [
+        { position: 1, instruction: step1 },
+        { position: 2, instruction: step3 },
+      ],
+    });
+  });
+
+  it("allows adding a step after removing every row", async () => {
+    const removeStepLabel = "Remove step 1";
+
+    const onSubmit = jest.fn().mockResolvedValue(undefined);
+
+    await renderRecipeCreateForm(onSubmit);
+
+    await fireEvent.changeText(screen.getByLabelText(TITLE_INPUT_LABEL), RECIPE_TITLE);
+    await fireEvent.press(screen.getByRole("button", { name: removeStepLabel }));
+
+    expect(screen.queryByLabelText(STEP_LABEL_1)).toBeNull();
+
+    await fireEvent.press(screen.getByRole("button", { name: ADD_STEP_LABEL }));
+    await fireEvent.changeText(screen.getByLabelText(STEP_LABEL_1), STEP_2);
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_BUTTON_LABEL }));
+
+    expect(onSubmit).toHaveBeenCalledWith({
+      title: RECIPE_TITLE,
+      ingredients: [],
+      steps: [{ position: 1, instruction: STEP_2 }],
     });
   });
 });
