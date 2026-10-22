@@ -5,6 +5,7 @@ type RecipeFormTextRowProps = {
   placeholder: string;
   value: string;
   multiline?: boolean;
+  autoFocus?: boolean;
   removeLabel: string;
   removeTitle: string;
   onChangeText: (text: string) => void;
@@ -16,6 +17,7 @@ export function RecipeFormTextRow({
   placeholder,
   value,
   multiline,
+  autoFocus,
   removeLabel,
   removeTitle,
   onChangeText,
@@ -28,6 +30,7 @@ export function RecipeFormTextRow({
         placeholder={placeholder}
         multiline={multiline}
         value={value}
+        autoFocus={autoFocus}
         autoCorrect={false}
         onChangeText={onChangeText}
         textAlignVertical={multiline ? "top" : "center"}

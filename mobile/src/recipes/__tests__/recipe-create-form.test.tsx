@@ -342,4 +342,17 @@ describe("RecipeCreateForm", () => {
       steps: [{ position: 1, instruction: STEP_2 }],
     });
   });
+
+  it.each([
+    [ADD_INGREDIENT_LABEL, INGREDIENT_INPUT_LABEL_2],
+    [ADD_STEP_LABEL, STEP_LABEL_2],
+  ])("requests autofocus after press %s", async (buttonName, inputLabel) => {
+    const onSubmit = jest.fn().mockResolvedValue(undefined);
+
+    await renderRecipeCreateForm(onSubmit);
+
+    await fireEvent.press(screen.getByRole("button", { name: buttonName }));
+
+    expect(screen.getByLabelText(inputLabel).props.autoFocus).toBe(true);
+  });
 });

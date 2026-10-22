@@ -127,6 +127,7 @@ export function RecipeCreateForm({ onSubmit }: RecipeCreateFormProps) {
           placeholder='Enter Ingredient Here'
           value={row.text}
           multiline={false}
+          autoFocus={row.id !== 0}
           removeLabel={`${REMOVE_INGREDIENT_LABEL} ${idx + 1}`}
           removeTitle={REMOVE_INGREDIENT_LABEL}
           onChangeText={(text) => handleChangeIngredient(row.id, text)}
@@ -142,6 +143,7 @@ export function RecipeCreateForm({ onSubmit }: RecipeCreateFormProps) {
           placeholder='Enter Step Here'
           value={row.text}
           multiline={true}
+          autoFocus={row.id !== 0}
           removeLabel={`${REMOVE_STEP_LABEL} ${idx + 1}`}
           removeTitle={REMOVE_STEP_LABEL}
           onChangeText={(text) => handleChangeStep(row.id, text)}
