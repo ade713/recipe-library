@@ -1,6 +1,8 @@
 import { useRef, useState } from "react";
 import { Button, StyleSheet, Text, TextInput, View } from "react-native";
 
+import { RecipeFormTextRow } from "./recipe-form-text-row";
+
 const ADD_INGREDIENT_LABEL = "Add ingredient";
 const ADD_STEP_LABEL = "Add step";
 const ENTER_TITLE_ERROR_MESSAGE = "Enter a recipe title.";
@@ -119,42 +121,32 @@ export function RecipeCreateForm({ onSubmit }: RecipeCreateFormProps) {
       />
 
       {ingredients.map((row, idx) => (
-        <View key={row.id} style={styles.formTextRow}>
-          <TextInput
-            accessibilityLabel={`Ingredient ${idx + 1}`}
-            placeholder='Enter Ingredient Here'
-            value={row.text}
-            autoCorrect={false}
-            onChangeText={(text) => handleChangeIngredient(row.id, text)}
-            style={[styles.formInput, styles.rowInput]}
-          />
-          <Button
-            title={REMOVE_INGREDIENT_LABEL}
-            accessibilityLabel={`${REMOVE_INGREDIENT_LABEL} ${idx + 1}`}
-            onPress={() => handleRemoveIngredient(row.id)}
-          />
-        </View>
+        <RecipeFormTextRow
+          key={row.id}
+          label={`Ingredient ${idx + 1}`}
+          placeholder='Enter Ingredient Here'
+          value={row.text}
+          multiline={false}
+          removeLabel={`${REMOVE_INGREDIENT_LABEL} ${idx + 1}`}
+          removeTitle={REMOVE_INGREDIENT_LABEL}
+          onChangeText={(text) => handleChangeIngredient(row.id, text)}
+          onRemove={() => handleRemoveIngredient(row.id)}
+        />
       ))}
       <Button title={ADD_INGREDIENT_LABEL} onPress={handleAddIngredient} />
 
       {steps.map((row, idx) => (
-        <View key={row.id} style={styles.formTextRow}>
-          <TextInput
-            accessibilityLabel={`Step ${idx + 1}`}
-            placeholder='Enter Step Here'
-            multiline={true}
-            textAlignVertical='top'
-            value={row.text}
-            autoCorrect={false}
-            onChangeText={(text) => handleChangeStep(row.id, text)}
-            style={[styles.formInput, styles.rowInput]}
-          />
-          <Button
-            title={REMOVE_STEP_LABEL}
-            accessibilityLabel={`${REMOVE_STEP_LABEL} ${idx + 1}`}
-            onPress={() => handleRemoveStep(row.id)}
-          />
-        </View>
+        <RecipeFormTextRow
+          key={row.id}
+          label={`Step ${idx + 1}`}
+          placeholder='Enter Step Here'
+          value={row.text}
+          multiline={true}
+          removeLabel={`${REMOVE_STEP_LABEL} ${idx + 1}`}
+          removeTitle={REMOVE_STEP_LABEL}
+          onChangeText={(text) => handleChangeStep(row.id, text)}
+          onRemove={() => handleRemoveStep(row.id)}
+        />
       ))}
       <Button title={ADD_STEP_LABEL} onPress={handleAddStep} />
 
@@ -164,11 +156,6 @@ export function RecipeCreateForm({ onSubmit }: RecipeCreateFormProps) {
 }
 
 const styles = StyleSheet.create({
-  formTextRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
   formInput: {
     minWidth: 0,
     borderRadius: 2,
@@ -177,8 +164,5 @@ const styles = StyleSheet.create({
     borderStyle: "solid",
     marginTop: 2,
     marginBottom: 2,
-  },
-  rowInput: {
-    flex: 1,
   },
 });
