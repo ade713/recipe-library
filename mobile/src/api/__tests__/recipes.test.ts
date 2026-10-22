@@ -281,9 +281,11 @@ describe("setRecipeFavorite", () => {
 describe("createRecipe", () => {
   it("creates a recipe and returns the saved recipe", async () => {
     const ingredient = "2 cups flour";
+    const step = "Mix the ingredients.";
     const payload = {
       title: RECIPE_TITLE,
       ingredients: [{ position: 1, original_text: ingredient }],
+      steps: [{ position: 1, instruction: step }],
     };
     const recipe = makeRecipeDetailResponse();
 

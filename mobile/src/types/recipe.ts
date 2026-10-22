@@ -90,4 +90,8 @@ export type RecipeCreateRequest = {
     position: number;
     original_text: string;
   }[];
+  steps?: {
+    position: number;
+    instruction: string;
+  }[];
 };
