@@ -3,6 +3,7 @@ import { RecipeCreateForm } from "../recipe-create-form";
 
 const ADD_INGREDIENT_LABEL = "Add ingredient";
 const ADD_STEP_LABEL = "Add step";
+const ADD_TIP_LABEL = "Add tip";
 const ENTER_TITLE_ERROR_MESSAGE = "Enter a recipe title.";
 const INGREDIENT_1 = "2 cups flour";
 const INGREDIENT_2 = "1 cup milk";
@@ -16,6 +17,10 @@ const STEP_1 = "Mix the ingredients.";
 const STEP_2 = "Bake for 20 minutes.";
 const STEP_LABEL_1 = "Step 1";
 const STEP_LABEL_2 = "Step 2";
+const TIP_LABEL_1 = "Tip 1";
+const TIP_LABEL_2 = "Tip 2";
+const TIP_1 = "Use room-temperature ingredients.";
+const TIP_2 = "Let it cool before serving.";
 const TITLE_INPUT_LABEL = "Recipe title";
 
 const renderRecipeCreateForm = async (onSubmit: () => Promise<void>) => {
@@ -31,7 +36,12 @@ describe("RecipeCreateForm", () => {
     await fireEvent.changeText(await screen.findByLabelText(TITLE_INPUT_LABEL), RECIPE_TITLE);
     await fireEvent.press(await screen.findByRole("button", { name: SAVE_BUTTON_LABEL }));
 
-    expect(onSubmit).toHaveBeenCalledWith({ title: RECIPE_TITLE, ingredients: [], steps: [] });
+    expect(onSubmit).toHaveBeenCalledWith({
+      title: RECIPE_TITLE,
+      ingredients: [],
+      steps: [],
+      tips: [],
+    });
   });
 
   it.each(["", "   "])("rejects a blank recipe title: %p", async (title) => {
@@ -57,7 +67,12 @@ describe("RecipeCreateForm", () => {
     await fireEvent.changeText(await screen.findByLabelText(TITLE_INPUT_LABEL), RECIPE_TITLE);
     await fireEvent.press(saveButton);
 
-    expect(onSubmit).toHaveBeenCalledWith({ title: RECIPE_TITLE, ingredients: [], steps: [] });
+    expect(onSubmit).toHaveBeenCalledWith({
+      title: RECIPE_TITLE,
+      ingredients: [],
+      steps: [],
+      tips: [],
+    });
     expect(screen.queryByText(ENTER_TITLE_ERROR_MESSAGE)).toBeNull();
   });
 
@@ -107,12 +122,14 @@ describe("RecipeCreateForm", () => {
     await fireEvent.changeText(await screen.findByLabelText(TITLE_INPUT_LABEL), RECIPE_TITLE);
     await fireEvent.changeText(screen.getByLabelText(INGREDIENT_INPUT_LABEL_1), INGREDIENT_1);
     await fireEvent.changeText(screen.getByLabelText(STEP_LABEL_1), STEP_1);
+    await fireEvent.changeText(screen.getByLabelText(TIP_LABEL_1), TIP_1);
     const saveButton = await screen.findByRole("button", { name: SAVE_BUTTON_LABEL });
     await fireEvent.press(saveButton);
     await screen.findByText(SAVE_RECIPE_ERROR_MESSAGE);
 
     expect(screen.getByLabelText(INGREDIENT_INPUT_LABEL_1)).toHaveDisplayValue(INGREDIENT_1);
     expect(screen.getByLabelText(STEP_LABEL_1)).toHaveDisplayValue(STEP_1);
+    expect(screen.getByLabelText(TIP_LABEL_1)).toHaveDisplayValue(TIP_1);
     await fireEvent.press(saveButton);
 
     expect(onSubmit).toHaveBeenCalledTimes(2);
@@ -120,6 +137,7 @@ describe("RecipeCreateForm", () => {
       title: RECIPE_TITLE,
       ingredients: [{ position: 1, original_text: INGREDIENT_1 }],
       steps: [{ position: 1, instruction: STEP_1 }],
+      tips: [{ position: 1, tip: TIP_1 }],
     });
     expect(screen.queryByText(SAVE_RECIPE_ERROR_MESSAGE)).toBeNull();
     expect(saveButton).toBeEnabled();
@@ -143,6 +161,7 @@ describe("RecipeCreateForm", () => {
         { position: 2, original_text: INGREDIENT_2 },
       ],
       steps: [],
+      tips: [],
     });
   });
 
@@ -172,6 +191,7 @@ describe("RecipeCreateForm", () => {
         { position: 2, original_text: INGREDIENT_2 },
       ],
       steps: [],
+      tips: [],
     });
   });
 
@@ -207,6 +227,7 @@ describe("RecipeCreateForm", () => {
         { position: 2, original_text: ingredient3 },
       ],
       steps: [],
+      tips: [],
     });
   });
 
@@ -230,6 +251,7 @@ describe("RecipeCreateForm", () => {
       title: RECIPE_TITLE,
       ingredients: [{ position: 1, original_text: INGREDIENT_1 }],
       steps: [],
+      tips: [],
     });
   });
 
@@ -251,6 +273,7 @@ describe("RecipeCreateForm", () => {
         { position: 1, instruction: STEP_1 },
         { position: 2, instruction: STEP_2 },
       ],
+      tips: [],
     });
   });
 
@@ -281,6 +304,7 @@ describe("RecipeCreateForm", () => {
         { position: 1, instruction: multilineStep },
         { position: 2, instruction: STEP_2 },
       ],
+      tips: [],
     });
   });
 
@@ -317,6 +341,7 @@ describe("RecipeCreateForm", () => {
         { position: 1, instruction: step1 },
         { position: 2, instruction: step3 },
       ],
+      tips: [],
     });
   });
 
@@ -340,12 +365,14 @@ describe("RecipeCreateForm", () => {
       title: RECIPE_TITLE,
       ingredients: [],
       steps: [{ position: 1, instruction: STEP_2 }],
+      tips: [],
     });
   });
 
   it.each([
     [ADD_INGREDIENT_LABEL, INGREDIENT_INPUT_LABEL_2],
     [ADD_STEP_LABEL, STEP_LABEL_2],
+    [ADD_TIP_LABEL, TIP_LABEL_2],
   ])("requests autofocus after press %s", async (buttonName, inputLabel) => {
     const onSubmit = jest.fn().mockResolvedValue(undefined);
 
@@ -354,5 +381,59 @@ describe("RecipeCreateForm", () => {
     await fireEvent.press(screen.getByRole("button", { name: buttonName }));
 
     expect(screen.getByLabelText(inputLabel).props.autoFocus).toBe(true);
+  });
+
+  it("submits added tips in their entered order", async () => {
+    const onSubmit = jest.fn().mockResolvedValue(undefined);
+
+    await renderRecipeCreateForm(onSubmit);
+
+    await fireEvent.changeText(screen.getByLabelText(TITLE_INPUT_LABEL), RECIPE_TITLE);
+    await fireEvent.changeText(screen.getByLabelText(TIP_LABEL_1), TIP_1);
+    await fireEvent.press(screen.getByRole("button", { name: ADD_TIP_LABEL }));
+    await fireEvent.changeText(screen.getByLabelText(TIP_LABEL_2), TIP_2);
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_BUTTON_LABEL }));
+
+    expect(onSubmit).toHaveBeenCalledWith({
+      title: RECIPE_TITLE,
+      ingredients: [],
+      steps: [],
+      tips: [
+        { position: 1, tip: TIP_1 },
+        { position: 2, tip: TIP_2 },
+      ],
+    });
+  });
+
+  it("trims tips and skips blank rows while preserving line breaks", async () => {
+    const multilineTip = "Use fresh herbs.\nAdd them at the end.";
+    const tip = "Serve warm.";
+    const tipLabel3 = "Tip 3";
+    const tipLabel4 = "Tip 4";
+
+    const onSubmit = jest.fn().mockResolvedValue(undefined);
+
+    await renderRecipeCreateForm(onSubmit);
+
+    await fireEvent.changeText(screen.getByLabelText(TITLE_INPUT_LABEL), RECIPE_TITLE);
+    await fireEvent.changeText(screen.getByLabelText(TIP_LABEL_1), `   ${multilineTip}  `);
+    const addTipButton = screen.getByRole("button", { name: ADD_TIP_LABEL });
+    await fireEvent.press(addTipButton);
+    await fireEvent.changeText(screen.getByLabelText(TIP_LABEL_2), "    ");
+    await fireEvent.press(addTipButton);
+    await fireEvent.changeText(screen.getByLabelText(tipLabel3), "");
+    await fireEvent.press(addTipButton);
+    await fireEvent.changeText(screen.getByLabelText(tipLabel4), `  ${tip} `);
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_BUTTON_LABEL }));
+
+    expect(onSubmit).toHaveBeenCalledWith({
+      title: RECIPE_TITLE,
+      ingredients: [],
+      steps: [],
+      tips: [
+        { position: 1, tip: multilineTip },
+        { position: 2, tip: tip },
+      ],
+    });
   });
 });
