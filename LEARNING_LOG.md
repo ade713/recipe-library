@@ -727,3 +727,25 @@ Next:
 
 - Begin the React Native and Expo mobile MVP foundation.
 ```
+
+
+## Manual Recipe Time Entry — 2026-10-23
+
+Built:
+
+- Added optional prep, cook, and independently entered total minutes to manual recipe creation.
+- Preserved blank versus zero values, validated before saving, and retained inputs after failed saves.
+- Extended form, API, and navigation coverage; all 256 mobile tests and TypeScript checks passed.
+- Verified saved times, blanks, retry preservation, and keyboard/scrolling behavior on Android.
+
+Learned:
+
+- Controlled inputs keep strings during editing; conversion belongs at the submission boundary.
+- Check blanks before Number(), since an empty string converts to zero.
+- Numeric keyboards do not replace validation; Number.isSafeInteger() rejects fractional and unsafe values.
+- Validating before the submitting state keeps correction available and separates validation feedback from save failures.
+- Pick selects fields from an existing type, and JSON serialization omits undefined object values.
+
+Next:
+
+- Submit the focused time-entry PR before starting another creation-field milestone.

@@ -288,6 +288,9 @@ describe("createRecipe", () => {
       ingredients: [{ position: 1, original_text: ingredient }],
       steps: [{ position: 1, instruction: step }],
       tips: [{ position: 1, tip: tip }],
+      prep_time_minutes: 10,
+      cook_time_minutes: 0,
+      total_time_minutes: 30,
     };
     const recipe = makeRecipeDetailResponse();
 

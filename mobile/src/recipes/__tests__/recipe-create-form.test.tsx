@@ -4,12 +4,15 @@ import { RecipeCreateForm } from "../recipe-create-form";
 const ADD_INGREDIENT_LABEL = "Add ingredient";
 const ADD_STEP_LABEL = "Add step";
 const ADD_TIP_LABEL = "Add tip";
+const COOK_TIME_LABEL = "Cook time (minutes)";
 const ENTER_TITLE_ERROR_MESSAGE = "Enter a recipe title.";
 const INGREDIENT_1 = "2 cups flour";
 const INGREDIENT_2 = "1 cup milk";
 const INGREDIENT_INPUT_LABEL_1 = "Ingredient 1";
 const INGREDIENT_INPUT_LABEL_2 = "Ingredient 2";
+const INVALID_TIME_MESSAGE = "Enter times as whole minutes, zero or greater.";
 const NETWORK_ERROR_MESSAGE = "Network failure";
+const PREP_TIME_LABEL = "Prep time (minutes)";
 const RECIPE_TITLE = "Chicken Soup";
 const SAVE_BUTTON_LABEL = "Save recipe";
 const SAVE_RECIPE_ERROR_MESSAGE = "Unable to save recipe. Please try again.";
@@ -17,11 +20,12 @@ const STEP_1 = "Mix the ingredients.";
 const STEP_2 = "Bake for 20 minutes.";
 const STEP_LABEL_1 = "Step 1";
 const STEP_LABEL_2 = "Step 2";
-const TIP_LABEL_1 = "Tip 1";
-const TIP_LABEL_2 = "Tip 2";
 const TIP_1 = "Use room-temperature ingredients.";
 const TIP_2 = "Let it cool before serving.";
+const TIP_LABEL_1 = "Tip 1";
+const TIP_LABEL_2 = "Tip 2";
 const TITLE_INPUT_LABEL = "Recipe title";
+const TOTAL_TIME_LABEL = "Total time (minutes)";
 
 const renderRecipeCreateForm = async (onSubmit: () => Promise<void>) => {
   await render(<RecipeCreateForm onSubmit={onSubmit} />);
@@ -76,6 +80,70 @@ describe("RecipeCreateForm", () => {
     expect(screen.queryByText(ENTER_TITLE_ERROR_MESSAGE)).toBeNull();
   });
 
+  it("submits numeric times and preserves an independently entered total", async () => {
+    const onSubmit = jest.fn().mockResolvedValue(undefined);
+
+    await renderRecipeCreateForm(onSubmit);
+
+    await fireEvent.changeText(screen.getByLabelText(TITLE_INPUT_LABEL), RECIPE_TITLE);
+    await fireEvent.changeText(screen.getByLabelText(PREP_TIME_LABEL), " 10 ");
+    await fireEvent.changeText(screen.getByLabelText(COOK_TIME_LABEL), "0");
+    await fireEvent.changeText(screen.getByLabelText(TOTAL_TIME_LABEL), "30");
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_BUTTON_LABEL }));
+
+    expect(onSubmit).toHaveBeenCalledWith({
+      title: RECIPE_TITLE,
+      ingredients: [],
+      steps: [],
+      tips: [],
+      prep_time_minutes: 10,
+      cook_time_minutes: 0,
+      total_time_minutes: 30,
+    });
+  });
+
+  it("leaves blank times unspecified instead of converting them to zero", async () => {
+    const onSubmit = jest.fn().mockResolvedValue(undefined);
+
+    await renderRecipeCreateForm(onSubmit);
+
+    await fireEvent.changeText(screen.getByLabelText(TITLE_INPUT_LABEL), RECIPE_TITLE);
+    await fireEvent.changeText(screen.getByLabelText(PREP_TIME_LABEL), "   ");
+    await fireEvent.changeText(screen.getByLabelText(COOK_TIME_LABEL), "15");
+    await fireEvent.changeText(screen.getByLabelText(COOK_TIME_LABEL), "");
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_BUTTON_LABEL }));
+
+    expect(onSubmit).toHaveBeenCalledWith({
+      title: RECIPE_TITLE,
+      ingredients: [],
+      steps: [],
+      tips: [],
+    });
+  });
+
+  describe.each([PREP_TIME_LABEL, COOK_TIME_LABEL, TOTAL_TIME_LABEL])("%s validation", (label) => {
+    it.each(["-1", "1.5", "10 minutes"])("rejects %p and allows correction", async (invalidValue) => {
+      const onSubmit = jest.fn().mockResolvedValue(undefined);
+
+      await renderRecipeCreateForm(onSubmit);
+
+      await fireEvent.changeText(screen.getByLabelText(TITLE_INPUT_LABEL), RECIPE_TITLE);
+      await fireEvent.changeText(screen.getByLabelText(label), invalidValue);
+      const saveButton = screen.getByRole("button", { name: SAVE_BUTTON_LABEL });
+      await fireEvent.press(saveButton);
+
+      expect(screen.getByText(INVALID_TIME_MESSAGE)).toBeTruthy();
+      expect(onSubmit).not.toHaveBeenCalled();
+      expect(saveButton).toBeEnabled();
+
+      await fireEvent.changeText(screen.getByLabelText(label), "5");
+      await fireEvent.press(saveButton);
+
+      expect(onSubmit).toHaveBeenCalledTimes(1);
+      expect(screen.queryByText(INVALID_TIME_MESSAGE)).toBeNull();
+    });
+  });
+
   it("prevents another submission while saving", async () => {
     const onSubmit = jest.fn(() => new Promise<void>(() => {}));
 
@@ -123,6 +191,9 @@ describe("RecipeCreateForm", () => {
     await fireEvent.changeText(screen.getByLabelText(INGREDIENT_INPUT_LABEL_1), INGREDIENT_1);
     await fireEvent.changeText(screen.getByLabelText(STEP_LABEL_1), STEP_1);
     await fireEvent.changeText(screen.getByLabelText(TIP_LABEL_1), TIP_1);
+    await fireEvent.changeText(screen.getByLabelText(PREP_TIME_LABEL), "10");
+    await fireEvent.changeText(screen.getByLabelText(COOK_TIME_LABEL), "20");
+    await fireEvent.changeText(screen.getByLabelText(TOTAL_TIME_LABEL), "40");
     const saveButton = await screen.findByRole("button", { name: SAVE_BUTTON_LABEL });
     await fireEvent.press(saveButton);
     await screen.findByText(SAVE_RECIPE_ERROR_MESSAGE);
@@ -130,6 +201,9 @@ describe("RecipeCreateForm", () => {
     expect(screen.getByLabelText(INGREDIENT_INPUT_LABEL_1)).toHaveDisplayValue(INGREDIENT_1);
     expect(screen.getByLabelText(STEP_LABEL_1)).toHaveDisplayValue(STEP_1);
     expect(screen.getByLabelText(TIP_LABEL_1)).toHaveDisplayValue(TIP_1);
+    expect(screen.getByLabelText(PREP_TIME_LABEL)).toHaveDisplayValue("10");
+    expect(screen.getByLabelText(COOK_TIME_LABEL)).toHaveDisplayValue("20");
+    expect(screen.getByLabelText(TOTAL_TIME_LABEL)).toHaveDisplayValue("40");
     await fireEvent.press(saveButton);
 
     expect(onSubmit).toHaveBeenCalledTimes(2);
@@ -138,6 +212,9 @@ describe("RecipeCreateForm", () => {
       ingredients: [{ position: 1, original_text: INGREDIENT_1 }],
       steps: [{ position: 1, instruction: STEP_1 }],
       tips: [{ position: 1, tip: TIP_1 }],
+      prep_time_minutes: 10,
+      cook_time_minutes: 20,
+      total_time_minutes: 40,
     });
     expect(screen.queryByText(SAVE_RECIPE_ERROR_MESSAGE)).toBeNull();
     expect(saveButton).toBeEnabled();

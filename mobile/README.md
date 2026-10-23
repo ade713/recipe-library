@@ -389,6 +389,28 @@ do not manually edit .expo/types/router.d.ts or bypass the type check.
 npm test -- auth-form.test.tsx --runInBand
 ```
 
+## Manual recipe time entry
+
+The creation form accepts optional prep, cook, and total times in minutes.
+The fields share one equal-width row under Times (minutes), with short visible
+labels and full accessibility labels. Inputs have a minimum height of 48 and
+horizontal padding. The user verified this layout on Android with normal and
+enlarged text. Each input keeps string state while editing. Before saving, blank or whitespace-only
+values become undefined and are omitted from JSON; zero remains a valid value.
+Nonblank values must convert to nonnegative safe integers. Total time is entered
+independently rather than calculated from prep and cook time.
+
+Invalid input shows `Enter times as whole minutes, zero or greater.` before
+the form enters its submitting state. Save failures use separate feedback and
+preserve the entered values for retry. The numeric keyboard assists entry but
+does not replace validation.
+
+Form tests cover conversion, blank values, invalid values, correction, and retry
+preservation. Existing API and navigation tests cover serialization and forwarding.
+All 256 mobile tests across twenty suites and TypeScript checks passed. Android
+checks verified saved times including zero and an independent total, blank times,
+failure/retry preservation, and keyboard and scrolling access.
+
 ## Secure token storage
 
 `src/auth/token-storage.ts` wraps Expo SecureStore with three operations:
