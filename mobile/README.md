@@ -392,7 +392,10 @@ npm test -- auth-form.test.tsx --runInBand
 ## Manual recipe time entry
 
 The creation form accepts optional prep, cook, and total times in minutes.
-Each input keeps string state while editing. Before saving, blank or whitespace-only
+The fields share one equal-width row under Times (minutes), with short visible
+labels and full accessibility labels. Inputs have a minimum height of 48 and
+horizontal padding. The user verified this layout on Android with normal and
+enlarged text. Each input keeps string state while editing. Before saving, blank or whitespace-only
 values become undefined and are omitted from JSON; zero remains a valid value.
 Nonblank values must convert to nonnegative safe integers. Total time is entered
 independently rather than calculated from prep and cook time.

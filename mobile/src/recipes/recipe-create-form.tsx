@@ -7,16 +7,20 @@ import { useFormTextRows } from "./use-form-text-rows";
 const ADD_INGREDIENT_LABEL = "Add ingredient";
 const ADD_STEP_LABEL = "Add step";
 const ADD_TIP_LABEL = "Add tip";
+const COOK_TEXT = "Cook";
 const COOK_TIME_LABEL = "Cook time (minutes)";
 const ENTER_TITLE_ERROR_MESSAGE = "Enter a recipe title.";
 const INVALID_TIME_MESSAGE = "Enter times as whole minutes, zero or greater.";
+const PREP_TEXT = "Prep";
 const PREP_TIME_LABEL = "Prep time (minutes)";
 const REMOVE_INGREDIENT_LABEL = "Remove ingredient";
 const REMOVE_STEP_LABEL = "Remove step";
 const REMOVE_TIP_LABEL = "Remove tip";
 const SAVE_BUTTON_LABEL = "Save recipe";
 const SAVE_RECIPE_ERROR_MESSAGE = "Unable to save recipe. Please try again.";
+const TIME_HEADING = "Times (minutes)";
 const TITLE_INPUT_LABEL = "Recipe title";
+const TOTAL_TEXT = "Total";
 const TOTAL_TIME_LABEL = "Total time (minutes)";
 
 type RecipeCreateFormValues = {
@@ -156,32 +160,41 @@ export function RecipeCreateForm({ onSubmit }: RecipeCreateFormProps) {
         style={styles.formInput}
       />
 
-      <Text>{PREP_TIME_LABEL}</Text>
-      <TextInput
-        accessibilityLabel={PREP_TIME_LABEL}
-        value={prepTime}
-        onChangeText={setPrepTime}
-        keyboardType='number-pad'
-        style={styles.formInput}
-      />
+      <Text>{TIME_HEADING}</Text>
+      <View style={styles.timesRow}>
+        <View style={styles.timeField}>
+          <Text>{PREP_TEXT}</Text>
+          <TextInput
+            accessibilityLabel={PREP_TIME_LABEL}
+            value={prepTime}
+            onChangeText={setPrepTime}
+            keyboardType='number-pad'
+            style={[styles.formInput, styles.timeInput]}
+          />
+        </View>
 
-      <Text>{COOK_TIME_LABEL}</Text>
-      <TextInput
-        accessibilityLabel={COOK_TIME_LABEL}
-        value={cookTime}
-        onChangeText={setCookTime}
-        keyboardType='number-pad'
-        style={styles.formInput}
-      />
+        <View style={styles.timeField}>
+          <Text>{COOK_TEXT}</Text>
+          <TextInput
+            accessibilityLabel={COOK_TIME_LABEL}
+            value={cookTime}
+            onChangeText={setCookTime}
+            keyboardType='number-pad'
+            style={[styles.formInput, styles.timeInput]}
+          />
+        </View>
 
-      <Text>{TOTAL_TIME_LABEL}</Text>
-      <TextInput
-        accessibilityLabel={TOTAL_TIME_LABEL}
-        value={totalTime}
-        onChangeText={setTotalTime}
-        keyboardType='number-pad'
-        style={styles.formInput}
-      />
+        <View style={styles.timeField}>
+          <Text>{TOTAL_TEXT}</Text>
+          <TextInput
+            accessibilityLabel={TOTAL_TIME_LABEL}
+            value={totalTime}
+            onChangeText={setTotalTime}
+            keyboardType='number-pad'
+            style={[styles.formInput, styles.timeInput]}
+          />
+        </View>
+      </View>
 
       {ingredients.map((row, idx) => (
         <RecipeFormTextRow
@@ -245,5 +258,18 @@ const styles = StyleSheet.create({
     borderStyle: "solid",
     marginTop: 2,
     marginBottom: 2,
+  },
+  timesRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 8,
+  },
+  timeField: {
+    flex: 1,
+    minWidth: 0,
+  },
+  timeInput: {
+    minHeight: 48,
+    paddingHorizontal: 8,
   },
 });
