@@ -365,6 +365,8 @@ describe("AppNavigator", () => {
     const ingredient1 = "2 cups flour";
     const stepLabel = "Step 1";
     const step1 = "Mix the ingredients.";
+    const tipLabel = "Tip 1";
+    const tip1 = "Serve warm";
     const user = makeUserResponse();
 
     jest.spyOn(session, "restoreSession").mockResolvedValue(user);
@@ -377,12 +379,14 @@ describe("AppNavigator", () => {
     await fireEvent.changeText(await screen.findByLabelText(RECIPE_TITLE_LABEL), recipe.title);
     await fireEvent.changeText(screen.getByLabelText(ingredientLabel), ingredient1);
     await fireEvent.changeText(screen.getByLabelText(stepLabel), step1);
+    await fireEvent.changeText(screen.getByLabelText(tipLabel), tip1);
     await fireEvent.press(screen.getByRole("button", { name: SAVE_RECIPE_TEXT }));
 
     expect(saveMock).toHaveBeenCalledWith({
       title: recipe.title,
       ingredients: [{ position: 1, original_text: ingredient1 }],
       steps: [{ position: 1, instruction: step1 }],
+      tips: [{ position: 1, tip: tip1 }],
     });
     expect(await screen.findByText(RECIPE_DETAIL_TEXT)).toBeTruthy();
     expect(navigation.getPathname()).toBe(`/recipes/${recipe.id}`);
