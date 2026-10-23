@@ -7,13 +7,17 @@ import { useFormTextRows } from "./use-form-text-rows";
 const ADD_INGREDIENT_LABEL = "Add ingredient";
 const ADD_STEP_LABEL = "Add step";
 const ADD_TIP_LABEL = "Add tip";
+const COOK_TIME_LABEL = "Cook time (minutes)";
 const ENTER_TITLE_ERROR_MESSAGE = "Enter a recipe title.";
+const INVALID_TIME_MESSAGE = "Enter times as whole minutes, zero or greater.";
+const PREP_TIME_LABEL = "Prep time (minutes)";
 const REMOVE_INGREDIENT_LABEL = "Remove ingredient";
 const REMOVE_STEP_LABEL = "Remove step";
 const REMOVE_TIP_LABEL = "Remove tip";
 const SAVE_BUTTON_LABEL = "Save recipe";
 const SAVE_RECIPE_ERROR_MESSAGE = "Unable to save recipe. Please try again.";
 const TITLE_INPUT_LABEL = "Recipe title";
+const TOTAL_TIME_LABEL = "Total time (minutes)";
 
 type RecipeCreateFormValues = {
   title: string;
@@ -29,14 +33,34 @@ type RecipeCreateFormValues = {
     position: number;
     tip: string;
   }[];
+  prep_time_minutes?: number;
+  cook_time_minutes?: number;
+  total_time_minutes?: number;
 };
 
 type RecipeCreateFormProps = {
   onSubmit: (values: RecipeCreateFormValues) => Promise<void>;
 };
 
+const parseOptionalMinutes = (value: string): number | undefined => {
+  const trimmedValue = value.trim();
+  if (trimmedValue.length === 0) {
+    return undefined;
+  }
+
+  const minutes = Number(trimmedValue);
+  if (!Number.isSafeInteger(minutes) || minutes < 0) {
+    throw new Error(INVALID_TIME_MESSAGE);
+  }
+
+  return minutes;
+};
+
 export function RecipeCreateForm({ onSubmit }: RecipeCreateFormProps) {
   const [title, setTitle] = useState("");
+  const [prepTime, setPrepTime] = useState("");
+  const [cookTime, setCookTime] = useState("");
+  const [totalTime, setTotalTime] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const {
@@ -65,6 +89,19 @@ export function RecipeCreateForm({ onSubmit }: RecipeCreateFormProps) {
 
     if (title.trim() === "") {
       setErrorMessage(ENTER_TITLE_ERROR_MESSAGE);
+      return;
+    }
+
+    let times: Pick<RecipeCreateFormValues, "prep_time_minutes" | "cook_time_minutes" | "total_time_minutes">;
+
+    try {
+      times = {
+        prep_time_minutes: parseOptionalMinutes(prepTime),
+        cook_time_minutes: parseOptionalMinutes(cookTime),
+        total_time_minutes: parseOptionalMinutes(totalTime),
+      };
+    } catch {
+      setErrorMessage(INVALID_TIME_MESSAGE);
       return;
     }
 
@@ -98,6 +135,7 @@ export function RecipeCreateForm({ onSubmit }: RecipeCreateFormProps) {
         ingredients: formattedIngredients,
         steps: formattedSteps,
         tips: formattedTips,
+        ...times,
       });
     } catch {
       setErrorMessage(SAVE_RECIPE_ERROR_MESSAGE);
@@ -115,6 +153,33 @@ export function RecipeCreateForm({ onSubmit }: RecipeCreateFormProps) {
         value={title}
         autoCorrect={false}
         onChangeText={setTitle}
+        style={styles.formInput}
+      />
+
+      <Text>{PREP_TIME_LABEL}</Text>
+      <TextInput
+        accessibilityLabel={PREP_TIME_LABEL}
+        value={prepTime}
+        onChangeText={setPrepTime}
+        keyboardType='number-pad'
+        style={styles.formInput}
+      />
+
+      <Text>{COOK_TIME_LABEL}</Text>
+      <TextInput
+        accessibilityLabel={COOK_TIME_LABEL}
+        value={cookTime}
+        onChangeText={setCookTime}
+        keyboardType='number-pad'
+        style={styles.formInput}
+      />
+
+      <Text>{TOTAL_TIME_LABEL}</Text>
+      <TextInput
+        accessibilityLabel={TOTAL_TIME_LABEL}
+        value={totalTime}
+        onChangeText={setTotalTime}
+        keyboardType='number-pad'
         style={styles.formInput}
       />
 
