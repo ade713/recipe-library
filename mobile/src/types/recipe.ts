@@ -94,4 +94,8 @@ export type RecipeCreateRequest = {
     position: number;
     instruction: string;
   }[];
+  tips?: {
+    position: number;
+    tip: string;
+  }[];
 };
