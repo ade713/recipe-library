@@ -432,6 +432,20 @@ mobile tests across twenty suites and TypeScript checks passed. The user verifie
 Android decimal yield with a unit, quantity without a unit, zero and blanks,
 failed-save retry, decimal keyboard access, and enlarged-text layout.
 
+## Manual recipe description entry
+
+An optional multiline description input appears below the title. It keeps entered
+text unchanged during editing, then trims surrounding whitespace on submission
+while preserving internal line breaks. Blank descriptions become undefined and
+are omitted from JSON. Failed saves preserve the text for retry.
+
+The input has a minimum height of 96 and top-aligned text. Form tests cover
+normalization and retry preservation; existing API and navigation tests verify
+serialization and forwarding. All 267 mobile tests across twenty suites,
+TypeScript, and whitespace checks passed. The user verified Android multiline
+editing, keyboard/scrolling access, blank submission, and failed-save retry.
+The detail screen does not yet display descriptions; that remains a follow-up.
+
 ## Secure token storage
 
 `src/auth/token-storage.ts` wraps Expo SecureStore with three operations:

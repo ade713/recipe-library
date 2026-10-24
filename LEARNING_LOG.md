@@ -770,3 +770,23 @@ Learned:
 Next:
 
 - Submit the focused servings/yield PR before adding another creation-field milestone.
+
+
+## Manual Recipe Description Entry
+
+Built:
+
+- Added an optional multiline description below the title and extended creation request types.
+- Trimmed surrounding whitespace on submission, preserved internal line breaks, and omitted blank descriptions.
+- Extended form, API, and navigation coverage; all 267 mobile tests and TypeScript checks passed.
+- Verified Android multiline editing, keyboard/scrolling access, blank submission, and text preservation through failed-save retry.
+
+Learned:
+
+- Trimming inside onChangeText removes trailing spaces during typing and disrupts word entry.
+- Submission-time trim() removes only surrounding whitespace, preserving internal line breaks.
+- Undefined optional fields are omitted when the request is serialized to JSON.
+
+Next:
+
+- Submit the focused description-entry PR. Description display on the detail screen remains follow-up work.
