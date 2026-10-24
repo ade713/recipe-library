@@ -9,7 +9,10 @@ const ADD_STEP_LABEL = "Add step";
 const ADD_TIP_LABEL = "Add tip";
 const COOK_TEXT = "Cook";
 const COOK_TIME_LABEL = "Cook time (minutes)";
+const DESCRIPTION_LABEL = "Description (optional)";
+const DESCRIPTION_PLACEHOLDER = "Enter Description Here";
 const ENTER_TITLE_ERROR_MESSAGE = "Enter a recipe title.";
+const INGREDIENT_PLACEHOLDER = "Enter Ingredient Here";
 const INVALID_SERVINGS_MESSAGE = "Enter a servings or yield quantity of zero or greater.";
 const INVALID_TIME_MESSAGE = "Enter times as whole minutes, zero or greater.";
 const PREP_TEXT = "Prep";
@@ -24,13 +27,17 @@ const SERVINGS_LABEL = "Servings or yield quantity";
 const SERVINGS_QUANTITY_TEXT = "Quantity";
 const SERVINGS_UNIT_LABEL = "Yield unit (optional)";
 const SERVINGS_UNIT_TEXT = "Unit (optional)";
+const STEP_PLACEHOLDER = "Enter Step Here";
 const TIME_HEADING = "Times (minutes)";
+const TIP_PLACEHOLDER = "Enter Tip Here";
 const TITLE_INPUT_LABEL = "Recipe title";
+const TITLE_PLACEHOLDER = "Enter Title Here";
 const TOTAL_TEXT = "Total";
 const TOTAL_TIME_LABEL = "Total time (minutes)";
 
 type RecipeCreateFormValues = {
   title: string;
+  description?: string;
   ingredients: {
     position: number;
     original_text: string;
@@ -84,6 +91,7 @@ const parseOptionalServings = (value: string): number | undefined => {
 
 export function RecipeCreateForm({ onSubmit }: RecipeCreateFormProps) {
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [prepTime, setPrepTime] = useState("");
   const [cookTime, setCookTime] = useState("");
   const [totalTime, setTotalTime] = useState("");
@@ -141,6 +149,7 @@ export function RecipeCreateForm({ onSubmit }: RecipeCreateFormProps) {
       return;
     }
 
+    const normalizedDescription = description.trim() || undefined;
     const normalizedUnit = servingsUnit.trim() || undefined;
 
     setIsSubmitting(true);
@@ -170,6 +179,7 @@ export function RecipeCreateForm({ onSubmit }: RecipeCreateFormProps) {
     try {
       await onSubmit({
         title,
+        description: normalizedDescription,
         ingredients: formattedIngredients,
         steps: formattedSteps,
         tips: formattedTips,
@@ -189,11 +199,23 @@ export function RecipeCreateForm({ onSubmit }: RecipeCreateFormProps) {
       {errorMessage !== null && <Text>{errorMessage}</Text>}
       <TextInput
         accessibilityLabel={TITLE_INPUT_LABEL}
-        placeholder='Enter Title Here'
+        placeholder={TITLE_PLACEHOLDER}
         value={title}
         autoCorrect={false}
         onChangeText={setTitle}
         style={styles.formInput}
+      />
+
+      <Text>{DESCRIPTION_LABEL}</Text>
+      <TextInput
+        accessibilityLabel={DESCRIPTION_LABEL}
+        placeholder={DESCRIPTION_PLACEHOLDER}
+        value={description}
+        multiline={true}
+        textAlignVertical='top'
+        autoCorrect={false}
+        onChangeText={setDescription}
+        style={[styles.formInput, styles.descriptionInput]}
       />
 
       <Text>{TIME_HEADING}</Text>
@@ -263,7 +285,7 @@ export function RecipeCreateForm({ onSubmit }: RecipeCreateFormProps) {
         <RecipeFormTextRow
           key={row.id}
           label={`Ingredient ${idx + 1}`}
-          placeholder='Enter Ingredient Here'
+          placeholder={INGREDIENT_PLACEHOLDER}
           value={row.text}
           multiline={false}
           autoFocus={row.id !== 0}
@@ -279,7 +301,7 @@ export function RecipeCreateForm({ onSubmit }: RecipeCreateFormProps) {
         <RecipeFormTextRow
           key={row.id}
           label={`Step ${idx + 1}`}
-          placeholder='Enter Step Here'
+          placeholder={STEP_PLACEHOLDER}
           value={row.text}
           multiline={true}
           autoFocus={row.id !== 0}
@@ -295,7 +317,7 @@ export function RecipeCreateForm({ onSubmit }: RecipeCreateFormProps) {
         <RecipeFormTextRow
           key={row.id}
           label={`Tip ${idx + 1}`}
-          placeholder='Enter Tip Here'
+          placeholder={TIP_PLACEHOLDER}
           value={row.text}
           multiline={true}
           autoFocus={row.id !== 0}
@@ -334,5 +356,8 @@ const styles = StyleSheet.create({
   compactInput: {
     minHeight: 48,
     paddingHorizontal: 8,
+  },
+  descriptionInput: {
+    minHeight: 96,
   },
 });

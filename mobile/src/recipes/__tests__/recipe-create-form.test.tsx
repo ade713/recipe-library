@@ -5,6 +5,8 @@ const ADD_INGREDIENT_LABEL = "Add ingredient";
 const ADD_STEP_LABEL = "Add step";
 const ADD_TIP_LABEL = "Add tip";
 const COOK_TIME_LABEL = "Cook time (minutes)";
+const DESCRIPTION = "A comforting soup.\nGreat for cold evenings.";
+const DESCRIPTION_LABEL = "Description (optional)";
 const ENTER_TITLE_ERROR_MESSAGE = "Enter a recipe title.";
 const INGREDIENT_1 = "2 cups flour";
 const INGREDIENT_2 = "1 cup milk";
@@ -81,6 +83,28 @@ describe("RecipeCreateForm", () => {
       tips: [],
     });
     expect(screen.queryByText(ENTER_TITLE_ERROR_MESSAGE)).toBeNull();
+  });
+
+  it.each([
+    [`  ${DESCRIPTION}  `, DESCRIPTION],
+    ["", undefined],
+    [" \n  ", undefined],
+  ])("normalizes description %p for submission", async (description, expectedDescription) => {
+    const onSubmit = jest.fn().mockResolvedValue(undefined);
+
+    await renderRecipeCreateForm(onSubmit);
+
+    await fireEvent.changeText(screen.getByLabelText(TITLE_INPUT_LABEL), RECIPE_TITLE);
+    await fireEvent.changeText(screen.getByLabelText(DESCRIPTION_LABEL), description);
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_BUTTON_LABEL }));
+
+    expect(onSubmit).toHaveBeenCalledWith({
+      title: RECIPE_TITLE,
+      description: expectedDescription,
+      ingredients: [],
+      steps: [],
+      tips: [],
+    });
   });
 
   it("submits numeric times and preserves an independently entered total", async () => {
@@ -245,6 +269,7 @@ describe("RecipeCreateForm", () => {
     await fireEvent.changeText(screen.getByLabelText(TOTAL_TIME_LABEL), "40");
     await fireEvent.changeText(screen.getByLabelText(SERVINGS_LABEL), "1.5");
     await fireEvent.changeText(screen.getByLabelText(SERVINGS_UNIT_LABEL), "loaves");
+    await fireEvent.changeText(screen.getByLabelText(DESCRIPTION_LABEL), DESCRIPTION);
     const saveButton = await screen.findByRole("button", { name: SAVE_BUTTON_LABEL });
     await fireEvent.press(saveButton);
     await screen.findByText(SAVE_RECIPE_ERROR_MESSAGE);
@@ -257,6 +282,7 @@ describe("RecipeCreateForm", () => {
     expect(screen.getByLabelText(TOTAL_TIME_LABEL)).toHaveDisplayValue("40");
     expect(screen.getByLabelText(SERVINGS_LABEL)).toHaveDisplayValue("1.5");
     expect(screen.getByLabelText(SERVINGS_UNIT_LABEL)).toHaveDisplayValue("loaves");
+    expect(screen.getByLabelText(DESCRIPTION_LABEL)).toHaveDisplayValue(DESCRIPTION);
     await fireEvent.press(saveButton);
 
     expect(onSubmit).toHaveBeenCalledTimes(2);
@@ -270,6 +296,7 @@ describe("RecipeCreateForm", () => {
       total_time_minutes: 40,
       base_servings: 1.5,
       servings_unit: "loaves",
+      description: DESCRIPTION,
     });
     expect(screen.queryByText(SAVE_RECIPE_ERROR_MESSAGE)).toBeNull();
     expect(saveButton).toBeEnabled();
