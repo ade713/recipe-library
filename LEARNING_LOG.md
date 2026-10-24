@@ -749,3 +749,24 @@ Learned:
 Next:
 
 - Submit the focused time-entry PR before starting another creation-field milestone.
+
+
+## Manual Recipe Servings and Yield Entry — 2026-10-23
+
+Built:
+
+- Added optional quantity and unit inputs with shared row styles, a decimal keyboard for quantity, and a text keyboard for units.
+- Converted finite nonnegative quantities, trimmed optional units, and preserved both inputs through save failures.
+- Extended form, API, and navigation tests; all 264 mobile tests and TypeScript checks passed.
+- Verified decimal yield, unitless quantity, zero and blanks, retry, keyboard access, and enlarged text on Android.
+
+Learned:
+
+- Number.isFinite() allows decimal quantities while rejecting NaN and Infinity; minutes still require Number.isSafeInteger(). Both fields permit zero.
+- Normalizing a blank unit to undefined lets JSON.stringify omit it so the backend uses its default.
+- expect.objectContaining() checks selected fields while allowing the rest of a submitted payload.
+- Layout styles can be named by their role and reused across rows with different field counts.
+
+Next:
+
+- Submit the focused servings/yield PR before adding another creation-field milestone.
