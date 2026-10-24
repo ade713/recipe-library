@@ -101,4 +101,6 @@ export type RecipeCreateRequest = {
   prep_time_minutes?: number;
   cook_time_minutes?: number;
   total_time_minutes?: number;
+  base_servings?: number;
+  servings_unit?: string;
 };
