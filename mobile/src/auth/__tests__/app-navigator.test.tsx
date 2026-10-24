@@ -383,6 +383,8 @@ describe("AppNavigator", () => {
     await fireEvent.changeText(screen.getByLabelText("Prep time (minutes)"), "10");
     await fireEvent.changeText(screen.getByLabelText("Cook time (minutes)"), "0");
     await fireEvent.changeText(screen.getByLabelText("Total time (minutes)"), "30");
+    await fireEvent.changeText(screen.getByLabelText("Servings or yield quantity"), "1.5");
+    await fireEvent.changeText(screen.getByLabelText("Yield unit (optional)"), "loaves");
     await fireEvent.press(screen.getByRole("button", { name: SAVE_RECIPE_TEXT }));
 
     expect(saveMock).toHaveBeenCalledWith({
@@ -393,6 +395,8 @@ describe("AppNavigator", () => {
       prep_time_minutes: 10,
       cook_time_minutes: 0,
       total_time_minutes: 30,
+      base_servings: 1.5,
+      servings_unit: "loaves",
     });
     expect(await screen.findByText(RECIPE_DETAIL_TEXT)).toBeTruthy();
     expect(navigation.getPathname()).toBe(`/recipes/${recipe.id}`);

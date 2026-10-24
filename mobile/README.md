@@ -411,6 +411,27 @@ All 256 mobile tests across twenty suites and TypeScript checks passed. Android
 checks verified saved times including zero and an independent total, blank times,
 failure/retry preservation, and keyboard and scrolling access.
 
+## Manual recipe servings and yield entry
+
+The creation form accepts an optional quantity and unit in a shared row below
+times. Quantity uses a decimal keyboard and accepts finite nonnegative numbers,
+including decimals and zero. Blank quantities remain unspecified. Unit text is
+trimmed, and blank units become undefined; JSON serialization omits undefined
+fields. Unit input disables autocorrection and automatic capitalization.
+
+Quantity validation runs before saving and uses separate feedback from save
+failures. Failed saves preserve both inputs for retry. The existing detail screen
+shows servings when no unit is supplied and yield when a unit is present; without
+a quantity, it hides the display. This change does not implement ingredient scaling.
+
+The times and yield sections reuse fieldsRow, fieldColumn, and compactInput
+styles. Visible text constants remain distinct from accessibility labels.
+Form tests cover conversion, blanks, invalid quantities, correction, and retry;
+existing API and navigation tests verify serialization and forwarding. All 264
+mobile tests across twenty suites and TypeScript checks passed. The user verified
+Android decimal yield with a unit, quantity without a unit, zero and blanks,
+failed-save retry, decimal keyboard access, and enlarged-text layout.
+
 ## Secure token storage
 
 `src/auth/token-storage.ts` wraps Expo SecureStore with three operations:

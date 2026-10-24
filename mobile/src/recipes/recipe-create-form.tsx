@@ -10,6 +10,7 @@ const ADD_TIP_LABEL = "Add tip";
 const COOK_TEXT = "Cook";
 const COOK_TIME_LABEL = "Cook time (minutes)";
 const ENTER_TITLE_ERROR_MESSAGE = "Enter a recipe title.";
+const INVALID_SERVINGS_MESSAGE = "Enter a servings or yield quantity of zero or greater.";
 const INVALID_TIME_MESSAGE = "Enter times as whole minutes, zero or greater.";
 const PREP_TEXT = "Prep";
 const PREP_TIME_LABEL = "Prep time (minutes)";
@@ -18,6 +19,11 @@ const REMOVE_STEP_LABEL = "Remove step";
 const REMOVE_TIP_LABEL = "Remove tip";
 const SAVE_BUTTON_LABEL = "Save recipe";
 const SAVE_RECIPE_ERROR_MESSAGE = "Unable to save recipe. Please try again.";
+const SERVINGS_HEADING = "Servings / yield";
+const SERVINGS_LABEL = "Servings or yield quantity";
+const SERVINGS_QUANTITY_TEXT = "Quantity";
+const SERVINGS_UNIT_LABEL = "Yield unit (optional)";
+const SERVINGS_UNIT_TEXT = "Unit (optional)";
 const TIME_HEADING = "Times (minutes)";
 const TITLE_INPUT_LABEL = "Recipe title";
 const TOTAL_TEXT = "Total";
@@ -40,6 +46,8 @@ type RecipeCreateFormValues = {
   prep_time_minutes?: number;
   cook_time_minutes?: number;
   total_time_minutes?: number;
+  base_servings?: number;
+  servings_unit?: string;
 };
 
 type RecipeCreateFormProps = {
@@ -60,11 +68,27 @@ const parseOptionalMinutes = (value: string): number | undefined => {
   return minutes;
 };
 
+const parseOptionalServings = (value: string): number | undefined => {
+  const trimmedValue = value.trim();
+  if (trimmedValue.length === 0) {
+    return undefined;
+  }
+
+  const servings = Number(trimmedValue);
+  if (servings < 0 || !Number.isFinite(servings)) {
+    throw new Error(INVALID_SERVINGS_MESSAGE);
+  }
+
+  return servings;
+};
+
 export function RecipeCreateForm({ onSubmit }: RecipeCreateFormProps) {
   const [title, setTitle] = useState("");
   const [prepTime, setPrepTime] = useState("");
   const [cookTime, setCookTime] = useState("");
   const [totalTime, setTotalTime] = useState("");
+  const [servings, setServings] = useState("");
+  const [servingsUnit, setServingsUnit] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const {
@@ -109,6 +133,16 @@ export function RecipeCreateForm({ onSubmit }: RecipeCreateFormProps) {
       return;
     }
 
+    let parsedServings: number | undefined;
+    try {
+      parsedServings = parseOptionalServings(servings);
+    } catch {
+      setErrorMessage(INVALID_SERVINGS_MESSAGE);
+      return;
+    }
+
+    const normalizedUnit = servingsUnit.trim() || undefined;
+
     setIsSubmitting(true);
     setErrorMessage(null);
 
@@ -139,6 +173,8 @@ export function RecipeCreateForm({ onSubmit }: RecipeCreateFormProps) {
         ingredients: formattedIngredients,
         steps: formattedSteps,
         tips: formattedTips,
+        base_servings: parsedServings,
+        servings_unit: normalizedUnit,
         ...times,
       });
     } catch {
@@ -161,37 +197,64 @@ export function RecipeCreateForm({ onSubmit }: RecipeCreateFormProps) {
       />
 
       <Text>{TIME_HEADING}</Text>
-      <View style={styles.timesRow}>
-        <View style={styles.timeField}>
+      <View style={styles.fieldsRow}>
+        <View style={styles.fieldColumn}>
           <Text>{PREP_TEXT}</Text>
           <TextInput
             accessibilityLabel={PREP_TIME_LABEL}
             value={prepTime}
             onChangeText={setPrepTime}
             keyboardType='number-pad'
-            style={[styles.formInput, styles.timeInput]}
+            style={[styles.formInput, styles.compactInput]}
           />
         </View>
 
-        <View style={styles.timeField}>
+        <View style={styles.fieldColumn}>
           <Text>{COOK_TEXT}</Text>
           <TextInput
             accessibilityLabel={COOK_TIME_LABEL}
             value={cookTime}
             onChangeText={setCookTime}
             keyboardType='number-pad'
-            style={[styles.formInput, styles.timeInput]}
+            style={[styles.formInput, styles.compactInput]}
           />
         </View>
 
-        <View style={styles.timeField}>
+        <View style={styles.fieldColumn}>
           <Text>{TOTAL_TEXT}</Text>
           <TextInput
             accessibilityLabel={TOTAL_TIME_LABEL}
             value={totalTime}
             onChangeText={setTotalTime}
             keyboardType='number-pad'
-            style={[styles.formInput, styles.timeInput]}
+            style={[styles.formInput, styles.compactInput]}
+          />
+        </View>
+      </View>
+
+      <Text>{SERVINGS_HEADING}</Text>
+      <View style={styles.fieldsRow}>
+        <View style={styles.fieldColumn}>
+          <Text>{SERVINGS_QUANTITY_TEXT}</Text>
+          <TextInput
+            accessibilityLabel={SERVINGS_LABEL}
+            value={servings}
+            onChangeText={setServings}
+            keyboardType='decimal-pad'
+            style={[styles.formInput, styles.compactInput]}
+          />
+        </View>
+
+        <View style={styles.fieldColumn}>
+          <Text>{SERVINGS_UNIT_TEXT}</Text>
+          <TextInput
+            accessibilityLabel={SERVINGS_UNIT_LABEL}
+            autoCorrect={false}
+            autoCapitalize='none'
+            placeholder='e.g. servings'
+            value={servingsUnit}
+            onChangeText={setServingsUnit}
+            style={[styles.formInput, styles.compactInput]}
           />
         </View>
       </View>
@@ -259,16 +322,16 @@ const styles = StyleSheet.create({
     marginTop: 2,
     marginBottom: 2,
   },
-  timesRow: {
+  fieldsRow: {
     flexDirection: "row",
     gap: 8,
     marginBottom: 8,
   },
-  timeField: {
+  fieldColumn: {
     flex: 1,
     minWidth: 0,
   },
-  timeInput: {
+  compactInput: {
     minHeight: 48,
     paddingHorizontal: 8,
   },

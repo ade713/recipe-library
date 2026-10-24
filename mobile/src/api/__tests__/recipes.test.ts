@@ -291,6 +291,8 @@ describe("createRecipe", () => {
       prep_time_minutes: 10,
       cook_time_minutes: 0,
       total_time_minutes: 30,
+      base_servings: 1.5,
+      servings_unit: "loaves",
     };
     const recipe = makeRecipeDetailResponse();
 
