@@ -790,3 +790,24 @@ Learned:
 Next:
 
 - Submit the focused description-entry PR. Description display on the detail screen remains follow-up work.
+
+
+## Recipe Detail Description Display — 2026-10-25
+
+Built:
+
+- Displayed nonblank descriptions directly below the recipe title while preserving the original text.
+- Hid null, empty, and whitespace-only descriptions.
+- Added presence and absence tests; Android verification confirmed multiline display and no empty block for missing descriptions.
+
+Learned:
+
+- A local const gives TypeScript a stable value to narrow through a boolean guard.
+- Use trim() for the visibility check while rendering the original description.
+- A generic accessibility label can replace useful spoken text; a test ID locates the element without changing its accessible content.
+- Absence tests complement presence tests, and waiting for the loaded title prevents checking absence prematurely.
+- An identity normalizer and exact text assertion preserve whitespace sensitivity in rendering tests.
+
+Next:
+
+- Submit the focused description-display PR.

@@ -444,7 +444,12 @@ normalization and retry preservation; existing API and navigation tests verify
 serialization and forwarding. All 267 mobile tests across twenty suites,
 TypeScript, and whitespace checks passed. The user verified Android multiline
 editing, keyboard/scrolling access, blank submission, and failed-save retry.
-The detail screen does not yet display descriptions; that remains a follow-up.
+The detail screen now displays nonblank descriptions directly beneath the title,
+preserving the original text, including surrounding whitespace and internal line
+breaks. Null, empty, and whitespace-only descriptions render no description block.
+A test ID locates the block without replacing its screen-reader text with a generic
+accessibility label. All 39 detail-screen tests and TypeScript checks passed; the
+user verified multiline display and absent-description behavior on Android.
 
 ## Secure token storage
 
