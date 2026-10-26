@@ -8,10 +8,13 @@ const COOK_TIME_LABEL = "Cook time (minutes)";
 const DESCRIPTION = "A comforting soup.\nGreat for cold evenings.";
 const DESCRIPTION_LABEL = "Description (optional)";
 const ENTER_TITLE_ERROR_MESSAGE = "Enter a recipe title.";
+const IMAGE_URL = "https://images.example.com/soup?size=large#photo";
+const IMAGE_URL_LABEL = "Image URL (optional)";
 const INGREDIENT_1 = "2 cups flour";
 const INGREDIENT_2 = "1 cup milk";
 const INGREDIENT_INPUT_LABEL_1 = "Ingredient 1";
 const INGREDIENT_INPUT_LABEL_2 = "Ingredient 2";
+const INVALID_IMAGE_URL_MESSAGE = "Enter a valid HTTP or HTTPS image URL.";
 const INVALID_SERVINGS_MESSAGE = "Enter a servings or yield quantity of zero or greater.";
 const INVALID_SOURCE_URL_MESSAGE = "Enter a valid HTTP or HTTPS recipe URL.";
 const INVALID_TIME_MESSAGE = "Enter times as whole minutes, zero or greater.";
@@ -161,6 +164,57 @@ describe("RecipeCreateForm", () => {
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ source_url: SOURCE_URL }));
     expect(screen.queryByText(INVALID_SOURCE_URL_MESSAGE)).toBeNull();
   });
+
+  it.each([
+    [`  ${IMAGE_URL}  `, IMAGE_URL],
+    ["http://example.com/photo", "http://example.com/photo"],
+    ["HTTPS://Example.COM:443/photo", "HTTPS://Example.COM:443/photo"],
+    ["", undefined],
+    ["   ", undefined],
+  ])("normalizes image URL %p independently of the source URL", async (imageUrl, expectedImageUrl) => {
+    const onSubmit = jest.fn().mockResolvedValue(undefined);
+
+    await renderRecipeCreateForm(onSubmit);
+
+    await fireEvent.changeText(screen.getByLabelText(TITLE_INPUT_LABEL), RECIPE_TITLE);
+    await fireEvent.changeText(screen.getByLabelText(SOURCE_URL_LABEL), SOURCE_URL);
+    await fireEvent.changeText(screen.getByLabelText(IMAGE_URL_LABEL), imageUrl);
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_BUTTON_LABEL }));
+
+    expect(onSubmit).toHaveBeenCalledWith({
+      title: RECIPE_TITLE,
+      source_url: SOURCE_URL,
+      image_url: expectedImageUrl,
+      ingredients: [],
+      steps: [],
+      tips: [],
+    });
+  });
+
+  it.each(["not a URL", "https://", "ftp://example.com/photo"])(
+    "rejects image URL %p and allows correction",
+    async (imageUrl) => {
+      const onSubmit = jest.fn().mockResolvedValue(undefined);
+
+      await renderRecipeCreateForm(onSubmit);
+
+      await fireEvent.changeText(screen.getByLabelText(TITLE_INPUT_LABEL), RECIPE_TITLE);
+      await fireEvent.changeText(screen.getByLabelText(IMAGE_URL_LABEL), imageUrl);
+      const saveButton = screen.getByRole("button", { name: SAVE_BUTTON_LABEL });
+      await fireEvent.press(saveButton);
+
+      expect(screen.getByText(INVALID_IMAGE_URL_MESSAGE)).toBeTruthy();
+      expect(screen.queryByText(INVALID_SOURCE_URL_MESSAGE)).toBeNull();
+      expect(onSubmit).not.toHaveBeenCalled();
+      expect(saveButton).toBeEnabled();
+
+      await fireEvent.changeText(screen.getByLabelText(IMAGE_URL_LABEL), IMAGE_URL);
+      await fireEvent.press(saveButton);
+
+      expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ image_url: IMAGE_URL }));
+      expect(screen.queryByText(INVALID_IMAGE_URL_MESSAGE)).toBeNull();
+    },
+  );
 
   it("submits numeric times and preserves an independently entered total", async () => {
     const onSubmit = jest.fn().mockResolvedValue(undefined);
@@ -326,6 +380,7 @@ describe("RecipeCreateForm", () => {
     await fireEvent.changeText(screen.getByLabelText(SERVINGS_UNIT_LABEL), "loaves");
     await fireEvent.changeText(screen.getByLabelText(DESCRIPTION_LABEL), DESCRIPTION);
     await fireEvent.changeText(screen.getByLabelText(SOURCE_URL_LABEL), SOURCE_URL);
+    await fireEvent.changeText(screen.getByLabelText(IMAGE_URL_LABEL), IMAGE_URL);
     const saveButton = await screen.findByRole("button", { name: SAVE_BUTTON_LABEL });
     await fireEvent.press(saveButton);
     await screen.findByText(SAVE_RECIPE_ERROR_MESSAGE);
@@ -340,6 +395,7 @@ describe("RecipeCreateForm", () => {
     expect(screen.getByLabelText(SERVINGS_UNIT_LABEL)).toHaveDisplayValue("loaves");
     expect(screen.getByLabelText(DESCRIPTION_LABEL)).toHaveDisplayValue(DESCRIPTION);
     expect(screen.getByLabelText(SOURCE_URL_LABEL)).toHaveDisplayValue(SOURCE_URL);
+    expect(screen.getByLabelText(IMAGE_URL_LABEL)).toHaveDisplayValue(IMAGE_URL);
     await fireEvent.press(saveButton);
 
     expect(onSubmit).toHaveBeenCalledTimes(2);
@@ -355,6 +411,7 @@ describe("RecipeCreateForm", () => {
       servings_unit: "loaves",
       description: DESCRIPTION,
       source_url: SOURCE_URL,
+      image_url: IMAGE_URL,
     });
     expect(screen.queryByText(SAVE_RECIPE_ERROR_MESSAGE)).toBeNull();
     expect(saveButton).toBeEnabled();

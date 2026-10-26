@@ -287,6 +287,7 @@ describe("createRecipe", () => {
       title: RECIPE_TITLE,
       description: "A comforting recipe.\nServe with friends.",
       source_url: "https://example.com/recipe?lang=en#ingredients",
+      image_url: "https://images.example.com/soup?size=large",
       ingredients: [{ position: 1, original_text: ingredient }],
       steps: [{ position: 1, instruction: step }],
       tips: [{ position: 1, tip: tip }],
