@@ -516,6 +516,20 @@ replacement URLs. All 300 mobile tests across twenty suites, TypeScript, and
 whitespace checks passed. Android checks verified compact missing/failed-image
 cards, working images, and navigation after image failure.
 
+## Favorite selection during manual creation
+
+A labeled Favorite switch appears above Save in a horizontal row, with the label
+on the left and switch on the right. It starts off and submits an explicit
+is_favorite boolean. Form values require that boolean; the API request type keeps
+it optional because the backend defaults omitted values to false.
+
+Failed saves preserve the selection for retry. Form tests cover default false,
+toggling on and back off, and retry preservation. Existing API/navigation tests
+verify forwarding and serialization. All 302 mobile tests across twenty suites
+and TypeScript passed before the final row styling. Android checks verified
+saving favorites, library/detail indicators, toggling off, and failed-save retry.
+The subsequent horizontal-row styling has not yet been separately verified on device.
+
 ## Secure token storage
 
 `src/auth/token-storage.ts` wraps Expo SecureStore with three operations:
