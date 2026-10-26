@@ -391,6 +391,7 @@ describe("AppNavigator", () => {
     await fireEvent.changeText(screen.getByLabelText("Description (optional)"), description);
     await fireEvent.changeText(screen.getByLabelText("Original recipe URL (optional)"), sourceUrl);
     await fireEvent.changeText(screen.getByLabelText("Image URL (optional)"), imageUrl);
+    await fireEvent(screen.getByRole("switch", { name: "Favorite" }), "valueChange", true);
     await fireEvent.press(screen.getByRole("button", { name: SAVE_RECIPE_TEXT }));
 
     expect(saveMock).toHaveBeenCalledWith({
@@ -398,6 +399,7 @@ describe("AppNavigator", () => {
       description,
       source_url: sourceUrl,
       image_url: imageUrl,
+      is_favorite: true,
       ingredients: [{ position: 1, original_text: ingredient1 }],
       steps: [{ position: 1, instruction: step1 }],
       tips: [{ position: 1, tip: tip1 }],

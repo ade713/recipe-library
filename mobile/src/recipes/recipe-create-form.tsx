@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button, StyleSheet, Text, TextInput, View } from "react-native";
+import { Button, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 
 import { RecipeFormTextRow } from "./recipe-form-text-row";
 import { useFormTextRows } from "./use-form-text-rows";
@@ -12,6 +12,7 @@ const COOK_TIME_LABEL = "Cook time (minutes)";
 const DESCRIPTION_LABEL = "Description (optional)";
 const DESCRIPTION_PLACEHOLDER = "Enter Description Here";
 const ENTER_TITLE_ERROR_MESSAGE = "Enter a recipe title.";
+const FAVORITE_LABEL = "Favorite";
 const IMAGE_URL_LABEL = "Image URL (optional)";
 const INGREDIENT_PLACEHOLDER = "Enter Ingredient Here";
 const INVALID_IMAGE_URL_MESSAGE = "Enter a valid HTTP or HTTPS image URL.";
@@ -63,6 +64,7 @@ type RecipeCreateFormValues = {
   total_time_minutes?: number;
   base_servings?: number;
   servings_unit?: string;
+  is_favorite: boolean;
 };
 
 type RecipeCreateFormProps = {
@@ -121,6 +123,7 @@ export function RecipeCreateForm({ onSubmit }: RecipeCreateFormProps) {
   const [totalTime, setTotalTime] = useState("");
   const [servings, setServings] = useState("");
   const [servingsUnit, setServingsUnit] = useState("");
+  const [isFavorite, setIsFavorite] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const {
@@ -227,6 +230,7 @@ export function RecipeCreateForm({ onSubmit }: RecipeCreateFormProps) {
         tips: formattedTips,
         base_servings: parsedServings,
         servings_unit: normalizedUnit,
+        is_favorite: isFavorite,
         ...times,
       });
     } catch {
@@ -395,6 +399,11 @@ export function RecipeCreateForm({ onSubmit }: RecipeCreateFormProps) {
       ))}
       <Button title={ADD_TIP_LABEL} onPress={handleAddTip} />
 
+      <View style={styles.favoriteRow}>
+        <Text>{FAVORITE_LABEL}</Text>
+        <Switch accessibilityLabel={FAVORITE_LABEL} value={isFavorite} onValueChange={setIsFavorite} />
+      </View>
+
       <Button title={SAVE_BUTTON_LABEL} disabled={isSubmitting} onPress={handleSubmit} />
     </View>
   );
@@ -425,5 +434,12 @@ const styles = StyleSheet.create({
   },
   descriptionInput: {
     minHeight: 96,
+  },
+  favoriteRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+    marginVertical: 8,
   },
 });

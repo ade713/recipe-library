@@ -8,6 +8,7 @@ const COOK_TIME_LABEL = "Cook time (minutes)";
 const DESCRIPTION = "A comforting soup.\nGreat for cold evenings.";
 const DESCRIPTION_LABEL = "Description (optional)";
 const ENTER_TITLE_ERROR_MESSAGE = "Enter a recipe title.";
+const FAVORITE_LABEL = "Favorite";
 const IMAGE_URL = "https://images.example.com/soup?size=large#photo";
 const IMAGE_URL_LABEL = "Image URL (optional)";
 const INGREDIENT_1 = "2 cups flour";
@@ -53,6 +54,7 @@ describe("RecipeCreateForm", () => {
 
     expect(onSubmit).toHaveBeenCalledWith({
       title: RECIPE_TITLE,
+      is_favorite: false,
       ingredients: [],
       steps: [],
       tips: [],
@@ -84,6 +86,7 @@ describe("RecipeCreateForm", () => {
 
     expect(onSubmit).toHaveBeenCalledWith({
       title: RECIPE_TITLE,
+      is_favorite: false,
       ingredients: [],
       steps: [],
       tips: [],
@@ -106,6 +109,7 @@ describe("RecipeCreateForm", () => {
 
     expect(onSubmit).toHaveBeenCalledWith({
       title: RECIPE_TITLE,
+      is_favorite: false,
       description: expectedDescription,
       ingredients: [],
       steps: [],
@@ -130,6 +134,7 @@ describe("RecipeCreateForm", () => {
 
     expect(onSubmit).toHaveBeenCalledWith({
       title: RECIPE_TITLE,
+      is_favorite: false,
       source_url: expectedSourceUrl,
       ingredients: [],
       steps: [],
@@ -183,6 +188,7 @@ describe("RecipeCreateForm", () => {
 
     expect(onSubmit).toHaveBeenCalledWith({
       title: RECIPE_TITLE,
+      is_favorite: false,
       source_url: SOURCE_URL,
       image_url: expectedImageUrl,
       ingredients: [],
@@ -229,6 +235,7 @@ describe("RecipeCreateForm", () => {
 
     expect(onSubmit).toHaveBeenCalledWith({
       title: RECIPE_TITLE,
+      is_favorite: false,
       ingredients: [],
       steps: [],
       tips: [],
@@ -251,6 +258,7 @@ describe("RecipeCreateForm", () => {
 
     expect(onSubmit).toHaveBeenCalledWith({
       title: RECIPE_TITLE,
+      is_favorite: false,
       ingredients: [],
       steps: [],
       tips: [],
@@ -297,6 +305,7 @@ describe("RecipeCreateForm", () => {
 
     expect(onSubmit).toHaveBeenCalledWith({
       title: RECIPE_TITLE,
+      is_favorite: false,
       ingredients: [],
       steps: [],
       tips: [],
@@ -324,6 +333,25 @@ describe("RecipeCreateForm", () => {
 
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ base_servings: 2.5 }));
     expect(screen.queryByText(INVALID_SERVINGS_MESSAGE)).toBeNull();
+  });
+
+  it.each([true, false])("submits favorite selection %p after toggling", async (isFavorite) => {
+    const onSubmit = jest.fn().mockResolvedValue(undefined);
+
+    await renderRecipeCreateForm(onSubmit);
+
+    const favoriteSwitch = screen.getByRole("switch", { name: FAVORITE_LABEL });
+    expect(favoriteSwitch.props.value).toBe(false);
+    await fireEvent(favoriteSwitch, "valueChange", true);
+    expect(screen.getByRole("switch", { name: FAVORITE_LABEL }).props.value).toBe(true);
+    if (!isFavorite) {
+      await fireEvent(favoriteSwitch, "valueChange", false);
+    }
+    expect(screen.getByRole("switch", { name: FAVORITE_LABEL }).props.value).toBe(isFavorite);
+    await fireEvent.changeText(screen.getByLabelText(TITLE_INPUT_LABEL), RECIPE_TITLE);
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_BUTTON_LABEL }));
+
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ is_favorite: isFavorite }));
   });
 
   it("prevents another submission while saving", async () => {
@@ -381,6 +409,7 @@ describe("RecipeCreateForm", () => {
     await fireEvent.changeText(screen.getByLabelText(DESCRIPTION_LABEL), DESCRIPTION);
     await fireEvent.changeText(screen.getByLabelText(SOURCE_URL_LABEL), SOURCE_URL);
     await fireEvent.changeText(screen.getByLabelText(IMAGE_URL_LABEL), IMAGE_URL);
+    await fireEvent(screen.getByRole("switch", { name: FAVORITE_LABEL }), "valueChange", true);
     const saveButton = await screen.findByRole("button", { name: SAVE_BUTTON_LABEL });
     await fireEvent.press(saveButton);
     await screen.findByText(SAVE_RECIPE_ERROR_MESSAGE);
@@ -396,11 +425,13 @@ describe("RecipeCreateForm", () => {
     expect(screen.getByLabelText(DESCRIPTION_LABEL)).toHaveDisplayValue(DESCRIPTION);
     expect(screen.getByLabelText(SOURCE_URL_LABEL)).toHaveDisplayValue(SOURCE_URL);
     expect(screen.getByLabelText(IMAGE_URL_LABEL)).toHaveDisplayValue(IMAGE_URL);
+    expect(screen.getByRole("switch", { name: FAVORITE_LABEL }).props.value).toBe(true);
     await fireEvent.press(saveButton);
 
     expect(onSubmit).toHaveBeenCalledTimes(2);
     expect(onSubmit).toHaveBeenLastCalledWith({
       title: RECIPE_TITLE,
+      is_favorite: true,
       ingredients: [{ position: 1, original_text: INGREDIENT_1 }],
       steps: [{ position: 1, instruction: STEP_1 }],
       tips: [{ position: 1, tip: TIP_1 }],
@@ -430,6 +461,7 @@ describe("RecipeCreateForm", () => {
 
     expect(onSubmit).toHaveBeenCalledWith({
       title: RECIPE_TITLE,
+      is_favorite: false,
       ingredients: [
         { position: 1, original_text: INGREDIENT_1 },
         { position: 2, original_text: INGREDIENT_2 },
@@ -460,6 +492,7 @@ describe("RecipeCreateForm", () => {
 
     expect(onSubmit).toHaveBeenCalledWith({
       title: RECIPE_TITLE,
+      is_favorite: false,
       ingredients: [
         { position: 1, original_text: INGREDIENT_1 },
         { position: 2, original_text: INGREDIENT_2 },
@@ -496,6 +529,7 @@ describe("RecipeCreateForm", () => {
 
     expect(onSubmit).toHaveBeenCalledWith({
       title: RECIPE_TITLE,
+      is_favorite: false,
       ingredients: [
         { position: 1, original_text: ingredient1 },
         { position: 2, original_text: ingredient3 },
@@ -523,6 +557,7 @@ describe("RecipeCreateForm", () => {
 
     expect(onSubmit).toHaveBeenCalledWith({
       title: RECIPE_TITLE,
+      is_favorite: false,
       ingredients: [{ position: 1, original_text: INGREDIENT_1 }],
       steps: [],
       tips: [],
@@ -542,6 +577,7 @@ describe("RecipeCreateForm", () => {
 
     expect(onSubmit).toHaveBeenCalledWith({
       title: RECIPE_TITLE,
+      is_favorite: false,
       ingredients: [],
       steps: [
         { position: 1, instruction: STEP_1 },
@@ -573,6 +609,7 @@ describe("RecipeCreateForm", () => {
 
     expect(onSubmit).toHaveBeenCalledWith({
       title: RECIPE_TITLE,
+      is_favorite: false,
       ingredients: [],
       steps: [
         { position: 1, instruction: multilineStep },
@@ -610,6 +647,7 @@ describe("RecipeCreateForm", () => {
 
     expect(onSubmit).toHaveBeenCalledWith({
       title: RECIPE_TITLE,
+      is_favorite: false,
       ingredients: [],
       steps: [
         { position: 1, instruction: step1 },
@@ -637,6 +675,7 @@ describe("RecipeCreateForm", () => {
 
     expect(onSubmit).toHaveBeenCalledWith({
       title: RECIPE_TITLE,
+      is_favorite: false,
       ingredients: [],
       steps: [{ position: 1, instruction: STEP_2 }],
       tips: [],
@@ -670,6 +709,7 @@ describe("RecipeCreateForm", () => {
 
     expect(onSubmit).toHaveBeenCalledWith({
       title: RECIPE_TITLE,
+      is_favorite: false,
       ingredients: [],
       steps: [],
       tips: [
@@ -702,6 +742,7 @@ describe("RecipeCreateForm", () => {
 
     expect(onSubmit).toHaveBeenCalledWith({
       title: RECIPE_TITLE,
+      is_favorite: false,
       ingredients: [],
       steps: [],
       tips: [

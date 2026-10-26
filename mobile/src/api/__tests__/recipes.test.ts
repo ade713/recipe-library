@@ -288,6 +288,7 @@ describe("createRecipe", () => {
       description: "A comforting recipe.\nServe with friends.",
       source_url: "https://example.com/recipe?lang=en#ingredients",
       image_url: "https://images.example.com/soup?size=large",
+      is_favorite: true,
       ingredients: [{ position: 1, original_text: ingredient }],
       steps: [{ position: 1, instruction: step }],
       tips: [{ position: 1, tip: tip }],
