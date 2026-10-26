@@ -480,14 +480,35 @@ validation message. The client preserves the trimmed input rather than
 serializing the parsed URL; backend validation may still normalize it.
 
 Failed saves preserve both URLs for retry. Library cards already display saved
-image URLs; detail-screen image rendering, uploads, and form previews remain
-outside this milestone. URL validation does not fetch or verify image content.
+image URLs. Detail-screen display is described below; uploads and form previews
+remain separate work. URL validation does not fetch or verify image content.
 
 Form tests cover URL spelling, blanks, invalid input, field independence,
 correction, and retry. Existing API/navigation tests verify forwarding and
 serialization. All 290 mobile tests across twenty suites and TypeScript passed.
 The user verified Android image saving and library-card display, blank submission,
 invalid-image-URL correction, and preservation of both URLs through failed-save retry.
+
+## Recipe detail images
+
+Recipe detail displays a saved image below the description at full width with a
+16:9 aspect ratio and cover cropping. Its accessible label includes the recipe
+title. Null, empty, and whitespace-only image URLs render no image block.
+
+A failed image is replaced with `Recipe image unavailable.` while the recipe
+content remains usable. Image failure state is separate from recipe-loading
+errors and resets when loading a recipe, so one failed image does not hide the
+next recipe's image.
+
+Tests cover display, missing/blank URLs, failure feedback, and failure isolation
+when changing recipes. All 296 mobile tests across twenty suites, TypeScript,
+and whitespace checks passed. Android verification covered image display and
+cropping, absent-image layout, broken-image fallback, and opening another recipe
+with a working image.
+
+Follow-up: library cards still reserve a 50x50 image area when an image fails.
+A separate focused fix will hide missing, blank, and failed card images without
+adding the detail screen's fallback message.
 
 ## Secure token storage
 

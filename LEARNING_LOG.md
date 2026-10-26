@@ -851,3 +851,24 @@ Learned:
 Next:
 
 - Submit the focused image-URL entry PR. Uploads, form previews, and detail-screen image display remain separate work.
+
+
+## Recipe Detail Image Display — 2026-10-26
+
+Built:
+
+- Displayed saved images below the description with a full-width 16:9 layout and title-based accessibility label.
+- Hid missing/blank image URLs and replaced failed images with a small message while preserving recipe content.
+- Reset image-failure state when loading recipes; added display, absence, failure, and recipe-change coverage.
+- All 296 mobile tests, TypeScript, and whitespace checks passed. Android display/cropping, absent images, failed-image fallback, and switching to another working image were verified.
+
+Learned:
+
+- Remote images need dimensions; aspectRatio derives height from the available width.
+- A recipe can load successfully even when its image fails, so the error states should remain separate.
+- Resetting image-failure state prevents an earlier recipe's failure from affecting a newly loaded recipe.
+
+Next:
+
+- Submit the focused detail-image PR.
+- Fix library-card blank image space in a separate PR by hiding missing, blank, and failed images.

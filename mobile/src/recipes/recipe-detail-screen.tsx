@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button, Linking, Pressable, ScrollView, Text } from "react-native";
+import { Button, Image, Linking, Pressable, ScrollView, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { RecipeDetailResponse } from "@/types/recipe";
@@ -8,6 +8,7 @@ import { loadRecipe, updateRecipeFavorite } from "./recipe-service";
 
 const ADD_FAVORITE_TEXT = "Add to favorites";
 const DESCRIPTION_TEST_ID = "recipe-description";
+const IMAGE_ERROR_MESSAGE = "Recipe image unavailable.";
 const INGREDIENTS_HEADER_TEXT = "Ingredients";
 const INSTRUCTIONS_HEADER_TEXT = "Instructions";
 const LOAD_RECIPE_ERROR_MESSAGE = "Unable to load recipe.";
@@ -33,6 +34,7 @@ export function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps) {
   const [openLinkError, setOpenLinkError] = useState<string | null>(null);
   const [isUpdatingFavorite, setIsUpdatingFavorite] = useState(false);
   const [updateFavoriteError, setUpdateFavoriteError] = useState<string | null>(null);
+  const [hasImageError, setHasImageError] = useState(false);
 
   const handleUpdateRecipeFavorite = async (): Promise<void> => {
     if (recipe === null || isUpdatingFavorite) {
@@ -84,6 +86,7 @@ export function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps) {
 
     setIsLoadingRecipe(true);
     setLoadRecipeError(null);
+    setHasImageError(false);
     setRecipe(null);
 
     const getRecipe = async (): Promise<void> => {
@@ -126,12 +129,28 @@ export function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps) {
     const favoriteButtonTitle = recipe.is_favorite ? REMOVE_FAVORITE_TEXT : ADD_FAVORITE_TEXT;
     const description = recipe.description;
     const shouldDisplayDescription = description !== null && description.trim().length > 0;
+    const imageUrl = recipe.image_url;
+    const shouldDisplayImage = imageUrl !== null && imageUrl.trim().length > 0;
 
     return (
       <SafeAreaView edges={["bottom"]} style={{ flex: 1 }}>
         <ScrollView>
           <Text>{recipe.title}</Text>
           {shouldDisplayDescription && <Text testID={DESCRIPTION_TEST_ID}>{description}</Text>}
+          {shouldDisplayImage &&
+            (hasImageError ? (
+              <Text>{IMAGE_ERROR_MESSAGE}</Text>
+            ) : (
+              <Image
+                source={{ uri: imageUrl }}
+                accessible={true}
+                accessibilityRole='image'
+                accessibilityLabel={`${recipe.title} photo`}
+                resizeMode='cover'
+                onError={() => setHasImageError(true)}
+                style={styles.recipeImage}
+              />
+            ))}
 
           <Button title={favoriteButtonTitle} onPress={handleUpdateRecipeFavorite} disabled={isUpdatingFavorite} />
           {updateFavoriteError !== null && <Text>{updateFavoriteError}</Text>}
@@ -183,3 +202,10 @@ export function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps) {
 
   return <Text>{LOADING_RECIPE_TEXT}</Text>;
 }
+
+const styles = StyleSheet.create({
+  recipeImage: {
+    width: "100%",
+    aspectRatio: 16 / 9,
+  },
+});
