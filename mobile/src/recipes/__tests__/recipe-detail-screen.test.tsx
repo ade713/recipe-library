@@ -8,6 +8,8 @@ import * as recipeService from "../recipe-service";
 
 const ADD_FAVORITE_TEXT = "Add to favorites";
 const DESCRIPTION_TEST_ID = "recipe-description";
+const IMAGE_ERROR_MESSAGE = "Recipe image unavailable.";
+const IMAGE_URL = "https://images.example.com/recipe.jpg";
 const INGREDIENTS_HEADER_TEXT = "Ingredients";
 const INSTRUCTIONS_HEADER_TEXT = "Instructions";
 const LOAD_RECIPE_ERROR_MESSAGE = "Unable to load recipe.";
@@ -56,6 +58,7 @@ describe("RecipeDetailScreen", () => {
   it("displays the description with internal line breaks preserved", async () => {
     const description = " A comforting soup.\nGreat for cold evenings.    ";
     const recipe = makeRecipeDetailResponse({ description });
+
     jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
 
     await renderRecipeDetailScreen();
@@ -74,6 +77,69 @@ describe("RecipeDetailScreen", () => {
     await screen.findByText(recipe.title);
 
     expect(screen.queryByTestId(DESCRIPTION_TEST_ID)).toBeNull();
+  });
+
+  it("displays the recipe image with an accessible label", async () => {
+    const recipe = makeRecipeDetailResponse({ image_url: IMAGE_URL });
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+
+    await renderRecipeDetailScreen();
+
+    const image = await screen.findByRole("image", { name: `${recipe.title} photo` });
+    expect(image.props.source).toEqual({ uri: IMAGE_URL });
+    expect(screen.queryByText(IMAGE_ERROR_MESSAGE)).toBeNull();
+  });
+
+  it.each([null, "", "  \n  "])("hides an absent or blank image URL: %p", async (imageUrl) => {
+    const recipe = makeRecipeDetailResponse({ image_url: imageUrl });
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+
+    await renderRecipeDetailScreen();
+    await screen.findByText(recipe.title);
+
+    expect(screen.queryByRole("image")).toBeNull();
+    expect(screen.queryByText(IMAGE_ERROR_MESSAGE)).toBeNull();
+  });
+
+  it("replaces a failed image with feedback while keeping recipe content available", async () => {
+    const recipe = makeRecipeDetailResponse({ image_url: IMAGE_URL });
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+
+    await renderRecipeDetailScreen();
+    const image = await screen.findByRole("image", { name: `${recipe.title} photo` });
+    await fireEvent(image, "error", { nativeEvent: { error: NETWORK_ERROR_MESSAGE } });
+
+    expect(screen.getByText(IMAGE_ERROR_MESSAGE)).toBeTruthy();
+    expect(screen.queryByRole("image")).toBeNull();
+    expect(screen.getByText(recipe.title)).toBeTruthy();
+    expect(screen.getByText(INGREDIENTS_HEADER_TEXT)).toBeTruthy();
+    expect(screen.getByText(INSTRUCTIONS_HEADER_TEXT)).toBeTruthy();
+    expect(screen.queryByText(NETWORK_ERROR_MESSAGE)).toBeNull();
+  });
+
+  it("does not carry an image failure into another recipe", async () => {
+    const firstRecipe = makeRecipeDetailResponse({ image_url: IMAGE_URL });
+    const secondRecipe = makeRecipeDetailResponse({
+      id: "second-recipe",
+      title: "Second recipe",
+      image_url: "https://images.example.com/second.jpg",
+    });
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValueOnce(firstRecipe).mockResolvedValueOnce(secondRecipe);
+
+    await renderRecipeDetailScreen();
+    await fireEvent(await screen.findByRole("image"), "error", { nativeEvent: { error: NETWORK_ERROR_MESSAGE } });
+    expect(screen.getByText(IMAGE_ERROR_MESSAGE)).toBeTruthy();
+
+    await screen.rerender(<RecipeDetailScreen recipeId={secondRecipe.id} />);
+
+    expect((await screen.findByRole("image", { name: `${secondRecipe.title} photo` })).props.source).toEqual({
+      uri: secondRecipe.image_url,
+    });
+    expect(screen.queryByText(IMAGE_ERROR_MESSAGE)).toBeNull();
   });
 
   it("shows safe feedback when loading fails", async () => {
