@@ -94,13 +94,45 @@ describe("RecipeSummaryCard", () => {
     expect(image).toHaveProp("source", { uri: imageUrl });
   });
 
-  it("omits the recipe image when unavailable", async () => {
-    const recipe = makeRecipeSummary({ image_url: null });
+  it.each([null, "", "  \n  "])("omits an unavailable or blank recipe image: %p", async (imageUrl) => {
+    const recipe = makeRecipeSummary({ image_url: imageUrl });
 
     await renderRecipeSummaryCard(recipe);
 
     expect(screen.queryByLabelText(`${recipe.title} photo`)).toBeNull();
     expect(screen.getByText(recipe.title)).toBeTruthy();
+  });
+
+  it("removes a failed image while keeping the card usable", async () => {
+    const recipe = makeRecipeSummary({ image_url: "https://example.com/broken.jpg" });
+    const onPress = jest.fn();
+
+    await render(<RecipeSummaryCard recipe={recipe} onPress={onPress} />);
+    await fireEvent(screen.getByLabelText(`${recipe.title} photo`), "error", {
+      nativeEvent: { error: "Image request failed" },
+    });
+
+    expect(screen.queryByLabelText(`${recipe.title} photo`)).toBeNull();
+    expect(screen.queryByText("Image request failed")).toBeNull();
+    expect(screen.queryByText("Recipe image unavailable.")).toBeNull();
+    expect(screen.getByText(recipe.title)).toBeTruthy();
+    await fireEvent.press(screen.getByRole("button", { name: `Open ${recipe.title}` }));
+    expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
+  it("tries a replacement image URL after an image failure", async () => {
+    const recipe = makeRecipeSummary({ image_url: "https://example.com/broken.jpg" });
+    const replacementUrl = "https://example.com/replacement.jpg";
+
+    await renderRecipeSummaryCard(recipe);
+    await fireEvent(screen.getByLabelText(`${recipe.title} photo`), "error", {
+      nativeEvent: { error: "Image request failed" },
+    });
+    expect(screen.queryByLabelText(`${recipe.title} photo`)).toBeNull();
+
+    await screen.rerender(<RecipeSummaryCard recipe={{ ...recipe, image_url: replacementUrl }} />);
+
+    expect(screen.getByLabelText(`${recipe.title} photo`)).toHaveProp("source", { uri: replacementUrl });
   });
 
   it("calls onPress when the recipe card is pressed", async () => {

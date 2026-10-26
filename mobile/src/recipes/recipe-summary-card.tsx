@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Image, Pressable, StyleSheet, Text } from "react-native";
 
 import type { RecipeSummary } from "@/types/recipe";
@@ -8,6 +9,10 @@ type RecipeSummaryCardProps = {
 };
 
 export function RecipeSummaryCard({ recipe, onPress }: RecipeSummaryCardProps) {
+  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
+
+  const imageUrl = recipe.image_url;
+  const shouldDisplayImage = imageUrl !== null && imageUrl.trim().length > 0 && imageUrl !== failedImageUrl;
   const isDisabledButton = onPress === undefined;
 
   return (
@@ -19,11 +24,12 @@ export function RecipeSummaryCard({ recipe, onPress }: RecipeSummaryCardProps) {
       style={styles.container}
     >
       <Text>{recipe.title}</Text>
-      {recipe.image_url !== null && (
+      {shouldDisplayImage && (
         <Image
-          source={{ uri: recipe.image_url }}
+          source={{ uri: imageUrl }}
           accessible={true}
           accessibilityLabel={`${recipe.title} photo`}
+          onError={() => setFailedImageUrl(imageUrl)}
           style={styles.recipeImage}
         />
       )}
