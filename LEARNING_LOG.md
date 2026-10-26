@@ -831,3 +831,23 @@ Learned:
 Next:
 
 - Submit the focused source-URL entry PR.
+
+
+## Manual Recipe Image URL Entry — 2026-10-26
+
+Built:
+
+- Added an optional image URL input and request field with independent source/image state.
+- Shared HTTP/HTTPS validation while retaining field-specific error messages and failed-save input.
+- Extended form, API, and navigation coverage; all 290 mobile tests and TypeScript passed.
+- Verified Android image saving and library-card display, blanks, correction, and both URLs surviving failed-save retry.
+
+Learned:
+
+- Shared validation removes duplicated rules while separate catches identify the field needing correction.
+- A valid URL does not prove that the remote resource contains an image.
+- Keep adjacent refactors separate from a small feature PR; payload preparation can be extracted later if needed.
+
+Next:
+
+- Submit the focused image-URL entry PR. Uploads, form previews, and detail-screen image display remain separate work.

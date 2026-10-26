@@ -471,6 +471,24 @@ the final test cleanup; all 53 form tests and TypeScript passed after cleanup.
 Android checks verified saving/opening a valid source,
 blank submission, invalid-URL correction, and failed-save retry.
 
+## Manual recipe image URL entry
+
+An optional image URL input appears below the original-recipe URL. Both fields
+share parseOptionalHttpUrl, which trims surrounding whitespace, omits blanks,
+and accepts HTTP/HTTPS URLs. Each field retains independent state and its own
+validation message. The client preserves the trimmed input rather than
+serializing the parsed URL; backend validation may still normalize it.
+
+Failed saves preserve both URLs for retry. Library cards already display saved
+image URLs; detail-screen image rendering, uploads, and form previews remain
+outside this milestone. URL validation does not fetch or verify image content.
+
+Form tests cover URL spelling, blanks, invalid input, field independence,
+correction, and retry. Existing API/navigation tests verify forwarding and
+serialization. All 290 mobile tests across twenty suites and TypeScript passed.
+The user verified Android image saving and library-card display, blank submission,
+invalid-image-URL correction, and preservation of both URLs through failed-save retry.
+
 ## Secure token storage
 
 `src/auth/token-storage.ts` wraps Expo SecureStore with three operations:
