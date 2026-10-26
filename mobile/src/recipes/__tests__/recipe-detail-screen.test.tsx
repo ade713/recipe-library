@@ -7,6 +7,7 @@ import { RecipeDetailScreen } from "../recipe-detail-screen";
 import * as recipeService from "../recipe-service";
 
 const ADD_FAVORITE_TEXT = "Add to favorites";
+const DESCRIPTION_TEST_ID = "recipe-description";
 const INGREDIENTS_HEADER_TEXT = "Ingredients";
 const INSTRUCTIONS_HEADER_TEXT = "Instructions";
 const LOAD_RECIPE_ERROR_MESSAGE = "Unable to load recipe.";
@@ -50,6 +51,29 @@ describe("RecipeDetailScreen", () => {
 
     expect(await screen.findByText(recipe.title)).toBeTruthy();
     expect(screen.queryByText(LOADING_RECIPE_TEXT)).toBeNull();
+  });
+
+  it("displays the description with internal line breaks preserved", async () => {
+    const description = " A comforting soup.\nGreat for cold evenings.    ";
+    const recipe = makeRecipeDetailResponse({ description });
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+
+    await renderRecipeDetailScreen();
+
+    expect(await screen.findByTestId(DESCRIPTION_TEST_ID)).toHaveTextContent(description, {
+      normalizer: (text) => text,
+      exact: true,
+    });
+  });
+
+  it.each([null, "", "  \n  "])("hides an absent or blank description: %p", async (description) => {
+    const recipe = makeRecipeDetailResponse({ description });
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+
+    await renderRecipeDetailScreen();
+    await screen.findByText(recipe.title);
+
+    expect(screen.queryByTestId(DESCRIPTION_TEST_ID)).toBeNull();
   });
 
   it("shows safe feedback when loading fails", async () => {

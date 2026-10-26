@@ -7,6 +7,7 @@ import type { RecipeDetailResponse } from "@/types/recipe";
 import { loadRecipe, updateRecipeFavorite } from "./recipe-service";
 
 const ADD_FAVORITE_TEXT = "Add to favorites";
+const DESCRIPTION_TEST_ID = "recipe-description";
 const INGREDIENTS_HEADER_TEXT = "Ingredients";
 const INSTRUCTIONS_HEADER_TEXT = "Instructions";
 const LOAD_RECIPE_ERROR_MESSAGE = "Unable to load recipe.";
@@ -123,11 +124,15 @@ export function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps) {
     const sourceUrl = recipe.source_url;
     const shouldDisplaySourceDomain = sourceUrl !== null && recipe.source_domain !== null;
     const favoriteButtonTitle = recipe.is_favorite ? REMOVE_FAVORITE_TEXT : ADD_FAVORITE_TEXT;
+    const description = recipe.description;
+    const shouldDisplayDescription = description !== null && description.trim().length > 0;
 
     return (
       <SafeAreaView edges={["bottom"]} style={{ flex: 1 }}>
         <ScrollView>
           <Text>{recipe.title}</Text>
+          {shouldDisplayDescription && <Text testID={DESCRIPTION_TEST_ID}>{description}</Text>}
+
           <Button title={favoriteButtonTitle} onPress={handleUpdateRecipeFavorite} disabled={isUpdatingFavorite} />
           {updateFavoriteError !== null && <Text>{updateFavoriteError}</Text>}
 
