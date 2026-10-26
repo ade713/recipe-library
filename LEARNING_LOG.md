@@ -872,3 +872,23 @@ Next:
 
 - Submit the focused detail-image PR.
 - Fix library-card blank image space in a separate PR by hiding missing, blank, and failed images.
+
+
+## Library Card Image Failure Handling — 2026-10-26
+
+Built:
+
+- Hid missing, blank, and failed library-card images without reserving image space or showing a fallback message.
+- Preserved card content and navigation after image failures.
+- Added coverage for blank URLs, failure removal, navigation, and replacement URLs; all 300 mobile tests and TypeScript passed.
+- Verified Android compact cards without working images, working-image display, and navigation after image failure.
+
+Learned:
+
+- Storing the failed URL lets a different URL render without a reset effect.
+- The same failed URL stays hidden while that card remains mounted; this is not an automatic retry mechanism.
+- Unmounting the failed Image removes its reserved layout space.
+
+Next:
+
+- Submit the focused library-card image-failure PR.

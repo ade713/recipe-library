@@ -506,9 +506,15 @@ and whitespace checks passed. Android verification covered image display and
 cropping, absent-image layout, broken-image fallback, and opening another recipe
 with a working image.
 
-Follow-up: library cards still reserve a 50x50 image area when an image fails.
-A separate focused fix will hide missing, blank, and failed card images without
-adding the detail screen's fallback message.
+Library cards now hide missing, blank, and failed images without a fallback
+message or reserved image area. Each mounted card records the URL that failed;
+a different URL can load without a reset effect, while the same failed URL is not
+retried for that mounted card. Card text and navigation remain available.
+
+Card tests cover blank URLs, failed-image removal, continued navigation, and
+replacement URLs. All 300 mobile tests across twenty suites, TypeScript, and
+whitespace checks passed. Android checks verified compact missing/failed-image
+cards, working images, and navigation after image failure.
 
 ## Secure token storage
 
