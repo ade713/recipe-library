@@ -106,4 +106,5 @@ export type RecipeCreateRequest = {
   total_time_minutes?: number;
   base_servings?: number;
   servings_unit?: string;
+  is_favorite?: boolean;
 };

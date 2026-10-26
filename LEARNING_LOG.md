@@ -892,3 +892,24 @@ Learned:
 Next:
 
 - Submit the focused library-card image-failure PR.
+
+
+## Favorite Selection During Manual Creation — 2026-10-26
+
+Built:
+
+- Added a controlled Favorite switch, initially off, with explicit boolean submission.
+- Preserved selection after failed saves and extended form, API, and navigation coverage.
+- All 302 mobile tests and TypeScript passed; Android checks verified default state, favorite indicators, toggling off, and failed-save retry.
+- Placed the label and switch in a horizontal row after behavioral verification; the final layout still needs a device check.
+
+Learned:
+
+- Switch supplies a boolean directly, so no text parsing is needed.
+- Form values always contain the boolean, while API callers may omit it to use the backend default.
+- Using || undefined would discard an explicit false value.
+
+Next:
+
+- Submit the focused favorite-selection PR, assigned to ade713 with mobile and enhancement labels.
+- Keep tag selection as a separate milestone.
