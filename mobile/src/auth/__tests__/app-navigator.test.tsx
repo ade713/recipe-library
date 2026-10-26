@@ -361,6 +361,7 @@ describe("AppNavigator", () => {
 
   it("saves a new recipe and opens its detail screen", async () => {
     const description = "A comforting recipe.\nServe with friends.";
+    const sourceUrl = "https://example.com/recipe?lang=en#ingredients";
     const recipe = makeRecipeDetailResponse({ title: RECIPE_TITLE, description });
     const ingredientLabel = "Ingredient 1";
     const ingredient1 = "2 cups flour";
@@ -387,11 +388,13 @@ describe("AppNavigator", () => {
     await fireEvent.changeText(screen.getByLabelText("Servings or yield quantity"), "1.5");
     await fireEvent.changeText(screen.getByLabelText("Yield unit (optional)"), "loaves");
     await fireEvent.changeText(screen.getByLabelText("Description (optional)"), description);
+    await fireEvent.changeText(screen.getByLabelText("Original recipe URL (optional)"), sourceUrl);
     await fireEvent.press(screen.getByRole("button", { name: SAVE_RECIPE_TEXT }));
 
     expect(saveMock).toHaveBeenCalledWith({
       title: recipe.title,
       description,
+      source_url: sourceUrl,
       ingredients: [{ position: 1, original_text: ingredient1 }],
       steps: [{ position: 1, instruction: step1 }],
       tips: [{ position: 1, tip: tip1 }],

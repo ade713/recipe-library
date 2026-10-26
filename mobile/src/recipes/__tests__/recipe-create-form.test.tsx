@@ -13,6 +13,7 @@ const INGREDIENT_2 = "1 cup milk";
 const INGREDIENT_INPUT_LABEL_1 = "Ingredient 1";
 const INGREDIENT_INPUT_LABEL_2 = "Ingredient 2";
 const INVALID_SERVINGS_MESSAGE = "Enter a servings or yield quantity of zero or greater.";
+const INVALID_SOURCE_URL_MESSAGE = "Enter a valid HTTP or HTTPS recipe URL.";
 const INVALID_TIME_MESSAGE = "Enter times as whole minutes, zero or greater.";
 const NETWORK_ERROR_MESSAGE = "Network failure";
 const PREP_TIME_LABEL = "Prep time (minutes)";
@@ -21,6 +22,8 @@ const SAVE_BUTTON_LABEL = "Save recipe";
 const SAVE_RECIPE_ERROR_MESSAGE = "Unable to save recipe. Please try again.";
 const SERVINGS_LABEL = "Servings or yield quantity";
 const SERVINGS_UNIT_LABEL = "Yield unit (optional)";
+const SOURCE_URL = "https://example.com/recipes/soup?lang=en#ingredients";
+const SOURCE_URL_LABEL = "Original recipe URL (optional)";
 const STEP_1 = "Mix the ingredients.";
 const STEP_2 = "Bake for 20 minutes.";
 const STEP_LABEL_1 = "Step 1";
@@ -105,6 +108,58 @@ describe("RecipeCreateForm", () => {
       steps: [],
       tips: [],
     });
+  });
+
+  it.each([
+    [`  ${SOURCE_URL}  `, SOURCE_URL],
+    ["http://example.com/recipe", "http://example.com/recipe"],
+    ["HTTPS://Example.COM:443", "HTTPS://Example.COM:443"],
+    ["", undefined],
+    ["   ", undefined],
+  ])("normalizes source URL %p for submission", async (sourceUrl, expectedSourceUrl) => {
+    const onSubmit = jest.fn().mockResolvedValue(undefined);
+
+    await renderRecipeCreateForm(onSubmit);
+
+    await fireEvent.changeText(screen.getByLabelText(TITLE_INPUT_LABEL), RECIPE_TITLE);
+    await fireEvent.changeText(screen.getByLabelText(SOURCE_URL_LABEL), sourceUrl);
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_BUTTON_LABEL }));
+
+    expect(onSubmit).toHaveBeenCalledWith({
+      title: RECIPE_TITLE,
+      source_url: expectedSourceUrl,
+      ingredients: [],
+      steps: [],
+      tips: [],
+    });
+  });
+
+  it.each([
+    "not a URL",
+    "example.com/recipe",
+    "https://",
+    "https://bad host/recipe",
+    "ftp://example.com/recipe",
+    "javascript:alert(1)",
+  ])("rejects source URL %p and allows correction", async (sourceUrl) => {
+    const onSubmit = jest.fn().mockResolvedValue(undefined);
+
+    await renderRecipeCreateForm(onSubmit);
+
+    await fireEvent.changeText(screen.getByLabelText(TITLE_INPUT_LABEL), RECIPE_TITLE);
+    await fireEvent.changeText(screen.getByLabelText(SOURCE_URL_LABEL), sourceUrl);
+    const saveButton = screen.getByRole("button", { name: SAVE_BUTTON_LABEL });
+    await fireEvent.press(saveButton);
+
+    expect(screen.getByText(INVALID_SOURCE_URL_MESSAGE)).toBeTruthy();
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(saveButton).toBeEnabled();
+
+    await fireEvent.changeText(screen.getByLabelText(SOURCE_URL_LABEL), SOURCE_URL);
+    await fireEvent.press(saveButton);
+
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ source_url: SOURCE_URL }));
+    expect(screen.queryByText(INVALID_SOURCE_URL_MESSAGE)).toBeNull();
   });
 
   it("submits numeric times and preserves an independently entered total", async () => {
@@ -270,6 +325,7 @@ describe("RecipeCreateForm", () => {
     await fireEvent.changeText(screen.getByLabelText(SERVINGS_LABEL), "1.5");
     await fireEvent.changeText(screen.getByLabelText(SERVINGS_UNIT_LABEL), "loaves");
     await fireEvent.changeText(screen.getByLabelText(DESCRIPTION_LABEL), DESCRIPTION);
+    await fireEvent.changeText(screen.getByLabelText(SOURCE_URL_LABEL), SOURCE_URL);
     const saveButton = await screen.findByRole("button", { name: SAVE_BUTTON_LABEL });
     await fireEvent.press(saveButton);
     await screen.findByText(SAVE_RECIPE_ERROR_MESSAGE);
@@ -283,6 +339,7 @@ describe("RecipeCreateForm", () => {
     expect(screen.getByLabelText(SERVINGS_LABEL)).toHaveDisplayValue("1.5");
     expect(screen.getByLabelText(SERVINGS_UNIT_LABEL)).toHaveDisplayValue("loaves");
     expect(screen.getByLabelText(DESCRIPTION_LABEL)).toHaveDisplayValue(DESCRIPTION);
+    expect(screen.getByLabelText(SOURCE_URL_LABEL)).toHaveDisplayValue(SOURCE_URL);
     await fireEvent.press(saveButton);
 
     expect(onSubmit).toHaveBeenCalledTimes(2);
@@ -297,6 +354,7 @@ describe("RecipeCreateForm", () => {
       base_servings: 1.5,
       servings_unit: "loaves",
       description: DESCRIPTION,
+      source_url: SOURCE_URL,
     });
     expect(screen.queryByText(SAVE_RECIPE_ERROR_MESSAGE)).toBeNull();
     expect(saveButton).toBeEnabled();

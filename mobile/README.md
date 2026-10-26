@@ -451,6 +451,26 @@ A test ID locates the block without replacing its screen-reader text with a gene
 accessibility label. All 39 detail-screen tests and TypeScript checks passed; the
 user verified multiline display and absent-description behavior on Android.
 
+## Manual recipe source URL entry
+
+The creation form accepts an optional original-recipe URL below the description.
+It trims surrounding whitespace, omits blanks, and checks that nonblank input
+parses as an HTTP/HTTPS URL before saving. The client submits the trimmed input
+rather than the parsed URL's serialized form, preserving its entered spelling,
+query, and fragment. Backend HttpUrl validation may still normalize the URL.
+
+The URL keyboard disables autocorrection and automatic capitalization. Invalid
+input shows correction feedback before submission; failed saves preserve the URL
+for retry. The existing detail-screen source link opens saved URLs. This field
+does not fetch or import the webpage, and adds no other source metadata.
+
+Form tests cover HTTP/HTTPS, blanks, invalid input, correction, preservation of
+entered URL text, and retry. Existing API and navigation tests verify forwarding
+and serialization. The full 281-test mobile suite and TypeScript passed before
+the final test cleanup; all 53 form tests and TypeScript passed after cleanup.
+Android checks verified saving/opening a valid source,
+blank submission, invalid-URL correction, and failed-save retry.
+
 ## Secure token storage
 
 `src/auth/token-storage.ts` wraps Expo SecureStore with three operations:

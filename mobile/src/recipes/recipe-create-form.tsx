@@ -14,6 +14,7 @@ const DESCRIPTION_PLACEHOLDER = "Enter Description Here";
 const ENTER_TITLE_ERROR_MESSAGE = "Enter a recipe title.";
 const INGREDIENT_PLACEHOLDER = "Enter Ingredient Here";
 const INVALID_SERVINGS_MESSAGE = "Enter a servings or yield quantity of zero or greater.";
+const INVALID_SOURCE_URL_MESSAGE = "Enter a valid HTTP or HTTPS recipe URL.";
 const INVALID_TIME_MESSAGE = "Enter times as whole minutes, zero or greater.";
 const PREP_TEXT = "Prep";
 const PREP_TIME_LABEL = "Prep time (minutes)";
@@ -27,6 +28,8 @@ const SERVINGS_LABEL = "Servings or yield quantity";
 const SERVINGS_QUANTITY_TEXT = "Quantity";
 const SERVINGS_UNIT_LABEL = "Yield unit (optional)";
 const SERVINGS_UNIT_TEXT = "Unit (optional)";
+const SOURCE_URL_LABEL = "Original recipe URL (optional)";
+const SOURCE_URL_PLACEHOLDER = "Enter URL Here";
 const STEP_PLACEHOLDER = "Enter Step Here";
 const TIME_HEADING = "Times (minutes)";
 const TIP_PLACEHOLDER = "Enter Tip Here";
@@ -38,6 +41,7 @@ const TOTAL_TIME_LABEL = "Total time (minutes)";
 type RecipeCreateFormValues = {
   title: string;
   description?: string;
+  source_url?: string;
   ingredients: {
     position: number;
     original_text: string;
@@ -89,9 +93,24 @@ const parseOptionalServings = (value: string): number | undefined => {
   return servings;
 };
 
+const parseOptionalSourceUrl = (value: string): string | undefined => {
+  const trimmedValue = value.trim();
+  if (trimmedValue.length === 0) {
+    return undefined;
+  }
+
+  const sourceUrl = new URL(trimmedValue);
+  if (!["http:", "https:"].includes(sourceUrl.protocol)) {
+    throw new Error(INVALID_SOURCE_URL_MESSAGE);
+  }
+
+  return trimmedValue;
+};
+
 export function RecipeCreateForm({ onSubmit }: RecipeCreateFormProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [sourceUrl, setSourceUrl] = useState("");
   const [prepTime, setPrepTime] = useState("");
   const [cookTime, setCookTime] = useState("");
   const [totalTime, setTotalTime] = useState("");
@@ -149,6 +168,14 @@ export function RecipeCreateForm({ onSubmit }: RecipeCreateFormProps) {
       return;
     }
 
+    let parsedSourceUrl: string | undefined;
+    try {
+      parsedSourceUrl = parseOptionalSourceUrl(sourceUrl);
+    } catch {
+      setErrorMessage(INVALID_SOURCE_URL_MESSAGE);
+      return;
+    }
+
     const normalizedDescription = description.trim() || undefined;
     const normalizedUnit = servingsUnit.trim() || undefined;
 
@@ -179,6 +206,7 @@ export function RecipeCreateForm({ onSubmit }: RecipeCreateFormProps) {
     try {
       await onSubmit({
         title,
+        source_url: parsedSourceUrl,
         description: normalizedDescription,
         ingredients: formattedIngredients,
         steps: formattedSteps,
@@ -216,6 +244,18 @@ export function RecipeCreateForm({ onSubmit }: RecipeCreateFormProps) {
         autoCorrect={false}
         onChangeText={setDescription}
         style={[styles.formInput, styles.descriptionInput]}
+      />
+
+      <Text>{SOURCE_URL_LABEL}</Text>
+      <TextInput
+        accessibilityLabel={SOURCE_URL_LABEL}
+        placeholder={SOURCE_URL_PLACEHOLDER}
+        value={sourceUrl}
+        autoCapitalize='none'
+        autoCorrect={false}
+        keyboardType='url'
+        onChangeText={setSourceUrl}
+        style={styles.formInput}
       />
 
       <Text>{TIME_HEADING}</Text>

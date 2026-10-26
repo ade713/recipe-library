@@ -811,3 +811,23 @@ Learned:
 Next:
 
 - Submit the focused description-display PR.
+
+
+## Manual Recipe Source URL Entry
+
+Built:
+
+- Added an optional original-recipe URL input, request types, and validation before submission.
+- Trimmed surrounding whitespace, omitted blanks, restricted schemes to HTTP/HTTPS, and preserved input after save failures.
+- Extended form, API, and navigation tests; Android checks verified source-link opening, blanks, correction, and failed-save retry.
+
+Learned:
+
+- URL parsing does not make a network request or restrict the scheme to HTTP/HTTPS.
+- Returning trimmed input preserves its entered form; URL.toString() serializes and may normalize it.
+- Backend URL validation can still apply its own normalization.
+- Source attribution can be saved independently of webpage importing.
+
+Next:
+
+- Submit the focused source-URL entry PR.
