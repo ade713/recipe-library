@@ -913,3 +913,23 @@ Next:
 
 - Submit the focused favorite-selection PR, assigned to ade713 with mobile and enhancement labels.
 - Keep tag selection as a separate milestone.
+
+
+## Tag-List API Foundation — 2026-10-27
+
+Built:
+
+- Added TagResponse and TagListResponse types and an authenticated listTags(token) helper.
+- Accepted empty tag lists, rejected missing response bodies, and propagated API/network errors unchanged.
+- Added six mocked helper tests; all 308 mobile tests and TypeScript checks passed.
+
+Learned:
+
+- GET /tags lists all tags owned by the authenticated user, not tags attached to one recipe.
+- An empty items array is valid; undefined means the expected body is missing, not necessarily that the HTTP request failed.
+- Generic response types provide compile-time guidance without validating JSON at runtime.
+- Backend ownership checks use the token; this helper does not need a client-supplied user ID or token-storage access.
+
+Next:
+
+- Submit the focused tag-list API PR before connecting the tag picker or adding tag creation.
