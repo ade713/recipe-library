@@ -7,6 +7,7 @@ import type { ReactElement } from "react";
 import { makeRecipeDetailResponse, makeRecipeSummary } from "@/test/fixtures/recipes";
 import { makeUserResponse } from "@/test/fixtures/users";
 import * as recipeService from "@/recipes/recipe-service";
+import * as tagService from "@/tags/tag-service";
 
 import { LoginScreen } from "../login-screen";
 import { RegisterScreen } from "../register-screen";
@@ -37,6 +38,8 @@ const REGISTER_PATH = "/register";
 const REGISTER_TEXT = "Registration route";
 const SAVE_RECIPE_TEXT = "Save recipe";
 const SIGN_IN_TEXT = "Sign in";
+const TAGS_EMPTY_MESSAGE = "No tags yet.";
+const TAGS_LOADING_MESSAGE = "Loading tags...";
 
 type RouteOptions = {
   createRecipe?: () => ReactElement;
@@ -74,6 +77,10 @@ const renderRouteNavigation = async (
 };
 
 describe("AppNavigator", () => {
+  beforeEach(() => {
+    jest.spyOn(tagService, "loadTags").mockResolvedValue({ items: [] });
+  });
+
   afterEach(() => jest.useRealTimers());
 
   it("redirects signed-out users from the library to login", async () => {
@@ -357,6 +364,57 @@ describe("AppNavigator", () => {
 
     expect(await screen.findByText(LOGIN_TEXT)).toBeTruthy();
     expect(screen.queryByText(CREATE_RECIPE_TEXT)).toBeNull();
+  });
+
+  it("keeps recipe entry available while tags load", async () => {
+    jest.spyOn(session, "restoreSession").mockResolvedValue(makeUserResponse());
+    jest.spyOn(tagService, "loadTags").mockImplementation(() => new Promise(() => {}));
+
+    await renderRouteNavigation(CREATE_RECIPE_PATH, { createRecipe: NewRecipeScreen });
+
+    expect(await screen.findByText(TAGS_LOADING_MESSAGE)).toBeTruthy();
+
+    await fireEvent.changeText(screen.getByLabelText(RECIPE_TITLE_LABEL), RECIPE_TITLE);
+
+    expect(screen.getByLabelText(RECIPE_TITLE_LABEL)).toHaveDisplayValue(RECIPE_TITLE);
+    expect(screen.getByRole("button", { name: SAVE_RECIPE_TEXT })).toBeEnabled();
+  });
+
+  it("shows an empty tag state without blocking recipe entry", async () => {
+    jest.spyOn(session, "restoreSession").mockResolvedValue(makeUserResponse());
+
+    await renderRouteNavigation(CREATE_RECIPE_PATH, { createRecipe: NewRecipeScreen });
+
+    expect(await screen.findByText(TAGS_EMPTY_MESSAGE)).toBeTruthy();
+    expect(screen.queryByText(TAGS_LOADING_MESSAGE)).toBeNull();
+    expect(screen.getByRole("button", { name: SAVE_RECIPE_TEXT })).toBeEnabled();
+  });
+
+  it("retries tag loading without losing entered recipe text", async () => {
+    const tagsPrivateErrorMessage = "Private tag error";
+    const tagsLoadingErrorMessage = "Unable to load tags.";
+    const tagId = "tag-dinner";
+    const tagName = "Dinner";
+    const tagRetryButtonLabel = "Retry tags";
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(makeUserResponse());
+    const loadMock = jest
+      .spyOn(tagService, "loadTags")
+      .mockRejectedValueOnce(new Error(tagsPrivateErrorMessage))
+      .mockResolvedValueOnce({ items: [{ id: tagId, name: tagName }] });
+
+    await renderRouteNavigation(CREATE_RECIPE_PATH, { createRecipe: NewRecipeScreen });
+
+    expect(await screen.findByText(tagsLoadingErrorMessage)).toBeTruthy();
+    expect(screen.queryByText(tagsPrivateErrorMessage)).toBeNull();
+    await fireEvent.changeText(screen.getByLabelText(RECIPE_TITLE_LABEL), RECIPE_TITLE);
+    expect(screen.getByRole("button", { name: SAVE_RECIPE_TEXT })).toBeEnabled();
+    await fireEvent.press(screen.getByRole("button", { name: tagRetryButtonLabel }));
+
+    expect(await screen.findByText(tagName)).toBeTruthy();
+    expect(screen.getByLabelText(RECIPE_TITLE_LABEL)).toHaveDisplayValue(RECIPE_TITLE);
+    expect(screen.queryByText(tagsLoadingErrorMessage)).toBeNull();
+    expect(loadMock).toHaveBeenCalledTimes(2);
   });
 
   it("saves a new recipe and opens its detail screen", async () => {

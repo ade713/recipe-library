@@ -933,3 +933,24 @@ Learned:
 Next:
 
 - Submit the focused tag-list API PR before connecting the tag picker or adding tag creation.
+
+
+## Creation-Screen Tag Loading — 2026-10-27
+
+Built:
+
+- Added loadTags() using stored credentials, with missing-token handling and propagated storage/API errors.
+- Added loading, available-tag, empty, and safe error/retry states inside the creation screen's shared ScrollView.
+- Kept the recipe form mounted and saving available during tag-loading failures.
+- Added service and navigation coverage; all 317 mobile tests across twenty-two suites, TypeScript, and whitespace checks pass.
+- Android checks verified tag states, retry, title preservation, scrolling, and save availability.
+
+Learned:
+
+- Keeping the form mounted preserves entered values while tag-loading state changes.
+- The effect's active flag prevents late results from updating state; it does not cancel the request.
+- An attempt counter lets retry trigger the same loading effect.
+
+Next:
+
+- Submit the focused tag-loading PR before adding tag selection, submission, or creation.
