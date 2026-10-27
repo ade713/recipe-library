@@ -545,9 +545,31 @@ of JSON.
 
 Six mocked tests cover populated/empty results, a missing response, and
 unauthorized, server, and network errors. All 308 mobile tests across twenty-one
-suites and TypeScript checks passed. This helper is not yet connected to a screen,
-so device verification belongs to the later integration milestone. Tag-picker UI
-and tag creation remain separate work.
+suites and TypeScript checks passed. The helper is now connected through the
+tag-loading service and creation-screen integration described below. Tag-picker
+UI and tag creation remain separate work.
+
+## Available tags on recipe creation
+
+`loadTags()` in `src/tags/tag-service.ts` reads the stored access token and calls
+listTags. Missing credentials reject before an API request; storage and API
+failures propagate unchanged.
+
+The creation screen loads tags on mount and displays a Tags section inside the
+same ScrollView as the recipe form. The section shows loading feedback, available
+tag names, an empty state, or a safe error with Retry tags. Retrying increments
+an effect dependency. An active flag guards late state updates after cleanup;
+it does not cancel the request.
+
+The form stays mounted and usable throughout tag loading and retry, preserving
+entered values and allowing saving when tag loading fails. Tag selection,
+submission, and creation are separate milestones.
+
+Service and screen tests cover credential handling, propagated failures, loading,
+empty results, and retry without losing entered text. All 317 mobile tests across
+twenty-two suites and TypeScript pass after the final cleanup. Android
+checks verified available/empty tags, failure/retry feedback, title preservation,
+full-page scrolling, and save availability during tag failures.
 
 ## Secure token storage
 
