@@ -530,6 +530,25 @@ and TypeScript passed before the final row styling. Android checks verified
 saving favorites, library/detail indicators, toggling off, and failed-save retry.
 The subsequent horizontal-row styling has not yet been separately verified on device.
 
+## Tag-list API foundation
+
+`src/types/tag.ts` defines TagResponse (string id and name) and TagListResponse
+(an items array). `listTags(token)` in `src/api/tags.ts` requests GET /tags with
+the supplied Bearer token and returns the current user's tags. The backend
+performs ownership filtering; the helper sends no user ID and does not read or
+write token storage.
+
+An empty items array is a valid result. An undefined response throws
+`Expected a tag list response`; API and network errors propagate unchanged.
+The generic response type provides compile-time typing, not runtime validation
+of JSON.
+
+Six mocked tests cover populated/empty results, a missing response, and
+unauthorized, server, and network errors. All 308 mobile tests across twenty-one
+suites and TypeScript checks passed. This helper is not yet connected to a screen,
+so device verification belongs to the later integration milestone. Tag-picker UI
+and tag creation remain separate work.
+
 ## Secure token storage
 
 `src/auth/token-storage.ts` wraps Expo SecureStore with three operations:
