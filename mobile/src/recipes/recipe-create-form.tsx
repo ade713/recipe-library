@@ -68,6 +68,7 @@ type RecipeCreateFormValues = {
 };
 
 type RecipeCreateFormProps = {
+  disabled?: boolean;
   onSubmit: (values: RecipeCreateFormValues) => Promise<void>;
 };
 
@@ -113,7 +114,7 @@ const parseOptionalHttpUrl = (value: string): string | undefined => {
   return trimmedValue;
 };
 
-export function RecipeCreateForm({ onSubmit }: RecipeCreateFormProps) {
+export function RecipeCreateForm({ onSubmit, disabled }: RecipeCreateFormProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [sourceUrl, setSourceUrl] = useState("");
@@ -146,7 +147,7 @@ export function RecipeCreateForm({ onSubmit }: RecipeCreateFormProps) {
   } = useFormTextRows();
 
   const handleSubmit = async (): Promise<void> => {
-    if (isSubmitting) {
+    if (disabled || isSubmitting) {
       return;
     }
 
@@ -404,7 +405,7 @@ export function RecipeCreateForm({ onSubmit }: RecipeCreateFormProps) {
         <Switch accessibilityLabel={FAVORITE_LABEL} value={isFavorite} onValueChange={setIsFavorite} />
       </View>
 
-      <Button title={SAVE_BUTTON_LABEL} disabled={isSubmitting} onPress={handleSubmit} />
+      <Button title={SAVE_BUTTON_LABEL} disabled={disabled || isSubmitting} onPress={handleSubmit} />
     </View>
   );
 }

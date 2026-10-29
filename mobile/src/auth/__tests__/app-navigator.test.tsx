@@ -4,10 +4,12 @@ import { renderRouter, screen } from "expo-router/testing-library";
 import { Text } from "react-native";
 import type { ReactElement } from "react";
 
+import { ApiError } from "@/api/errors";
 import { makeRecipeDetailResponse, makeRecipeSummary } from "@/test/fixtures/recipes";
 import { makeUserResponse } from "@/test/fixtures/users";
 import * as recipeService from "@/recipes/recipe-service";
 import * as tagService from "@/tags/tag-service";
+import type { TagResponse } from "@/types/tag";
 
 import { LoginScreen } from "../login-screen";
 import { RegisterScreen } from "../register-screen";
@@ -41,8 +43,10 @@ const SEARCH_TAGS_LABEL = "Search tags";
 const SIGN_IN_TEXT = "Sign in";
 const TAG_ID = "tag-dinner";
 const TAG_ID_2 = "tag-quick";
+const TAG_ID_3 = "tag-breakfast";
 const TAG_NAME = "Dinner";
 const TAG_NAME_2 = "Quick";
+const TAG_NAME_3 = "Breakfast";
 const TAGS_EMPTY_MESSAGE = "No tags yet.";
 const TAGS_LOADING_MESSAGE = "Loading tags...";
 const TAGS_SEARCH_EMPTY_MESSAGE = "No matching tags.";
@@ -456,7 +460,7 @@ describe("AppNavigator", () => {
     await renderRouteNavigation(CREATE_RECIPE_PATH, { createRecipe: NewRecipeScreen });
 
     const search = await screen.findByLabelText(SEARCH_TAGS_LABEL);
-    await fireEvent.changeText(search, "Breakfast");
+    await fireEvent.changeText(search, TAG_NAME_3);
 
     expect(screen.getByText(TAGS_SEARCH_EMPTY_MESSAGE)).toBeTruthy();
     expect(screen.queryByText(TAGS_EMPTY_MESSAGE)).toBeNull();
@@ -553,6 +557,150 @@ describe("AppNavigator", () => {
     for (const tag of tags.slice(1)) {
       expect(screen.getByRole("button", { name: `Select tag ${tag.name}` })).toBeTruthy();
     }
+  });
+
+  it("offers a trimmed create action even when the user has no tags", async () => {
+    jest.spyOn(session, "restoreSession").mockResolvedValue(makeUserResponse());
+
+    await renderRouteNavigation(CREATE_RECIPE_PATH, { createRecipe: NewRecipeScreen });
+
+    expect(await screen.findByText(TAGS_EMPTY_MESSAGE)).toBeTruthy();
+    const search = await screen.findByLabelText(SEARCH_TAGS_LABEL);
+    expect(screen.queryByRole("button", { name: /^Create tag / })).toBeNull();
+
+    await fireEvent.changeText(search, `  ${TAG_NAME_3}  `);
+    expect(search).toHaveDisplayValue(`  ${TAG_NAME_3}  `);
+    expect(screen.getByRole("button", { name: `Create tag ${TAG_NAME_3}` })).toBeEnabled();
+
+    await fireEvent.changeText(search, "   ");
+    expect(screen.queryByRole("button", { name: /^Create tag / })).toBeNull();
+  });
+
+  it("hides creation for exact existing names, including selected tags, but allows partial matches", async () => {
+    jest.spyOn(session, "restoreSession").mockResolvedValue(makeUserResponse());
+    jest.spyOn(tagService, "loadTags").mockResolvedValue({ items: [{ id: TAG_ID, name: TAG_NAME }] });
+
+    await renderRouteNavigation(CREATE_RECIPE_PATH, { createRecipe: NewRecipeScreen });
+
+    const search = await screen.findByLabelText(SEARCH_TAGS_LABEL);
+    await fireEvent.changeText(search, "  dinner  ");
+    expect(screen.queryByRole("button", { name: /^Create tag / })).toBeNull();
+
+    await fireEvent.press(screen.getByRole("button", { name: `Select tag ${TAG_NAME}` }));
+    await fireEvent.changeText(search, TAG_NAME);
+    expect(screen.queryByRole("button", { name: /^Create tag / })).toBeNull();
+
+    await fireEvent.changeText(search, "Din");
+    expect(screen.getByRole("button", { name: "Create tag Din" })).toBeEnabled();
+  });
+
+  it("enforces the tag name limit on trimmed text and clears feedback after correction", async () => {
+    const validName = "a".repeat(50);
+    const tooLongName = "a".repeat(51);
+    const lengthError = "Tag names must be 50 characters or fewer.";
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(makeUserResponse());
+
+    await renderRouteNavigation(CREATE_RECIPE_PATH, { createRecipe: NewRecipeScreen });
+
+    const search = await screen.findByLabelText(SEARCH_TAGS_LABEL);
+    await fireEvent.changeText(search, tooLongName);
+    expect(screen.getByText(lengthError)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /^Create tag / })).toBeNull();
+    expect(screen.getByRole("button", { name: SAVE_RECIPE_TEXT })).toBeEnabled();
+
+    await fireEvent.changeText(search, `  ${validName}  `);
+    expect(screen.queryByText(lengthError)).toBeNull();
+    expect(screen.getByRole("button", { name: `Create tag ${validName}` })).toBeEnabled();
+  });
+
+  it("creates a trimmed tag once, selects the returned tag, and includes it when saving", async () => {
+    const savedTag: TagResponse = { id: TAG_ID_3, name: TAG_NAME_3 };
+    const creatingTagMessage = "Creating tag...";
+    let resolveCreation!: (tag: TagResponse) => void;
+    const pendingCreation = new Promise<TagResponse>((resolve) => {
+      resolveCreation = resolve;
+    });
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(makeUserResponse());
+    const createMock = jest.spyOn(tagService, "saveTag").mockReturnValue(pendingCreation);
+    const saveMock = jest.spyOn(recipeService, "saveRecipe").mockResolvedValue(makeRecipeDetailResponse());
+
+    await renderRouteNavigation(CREATE_RECIPE_PATH, { createRecipe: NewRecipeScreen });
+
+    const search = await screen.findByLabelText(SEARCH_TAGS_LABEL);
+    await fireEvent.changeText(screen.getByLabelText(RECIPE_TITLE_LABEL), RECIPE_TITLE);
+    await fireEvent.changeText(search, `  ${TAG_NAME_3}  `);
+    await fireEvent.press(screen.getByRole("button", { name: `Create tag ${TAG_NAME_3}` }));
+
+    expect(createMock).toHaveBeenCalledWith(TAG_NAME_3);
+    expect(screen.getByText(creatingTagMessage)).toBeTruthy();
+    expect(screen.getByRole("button", { name: `Create tag ${TAG_NAME_3}` })).toBeDisabled();
+    expect(search).toHaveProp("editable", false);
+    expect(screen.getByRole("button", { name: SAVE_RECIPE_TEXT })).toBeDisabled();
+
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_RECIPE_TEXT }));
+    expect(saveMock).not.toHaveBeenCalled();
+
+    await fireEvent.press(screen.getByRole("button", { name: `Create tag ${TAG_NAME_3}` }));
+    expect(createMock).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolveCreation(savedTag);
+    });
+    expect(await screen.findByRole("button", { name: `Remove tag ${TAG_NAME_3}` })).toBeTruthy();
+    expect(search).toHaveDisplayValue("");
+    expect(screen.queryByText(creatingTagMessage)).toBeNull();
+    expect(screen.getByRole("button", { name: SAVE_RECIPE_TEXT })).toBeEnabled();
+    expect(screen.queryByText(TAGS_EMPTY_MESSAGE)).toBeNull();
+    expect(screen.getByLabelText(RECIPE_TITLE_LABEL)).toHaveDisplayValue(RECIPE_TITLE);
+
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_RECIPE_TEXT }));
+    expect(saveMock).toHaveBeenCalledWith(expect.objectContaining({ tags: [TAG_NAME_3] }));
+    expect(await screen.findByText(RECIPE_DETAIL_TEXT)).toBeTruthy();
+  });
+
+  it.each([
+    {
+      label: "network failure",
+      error: new Error("Private failure"),
+      message: "Unable to create tag. Please try again.",
+    },
+    { label: "duplicate name", error: new ApiError(409), message: "A tag with this name already exists." },
+  ])("preserves the draft after tag creation fails and allows retry: $label", async ({ error, message }) => {
+    jest.spyOn(session, "restoreSession").mockResolvedValue(makeUserResponse());
+    jest.spyOn(tagService, "loadTags").mockResolvedValue({ items: [{ id: TAG_ID, name: TAG_NAME }] });
+    const createMock = jest
+      .spyOn(tagService, "saveTag")
+      .mockRejectedValueOnce(error)
+      .mockResolvedValueOnce({ id: TAG_ID_3, name: TAG_NAME_3 });
+
+    await renderRouteNavigation(CREATE_RECIPE_PATH, { createRecipe: NewRecipeScreen });
+
+    const search = await screen.findByLabelText(SEARCH_TAGS_LABEL);
+    await fireEvent.changeText(screen.getByLabelText(RECIPE_TITLE_LABEL), RECIPE_TITLE);
+    await fireEvent.changeText(search, TAG_NAME);
+    await fireEvent.press(screen.getByRole("button", { name: `Select tag ${TAG_NAME}` }));
+    await fireEvent.changeText(search, TAG_NAME_3);
+    await fireEvent.press(screen.getByRole("button", { name: `Create tag ${TAG_NAME_3}` }));
+
+    expect(await screen.findByText(message)).toBeTruthy();
+    expect(screen.getByRole("button", { name: SAVE_RECIPE_TEXT })).toBeEnabled();
+    expect(screen.queryByText(error.message)).toBeNull();
+    expect(search).toHaveDisplayValue(TAG_NAME_3);
+    expect(screen.getByLabelText(RECIPE_TITLE_LABEL)).toHaveDisplayValue(RECIPE_TITLE);
+    expect(screen.getByRole("button", { name: `Remove tag ${TAG_NAME}` })).toBeTruthy();
+    expect(screen.getByRole("button", { name: `Create tag ${TAG_NAME_3}` })).toBeEnabled();
+
+    await fireEvent.changeText(search, `${TAG_NAME_3} edited`);
+    expect(screen.queryByText(message)).toBeNull();
+
+    await fireEvent.changeText(search, TAG_NAME_3);
+    await fireEvent.press(screen.getByRole("button", { name: `Create tag ${TAG_NAME_3}` }));
+    expect(await screen.findByRole("button", { name: `Remove tag ${TAG_NAME_3}` })).toBeTruthy();
+    expect(screen.getByRole("button", { name: `Remove tag ${TAG_NAME}` })).toBeTruthy();
+    expect(screen.queryByText(message)).toBeNull();
+    expect(createMock).toHaveBeenCalledTimes(2);
   });
 
   it("submits selected tag names while excluding removed tags and unselected search text", async () => {

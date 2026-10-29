@@ -4,14 +4,20 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useHeaderHeight } from "expo-router/react-navigation";
 import { useRouter } from "expo-router";
 
-import { loadTags } from "@/tags/tag-service";
+import { ApiError } from "@/api/errors";
+import { loadTags, saveTag } from "@/tags/tag-service";
 import { RecipeCreateForm } from "@/recipes/recipe-create-form";
 import { saveRecipe } from "@/recipes/recipe-service";
 import type { RecipeCreateRequest } from "@/types/recipe";
 import type { TagResponse } from "@/types/tag";
 
+const CREATING_TAG_MESSAGE = "Creating tag...";
+const MAX_TAG_LENGTH = 50;
 const MAX_TAG_SUGGESTIONS = 5;
 const RETRY_TAGS_BUTTON_LABEL = "Retry tags";
+const TAG_CREATE_ERROR_MESSAGE = "Unable to create tag. Please try again.";
+const TAG_DUPLICATE_ERROR_MESSAGE = "A tag with this name already exists.";
+const TAG_NAME_LENGTH_ERROR_MESSAGE = "Tag names must be 50 characters or fewer.";
 const TAGS_EMPTY_MESSAGE = "No tags yet.";
 const TAGS_HEADER = "Tags";
 const TAGS_LOADING_ERROR_MESSAGE = "Unable to load tags.";
@@ -29,6 +35,43 @@ export default function NewRecipeScreen() {
   const [tagLoadingAttempt, setTagLoadingAttempt] = useState(0);
   const [tagSearchTerm, setTagSearchTerm] = useState("");
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [isCreatingTag, setIsCreatingTag] = useState(false);
+  const [tagCreateError, setTagCreateError] = useState<string | null>(null);
+
+  const handleCreateTag = async (): Promise<void> => {
+    if (isCreatingTag) {
+      return;
+    }
+
+    const newTagName = tagSearchTerm.trim();
+    if (newTagName.length === 0) {
+      return;
+    }
+    if (Array.from(newTagName).length > MAX_TAG_LENGTH) {
+      return;
+    }
+    if (tags.some((tag) => tag.name.toLowerCase() === newTagName.toLowerCase())) {
+      return;
+    }
+
+    setIsCreatingTag(true);
+    setTagCreateError(null);
+
+    try {
+      const result = await saveTag(newTagName);
+
+      setTags((currentTags) => [...currentTags, result]);
+      handleSelectTag(result.id);
+    } catch (error: unknown) {
+      if (error instanceof ApiError && error.status === 409) {
+        setTagCreateError(TAG_DUPLICATE_ERROR_MESSAGE);
+      } else {
+        setTagCreateError(TAG_CREATE_ERROR_MESSAGE);
+      }
+    } finally {
+      setIsCreatingTag(false);
+    }
+  };
 
   const handleSelectTag = (newTagId: string): void => {
     setSelectedTagIds((currentTagIds) =>
@@ -41,7 +84,12 @@ export default function NewRecipeScreen() {
     setSelectedTagIds((currentTagIds) => currentTagIds.filter((tagId) => tagId !== removeTagId));
   };
 
-  const handleSaveRecipe = async (values: RecipeCreateRequest) => {
+  const handleChangeSearchInput = (searchText: string): void => {
+    setTagCreateError(null);
+    setTagSearchTerm(searchText);
+  };
+
+  const handleSaveRecipe = async (values: RecipeCreateRequest): Promise<void> => {
     const selectedTagNames = tags.filter((tag) => selectedTagIds.includes(tag.id)).map((tag) => tag.name);
     const payload = { ...values, tags: selectedTagNames };
     const recipe = await saveRecipe(payload);
@@ -87,6 +135,32 @@ export default function NewRecipeScreen() {
     setTagError(null);
 
     setTagLoadingAttempt((attempt) => attempt + 1);
+  };
+
+  const renderCreateTagButton = () => {
+    const newTagName = tagSearchTerm.trim();
+    if (newTagName.length === 0) {
+      return null;
+    }
+
+    if (Array.from(newTagName).length > MAX_TAG_LENGTH) {
+      return null;
+    }
+
+    if (tags.some((tag) => tag.name.toLowerCase() === newTagName.toLowerCase())) {
+      return null;
+    }
+
+    return (
+      <Button
+        accessibilityLabel={`Create tag ${newTagName}`}
+        title={`Create ${newTagName}`}
+        disabled={isCreatingTag}
+        onPress={() => {
+          void handleCreateTag();
+        }}
+      />
+    );
   };
 
   const renderMatchingTags = () => {
@@ -161,9 +235,6 @@ export default function NewRecipeScreen() {
         </>
       );
     }
-    if (tags.length === 0) {
-      return <Text>{TAGS_EMPTY_MESSAGE}</Text>;
-    }
 
     return (
       <>
@@ -173,12 +244,19 @@ export default function NewRecipeScreen() {
           placeholder={TAGS_SEARCH_PLACEHOLDER}
           autoCorrect={false}
           autoCapitalize='none'
+          editable={!isCreatingTag}
           value={tagSearchTerm}
-          onChangeText={setTagSearchTerm}
-          style={styles.formInput}
+          onChangeText={(searchText) => handleChangeSearchInput(searchText)}
+          style={[styles.formInput, isCreatingTag && styles.disabledInput]}
         />
 
+        {tags.length === 0 && <Text>{TAGS_EMPTY_MESSAGE}</Text>}
         {renderMatchingTags()}
+
+        {Array.from(tagSearchTerm.trim()).length > MAX_TAG_LENGTH && <Text>{TAG_NAME_LENGTH_ERROR_MESSAGE}</Text>}
+        {renderCreateTagButton()}
+        {isCreatingTag && <Text>{CREATING_TAG_MESSAGE}</Text>}
+        {tagCreateError !== null && <Text>{tagCreateError}</Text>}
       </>
     );
   };
@@ -189,7 +267,7 @@ export default function NewRecipeScreen() {
         <ScrollView keyboardShouldPersistTaps='handled'>
           <Text>{TAGS_HEADER}</Text>
           {renderTagsSection()}
-          <RecipeCreateForm onSubmit={handleSaveRecipe} />
+          <RecipeCreateForm onSubmit={handleSaveRecipe} disabled={isCreatingTag} />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -208,6 +286,11 @@ const styles = StyleSheet.create({
     borderStyle: "solid",
     marginTop: 2,
     marginBottom: 2,
+  },
+  disabledInput: {
+    backgroundColor: "#F0F0F0",
+    borderColor: "#BDBDBD",
+    color: "#757575",
   },
   tagButton: {
     alignSelf: "flex-start",
