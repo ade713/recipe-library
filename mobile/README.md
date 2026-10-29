@@ -489,6 +489,19 @@ serialization. All 290 mobile tests across twenty suites and TypeScript passed.
 The user verified Android image saving and library-card display, blank submission,
 invalid-image-URL correction, and preservation of both URLs through failed-save retry.
 
+## Recipe detail tags
+
+The detail screen displays saved tag names as read-only chips in a wrapping row
+above Ingredients. A Tags heading is exposed as an accessibility header. The
+entire section is hidden when the recipe has no tags. Names come directly from
+the current recipe response, so switching recipes replaces the displayed tags
+without separate tag state or an additional API request.
+
+Tests cover populated and empty sections and switching recipes. All 346 mobile
+tests across twenty-two suites, TypeScript, and whitespace checks pass. Android
+checks verified wrapping with multiple/long names, hiding the empty section,
+and showing only the current recipe's tags. Tag editing is outside this milestone.
+
 ## Recipe detail images
 
 Recipe detail displays a saved image below the description at full width with a
