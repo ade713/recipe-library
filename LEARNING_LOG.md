@@ -1004,3 +1004,22 @@ Learned:
 Next:
 
 - Submit the focused inline tag-creation PR.
+
+
+## Recipe Detail Tags — 2026-10-29
+
+Built:
+
+- Displayed saved tag names as read-only wrapping chips with an accessible Tags heading.
+- Hid the section for empty tag lists and covered replacement when switching recipes.
+- All 346 mobile tests across twenty-two suites, TypeScript, and whitespace checks pass.
+- Android verified multiple/long-name wrapping, empty sections, and recipe switching.
+
+Learned:
+
+- Tags already belong to the recipe object in state; separate tag state would duplicate it.
+- Read-only chips use Text rather than interactive Pressable controls.
+
+Next:
+
+- Submit the focused recipe-detail tags PR before starting recipe editing.

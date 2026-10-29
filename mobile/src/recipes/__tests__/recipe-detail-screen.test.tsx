@@ -26,6 +26,8 @@ const SOURCE_DOMAIN = "example.com";
 const SOURCE_LINK_TEXT = "Open original recipe";
 const SOURCE_URL = "https://example.com/recipe";
 const STORAGE_ERROR_MESSAGE = "Secure storage unavailable";
+const TAG_NAME_1 = "Dinner";
+const TAGS_HEADER = "Tags";
 const TIPS_HEADER_TEXT = "Source tips";
 const UPDATE_FAVORITE_ERROR_MESSAGE = "Unable to update favorite. Please try again.";
 const URL_ERROR_MESSAGE = "Cannot open URL";
@@ -53,6 +55,48 @@ describe("RecipeDetailScreen", () => {
 
     expect(await screen.findByText(recipe.title)).toBeTruthy();
     expect(screen.queryByText(LOADING_RECIPE_TEXT)).toBeNull();
+  });
+
+  it("displays saved tags as read-only text", async () => {
+    const otherTagName = "Quick";
+    const tags = [TAG_NAME_1, otherTagName];
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(makeRecipeDetailResponse({ tags }));
+
+    await renderRecipeDetailScreen();
+
+    expect(await screen.findByRole("header", { name: TAGS_HEADER })).toBeTruthy();
+    for (const tag of tags) {
+      expect(screen.getByText(tag)).toBeTruthy();
+      expect(screen.queryByRole("button", { name: tag })).toBeNull();
+    }
+  });
+
+  it("hides the Tags section when the recipe has no tags", async () => {
+    const recipe = makeRecipeDetailResponse({ tags: [] });
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+
+    await renderRecipeDetailScreen();
+
+    await screen.findByText(recipe.title);
+
+    expect(screen.queryByText(TAGS_HEADER)).toBeNull();
+  });
+
+  it("replaces tags when a different recipe loads", async () => {
+    const otherTagName = "Breakfast";
+    const first = makeRecipeDetailResponse({ tags: [TAG_NAME_1] });
+    const second = makeRecipeDetailResponse({ id: "second-recipe", title: "Breakfast recipe", tags: [otherTagName] });
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValueOnce(first).mockResolvedValueOnce(second);
+
+    await renderRecipeDetailScreen();
+
+    expect(await screen.findByText(TAG_NAME_1)).toBeTruthy();
+
+    await screen.rerender(<RecipeDetailScreen recipeId={second.id} />);
+    expect(await screen.findByText(otherTagName)).toBeTruthy();
+    expect(screen.queryByText(TAG_NAME_1)).toBeNull();
   });
 
   it("displays the description with internal line breaks preserved", async () => {
