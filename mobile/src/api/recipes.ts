@@ -1,4 +1,9 @@
-import type { RecipeCreateRequest, RecipeDetailResponse, RecipeListResponse } from "@/types/recipe";
+import type {
+  RecipeCreateRequest,
+  RecipeDetailResponse,
+  RecipeListResponse,
+  RecipeUpdateRequest,
+} from "@/types/recipe";
 
 import { apiFetch } from "./client";
 
@@ -88,6 +93,27 @@ export async function setRecipeFavorite(
 export async function createRecipe(token: string, payload: RecipeCreateRequest): Promise<RecipeDetailResponse> {
   const result = await apiFetch<RecipeDetailResponse>(RECIPES_PATH, {
     method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (result === undefined) {
+    throw new Error(RECIPE_DETAIL_ERROR_MESSAGE);
+  }
+
+  return result;
+}
+
+/** Update the supplied fields of an authenticated user's recipe. */
+export async function updateRecipe(
+  token: string,
+  recipeId: string,
+  payload: RecipeUpdateRequest,
+): Promise<RecipeDetailResponse> {
+  const result = await apiFetch<RecipeDetailResponse>(`${RECIPES_PATH}/${recipeId}`, {
+    method: "PATCH",
     headers: {
       Authorization: `Bearer ${token}`,
     },

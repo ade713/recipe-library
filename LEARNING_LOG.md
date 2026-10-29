@@ -1023,3 +1023,22 @@ Learned:
 Next:
 
 - Submit the focused recipe-detail tags PR before starting recipe editing.
+
+
+## Recipe Update API Foundation — 2026-10-29
+
+Built:
+
+- Added RecipeUpdateRequest with an optional title and an authenticated updateRecipe PATCH helper.
+- Returned the saved recipe, rejected missing responses, and preserved API/network errors.
+- Added eight tests covering request serialization, omitted fields, and failures.
+- All 354 mobile tests across twenty-two suites, TypeScript, and whitespace checks pass. No device check is needed until screen integration.
+
+Learned:
+
+- Omitted update fields must remain unchanged; creation defaults could clear existing data.
+- JSON.stringify omits undefined properties, so { title: undefined } serializes to {}.
+
+Next:
+
+- Submit the focused update API PR before adding the editing service and UI.

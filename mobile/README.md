@@ -389,6 +389,25 @@ do not manually edit .expo/types/router.d.ts or bypass the type check.
 npm test -- auth-form.test.tsx --runInBand
 ```
 
+## Recipe update API foundation
+
+`RecipeUpdateRequest` currently supports an optional title. The
+`updateRecipe(token, recipeId, payload)` helper sends an authenticated PATCH to
+`/recipes/{id}` and returns the saved `RecipeDetailResponse`. A missing response
+is rejected; API and network errors propagate unchanged.
+
+The helper serializes only the supplied payload. Undefined properties are
+omitted by JSON.stringify, and no creation defaults are added: fields omitted
+from an update must remain unchanged. For example, supplying `tags: []` in a
+future update would explicitly clear tags rather than leave them untouched.
+
+Eight helper tests cover title-only serialization, omitted title, missing
+response, and unauthorized/not-found/validation/server/network failures. All
+354 mobile tests across twenty-two suites, TypeScript, and whitespace checks
+pass. This helper is not connected to a screen yet, so no Android check is
+required for this milestone. Service integration, an Edit action, a prefilled
+form, and additional editable fields remain separate follow-up work.
+
 ## Manual recipe time entry
 
 The creation form accepts optional prep, cook, and total times in minutes.
