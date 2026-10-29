@@ -979,3 +979,28 @@ Next:
 
 - Submit the focused searchable-picker PR after the remaining layout check.
 - Add inline tag creation in a separate PR.
+
+
+## Inline Tag Creation — 2026-10-29
+
+Built:
+
+- Added authenticated tag-creation API and service helpers with failure coverage.
+- Added explicit creation from trimmed search text, name-length validation, and existing-name checks.
+- Appended and selected the returned tag, preserving recipe fields and selections on failure.
+- Disabled search, creation, and recipe saving during the tag request, with separate duplicate and generic error feedback.
+- All 343 mobile tests across twenty-two suites, TypeScript, and whitespace checks pass.
+- Android verified creation, validation, pending controls, failure/retry, recipe attachment, and independent tag persistence.
+
+Learned:
+
+- API helpers receive credentials; services retrieve them. Storage failures prevent requests.
+- Preserve API errors so the UI can distinguish duplicate names from other failures.
+- Use the returned backend ID to select the newly created tag automatically.
+- Validate before setting pending state so early returns cannot leave controls disabled.
+- A deferred test can deadlock if it awaits an event's request promise before resolving that same promise.
+- Disabled submission needs both visible feedback and a handler guard; entered form state remains mounted.
+
+Next:
+
+- Submit the focused inline tag-creation PR.
