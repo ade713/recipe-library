@@ -954,3 +954,28 @@ Learned:
 Next:
 
 - Submit the focused tag-loading PR before adding tag selection, submission, or creation.
+
+
+## Searchable Recipe Tag Picker — 2026-10-28
+
+Built:
+
+- Replaced the full tag list with local search and up to five unselected suggestions.
+- Added accessible selection/removal controls, search clearing, and wrapping chips.
+- Submitted selected tag names with recipe fields, including an empty array when nothing is selected.
+- Preserved entered recipe text and selections after failed saves.
+- All 324 mobile tests across twenty-two suites, TypeScript, and whitespace checks pass.
+- Android verified selection/removal, selected-chip wrapping, saving with/without tags, and failed-save retry. Suggestion-row wrapping was added afterward and still needs a device layout check.
+
+Learned:
+
+- Filter before limiting suggestions so matches later in the list remain searchable.
+- Derive matches from tags and search text instead of keeping duplicate state.
+- Check for duplicate IDs inside functional state updates to use the latest state.
+- Send tag names because the API expects them; the backend still resolves tags and enforces ownership.
+- Search text is not a selection, even when it exactly matches an existing tag.
+
+Next:
+
+- Submit the focused searchable-picker PR after the remaining layout check.
+- Add inline tag creation in a separate PR.

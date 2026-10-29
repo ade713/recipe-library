@@ -555,21 +555,29 @@ UI and tag creation remain separate work.
 listTags. Missing credentials reject before an API request; storage and API
 failures propagate unchanged.
 
-The creation screen loads tags on mount and displays a Tags section inside the
-same ScrollView as the recipe form. The section shows loading feedback, available
-tag names, an empty state, or a safe error with Retry tags. Retrying increments
-an effect dependency. An active flag guards late state updates after cleanup;
-it does not cancel the request.
+The creation screen loads tags on mount and displays a searchable Tags section
+inside the same ScrollView as the recipe form. Loading, empty, and safe
+error/retry states remain local to this section. Retrying increments an effect
+dependency; an active flag guards late state updates without cancelling requests.
 
-The form stays mounted and usable throughout tag loading and retry, preserving
-entered values and allowing saving when tag loading fails. Tag selection,
-submission, and creation are separate milestones.
+Search matches tag names locally, ignoring case and surrounding query spaces
+while preserving the typed text. Blank searches show no suggestions. Matching
+unselected tags are filtered before limiting suggestions to five; an unmatched
+query shows “No matching tags.” Selecting a suggestion clears the search and
+adds a removable chip. Both suggestions and selected chips use wrapping rows.
+Buttons expose explicit select/remove accessibility labels.
 
-Service and screen tests cover credential handling, propagated failures, loading,
-empty results, and retry without losing entered text. All 317 mobile tests across
-twenty-two suites and TypeScript pass after the final cleanup. Android
-checks verified available/empty tags, failure/retry feedback, title preservation,
-full-page scrolling, and save availability during tag failures.
+The screen tracks selected IDs and combines their names with the form values
+when saving. The API expects `tags: string[]`; the screen sends an empty array
+when nothing is selected. Search text and removed tags are never submitted.
+The form and selections remain intact after a failed save. Tag loading failures
+do not block recipe entry or saving. Inline tag creation is a separate follow-up.
+
+All 324 mobile tests across twenty-two suites, TypeScript, and whitespace checks
+pass. Coverage includes search limits, selection/removal, request serialization,
+and failed-save preservation. Android checks verified selection, removal,
+selected-chip wrapping, saving with and without tags, and failed-save retry.
+The later change to wrapping suggestion buttons still needs a device layout check.
 
 ## Secure token storage
 
