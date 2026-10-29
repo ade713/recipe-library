@@ -571,13 +571,39 @@ The screen tracks selected IDs and combines their names with the form values
 when saving. The API expects `tags: string[]`; the screen sends an empty array
 when nothing is selected. Search text and removed tags are never submitted.
 The form and selections remain intact after a failed save. Tag loading failures
-do not block recipe entry or saving. Inline tag creation is a separate follow-up.
+do not block recipe entry or saving. Inline tag creation is described below.
 
 All 324 mobile tests across twenty-two suites, TypeScript, and whitespace checks
 pass. Coverage includes search limits, selection/removal, request serialization,
 and failed-save preservation. Android checks verified selection, removal,
 selected-chip wrapping, saving with and without tags, and failed-save retry.
 The later change to wrapping suggestion buttons still needs a device layout check.
+
+## Inline tag creation
+
+The picker offers an explicit Create action for a trimmed, nonblank name of at
+most 50 Unicode code points when no loaded tag has the same name ignoring case.
+The search input remains available even when the user has no tags. Trimming
+preserves the typed input; the saved name retains its case.
+
+`createTag(token, name)` posts `{ name }` to `/tags`, rejects a missing response,
+and propagates API errors. `saveTag(name)` supplies the stored token, rejecting
+missing credentials and preserving storage failures. The backend scopes creation
+to the authenticated user.
+
+On success, the picker appends the returned tag, selects its ID, and clears
+search. While creation is pending, search editing, Create, and recipe saving are
+disabled. The form remains mounted and its fields are preserved. A duplicate-name
+409 gets specific feedback; other failures get a safe generic message. Editing
+or retrying clears creation errors, which are separate from tag-loading errors.
+
+Tags persist independently of recipe saving. Leaving without saving the recipe
+does not delete a newly created tag; it remains available on the next visit.
+
+All 343 mobile tests across twenty-two suites, TypeScript, and whitespace checks
+pass. Android checks verified creation with and without existing tags, validation,
+automatic selection, pending controls, failure/retry preservation, recipe
+attachment, and tag persistence after leaving without saving.
 
 ## Secure token storage
 
