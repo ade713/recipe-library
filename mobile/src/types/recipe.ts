@@ -109,3 +109,8 @@ export type RecipeCreateRequest = {
   }[];
   tags?: string[];
 };
+
+/** Fields currently supported by mobile recipe editing. */
+export type RecipeUpdateRequest = {
+  title?: string;
+};

@@ -1,9 +1,9 @@
 import { makeRecipeDetailResponse, makeRecipeSummary } from "@/test/fixtures/recipes";
-import type { RecipeListResponse } from "@/types/recipe";
+import type { RecipeListResponse, RecipeUpdateRequest } from "@/types/recipe";
 
 import * as client from "../client";
 import { ApiError } from "../errors";
-import { createRecipe, getRecipe, listRecipes, setRecipeFavorite } from "../recipes";
+import { createRecipe, getRecipe, listRecipes, setRecipeFavorite, updateRecipe } from "../recipes";
 
 const ACCESS_TOKEN = "test-access-token";
 const BASE_SERVINGS = "4";
@@ -323,5 +323,51 @@ describe("createRecipe", () => {
     jest.spyOn(client, "apiFetch").mockResolvedValue(undefined);
 
     await expect(createRecipe(ACCESS_TOKEN, payload)).rejects.toThrow(RECIPE_DETAIL_ERROR_MESSAGE);
+  });
+});
+
+describe("updateRecipe", () => {
+  it("patches only the supplied title and returns the saved recipe", async () => {
+    const payload: RecipeUpdateRequest = { title: "Updated recipe title" };
+    const response = makeRecipeDetailResponse({ id: RECIPE_ID, title: payload.title });
+    const requestMock = jest.spyOn(client, "apiFetch").mockResolvedValue(response);
+
+    expect(await updateRecipe(ACCESS_TOKEN, RECIPE_ID, payload)).toBe(response);
+    expect(requestMock).toHaveBeenCalledWith(`${RECIPES_PATH}/${RECIPE_ID}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
+      body: JSON.stringify({ title: payload.title }),
+    });
+  });
+
+  it("omits an unspecified title without inserting defaults", async () => {
+    const requestMock = jest.spyOn(client, "apiFetch").mockResolvedValue(makeRecipeDetailResponse());
+
+    await updateRecipe(ACCESS_TOKEN, RECIPE_ID, { title: undefined });
+
+    expect(requestMock).toHaveBeenCalledWith(`${RECIPES_PATH}/${RECIPE_ID}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
+      body: "{}",
+    });
+  });
+
+  it("rejects a missing recipe response", async () => {
+    jest.spyOn(client, "apiFetch").mockResolvedValue(undefined);
+
+    await expect(updateRecipe(ACCESS_TOKEN, RECIPE_ID, { title: RECIPE_TITLE }))
+      .rejects.toThrow(RECIPE_DETAIL_ERROR_MESSAGE);
+  });
+
+  it.each([
+    { label: "unauthorized", error: new ApiError(401) },
+    { label: "not found", error: new ApiError(404) },
+    { label: "invalid title", error: new ApiError(422) },
+    { label: "server error", error: new ApiError(500) },
+    { label: "network failure", error: new Error(NETWORK_ERROR_MESSAGE) },
+  ])("propagates update failures unchanged: $label", async ({ error }) => {
+    jest.spyOn(client, "apiFetch").mockRejectedValue(error);
+
+    await expect(updateRecipe(ACCESS_TOKEN, RECIPE_ID, { title: RECIPE_TITLE })).rejects.toBe(error);
   });
 });
