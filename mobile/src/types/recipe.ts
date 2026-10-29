@@ -89,6 +89,12 @@ export type RecipeCreateRequest = {
   description?: string;
   source_url?: string;
   image_url?: string;
+  prep_time_minutes?: number;
+  cook_time_minutes?: number;
+  total_time_minutes?: number;
+  base_servings?: number;
+  servings_unit?: string;
+  is_favorite?: boolean;
   ingredients?: {
     position: number;
     original_text: string;
@@ -101,10 +107,5 @@ export type RecipeCreateRequest = {
     position: number;
     tip: string;
   }[];
-  prep_time_minutes?: number;
-  cook_time_minutes?: number;
-  total_time_minutes?: number;
-  base_servings?: number;
-  servings_unit?: string;
-  is_favorite?: boolean;
+  tags?: string[];
 };

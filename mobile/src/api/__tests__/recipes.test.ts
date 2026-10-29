@@ -285,6 +285,7 @@ describe("createRecipe", () => {
     const tip = "Serve warm.";
     const payload = {
       title: RECIPE_TITLE,
+      tags: ["Dinner", "Quick"],
       description: "A comforting recipe.\nServe with friends.",
       source_url: "https://example.com/recipe?lang=en#ingredients",
       image_url: "https://images.example.com/soup?size=large",

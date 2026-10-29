@@ -40,7 +40,9 @@ const SAVE_RECIPE_TEXT = "Save recipe";
 const SEARCH_TAGS_LABEL = "Search tags";
 const SIGN_IN_TEXT = "Sign in";
 const TAG_ID = "tag-dinner";
+const TAG_ID_2 = "tag-quick";
 const TAG_NAME = "Dinner";
+const TAG_NAME_2 = "Quick";
 const TAGS_EMPTY_MESSAGE = "No tags yet.";
 const TAGS_LOADING_MESSAGE = "Loading tags...";
 const TAGS_SEARCH_EMPTY_MESSAGE = "No matching tags.";
@@ -422,7 +424,7 @@ describe("AppNavigator", () => {
 
   it("searches tags without showing the full list for a blank query", async () => {
     const dinnerTag = { id: TAG_ID, name: TAG_NAME };
-    const quickTag = { id: "tag-quick", name: "Quick" };
+    const quickTag = { id: TAG_ID_2, name: TAG_NAME_2 };
     const searchTerm = "  DIN  ";
     const blankSearchTerm = "   ";
 
@@ -492,7 +494,7 @@ describe("AppNavigator", () => {
   });
 
   it("selects multiple tags, clears search, and removes only the chosen chip", async () => {
-    const quickTag = { id: "tag-quick", name: "Quick" };
+    const quickTag = { id: TAG_ID_2, name: TAG_NAME_2 };
     const selectDinnerLabel = `Select tag ${TAG_NAME}`;
     const removeDinnerLabel = `Remove tag ${TAG_NAME}`;
     const selectQuickLabel = `Select tag ${quickTag.name}`;
@@ -553,6 +555,70 @@ describe("AppNavigator", () => {
     }
   });
 
+  it("submits selected tag names while excluding removed tags and unselected search text", async () => {
+    const quickTag = { id: TAG_ID_2, name: TAG_NAME_2 };
+    const recipe = makeRecipeDetailResponse();
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(makeUserResponse());
+    jest.spyOn(tagService, "loadTags").mockResolvedValue({
+      items: [{ id: TAG_ID, name: TAG_NAME }, quickTag],
+    });
+    const saveMock = jest.spyOn(recipeService, "saveRecipe").mockResolvedValue(recipe);
+
+    await renderRouteNavigation(CREATE_RECIPE_PATH, { createRecipe: NewRecipeScreen });
+    const search = await screen.findByLabelText(SEARCH_TAGS_LABEL);
+    for (const name of [TAG_NAME, quickTag.name]) {
+      await fireEvent.changeText(search, name);
+      await fireEvent.press(screen.getByRole("button", { name: `Select tag ${name}` }));
+    }
+    await fireEvent.press(screen.getByRole("button", { name: `Remove tag ${TAG_NAME}` }));
+    await fireEvent.changeText(search, TAG_NAME);
+    await fireEvent.changeText(screen.getByLabelText(RECIPE_TITLE_LABEL), RECIPE_TITLE);
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_RECIPE_TEXT }));
+
+    expect(saveMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: RECIPE_TITLE,
+        tags: [quickTag.name],
+      }),
+    );
+    expect(await screen.findByText(RECIPE_DETAIL_TEXT)).toBeTruthy();
+  });
+
+  it("preserves selected tags and recipe text after a failed save and resubmits them", async () => {
+    const saveErrorMessage = "Unable to save recipe. Please try again.";
+    const recipe = makeRecipeDetailResponse();
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(makeUserResponse());
+    jest.spyOn(tagService, "loadTags").mockResolvedValue({ items: [{ id: TAG_ID, name: TAG_NAME }] });
+    const saveMock = jest
+      .spyOn(recipeService, "saveRecipe")
+      .mockRejectedValueOnce(new Error("Network failure"))
+      .mockResolvedValueOnce(recipe);
+
+    await renderRouteNavigation(CREATE_RECIPE_PATH, { createRecipe: NewRecipeScreen });
+    const search = await screen.findByLabelText(SEARCH_TAGS_LABEL);
+    await fireEvent.changeText(search, TAG_NAME);
+    await fireEvent.press(screen.getByRole("button", { name: `Select tag ${TAG_NAME}` }));
+    await fireEvent.changeText(screen.getByLabelText(RECIPE_TITLE_LABEL), RECIPE_TITLE);
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_RECIPE_TEXT }));
+    await screen.findByText(saveErrorMessage);
+
+    expect(screen.getByRole("button", { name: `Remove tag ${TAG_NAME}` })).toBeTruthy();
+    expect(screen.getByLabelText(RECIPE_TITLE_LABEL)).toHaveDisplayValue(RECIPE_TITLE);
+    expect(saveMock).toHaveBeenNthCalledWith(1, expect.objectContaining({ tags: [TAG_NAME] }));
+
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_RECIPE_TEXT }));
+    expect(saveMock).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        title: RECIPE_TITLE,
+        tags: [TAG_NAME],
+      }),
+    );
+    expect(await screen.findByText(RECIPE_DETAIL_TEXT)).toBeTruthy();
+  });
+
   it("saves a new recipe and opens its detail screen", async () => {
     const description = "A comforting recipe.\nServe with friends.";
     const sourceUrl = "https://example.com/recipe?lang=en#ingredients";
@@ -590,6 +656,7 @@ describe("AppNavigator", () => {
 
     expect(saveMock).toHaveBeenCalledWith({
       title: recipe.title,
+      tags: [],
       description,
       source_url: sourceUrl,
       image_url: imageUrl,

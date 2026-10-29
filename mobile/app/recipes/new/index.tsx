@@ -18,7 +18,7 @@ const TAGS_LOADING_ERROR_MESSAGE = "Unable to load tags.";
 const TAGS_LOADING_MESSAGE = "Loading tags...";
 const TAGS_SEARCH_EMPTY_MESSAGE = "No matching tags.";
 const TAGS_SEARCH_LABEL = "Search tags";
-const TAGS_SEARCH_PLACEHOLDER = "Search For Tags Here";
+const TAGS_SEARCH_PLACEHOLDER = "Search Tags";
 
 export default function NewRecipeScreen() {
   const headerHeight = useHeaderHeight();
@@ -42,7 +42,9 @@ export default function NewRecipeScreen() {
   };
 
   const handleSaveRecipe = async (values: RecipeCreateRequest) => {
-    const recipe = await saveRecipe(values);
+    const selectedTagNames = tags.filter((tag) => selectedTagIds.includes(tag.id)).map((tag) => tag.name);
+    const payload = { ...values, tags: selectedTagNames };
+    const recipe = await saveRecipe(payload);
     router.replace(`/recipes/${recipe.id}`);
   };
 
@@ -102,7 +104,7 @@ export default function NewRecipeScreen() {
     }
 
     return (
-      <>
+      <View style={styles.tagRow}>
         {matchingTags.map((tag) => (
           <Pressable
             key={tag.id}
@@ -114,7 +116,7 @@ export default function NewRecipeScreen() {
             <Text style={styles.matchingTag}>{tag.name}</Text>
           </Pressable>
         ))}
-      </>
+      </View>
     );
   };
 
@@ -135,7 +137,7 @@ export default function NewRecipeScreen() {
               onPress={() => handleRemoveTag(tagId)}
               style={[styles.tagButton, styles.selectedTag]}
             >
-              <Text>{`${tag.name} X`}</Text>
+              <Text>{`${tag.name} x`}</Text>
             </Pressable>
           );
         })}
