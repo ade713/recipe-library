@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button, Image, Linking, Pressable, ScrollView, StyleSheet, Text } from "react-native";
+import { Button, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { RecipeDetailResponse } from "@/types/recipe";
@@ -19,6 +19,7 @@ const OPEN_LINK_ERROR_MESSAGE = "Unable to open original recipe. Please try agai
 const REMOVE_FAVORITE_TEXT = "Remove from favorites";
 const RETRY_TEXT = "Retry";
 const SOURCE_LINK_TEXT = "Open original recipe";
+const TAGS_HEADER = "Tags";
 const TIPS_HEADER_TEXT = "Source tips";
 const UPDATE_FAVORITE_ERROR_MESSAGE = "Unable to update favorite. Please try again.";
 
@@ -173,6 +174,19 @@ export function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps) {
               <Text>{`Servings: ${recipe.base_servings}`}</Text>
             ))}
 
+          {recipe.tags.length > 0 && (
+            <>
+              <Text accessibilityRole='header'>{TAGS_HEADER}</Text>
+              <View style={styles.tagsRow}>
+                {recipe.tags.map((tag) => (
+                  <Text key={tag} style={styles.tagChip}>
+                    {tag}
+                  </Text>
+                ))}
+              </View>
+            </>
+          )}
+
           <Text>{INGREDIENTS_HEADER_TEXT}</Text>
           {recipe.ingredients.length === 0 ? (
             <Text>{NO_INGREDIENTS_TEXT}</Text>
@@ -207,5 +221,20 @@ const styles = StyleSheet.create({
   recipeImage: {
     width: "100%",
     aspectRatio: 16 / 9,
+  },
+  tagsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginBottom: 6,
+  },
+  tagChip: {
+    alignSelf: "flex-start",
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    backgroundColor: "#E3F2FD",
+    borderColor: "#2196F3",
+    borderWidth: 1,
+    borderRadius: 15,
   },
 });
