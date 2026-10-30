@@ -1,7 +1,8 @@
 import { makeRecipeDetailResponse, makeRecipeSummary } from "@/test/fixtures/recipes";
-import type { RecipeListResponse } from "@/types/recipe";
+import type { RecipeListResponse, RecipeUpdateRequest } from "@/types/recipe";
 
-import { loadRecipe, loadRecipes, saveRecipe, updateRecipeFavorite } from "../recipe-service";
+import { loadRecipe, loadRecipes, saveRecipe, saveRecipeChanges, updateRecipeFavorite } from "../recipe-service";
+import { ApiError } from "../../api/errors";
 import * as recipesApi from "../../api/recipes";
 import * as tokenStorage from "../../auth/token-storage";
 
@@ -215,5 +216,48 @@ describe("saveRecipe", () => {
     jest.spyOn(recipesApi, "createRecipe").mockRejectedValue(error);
 
     await expect(saveRecipe(makeRecipePayload())).rejects.toBe(error);
+  });
+});
+
+describe("saveRecipeChanges", () => {
+  const payload: RecipeUpdateRequest = { title: RECIPE_TITLE };
+
+  it("updates the specified recipe with stored credentials and returns the saved recipe", async () => {
+    const savedRecipe = makeRecipeDetailResponse({ id: RECIPE_ID, title: RECIPE_TITLE });
+
+    jest.spyOn(tokenStorage, "getAccessToken").mockResolvedValue(ACCESS_TOKEN);
+    const requestMock = jest.spyOn(recipesApi, "updateRecipe").mockResolvedValue(savedRecipe);
+
+    expect(await saveRecipeChanges(RECIPE_ID, payload)).toBe(savedRecipe);
+    expect(requestMock).toHaveBeenCalledWith(ACCESS_TOKEN, RECIPE_ID, payload);
+  });
+
+  it("rejects missing credentials without updating a recipe", async () => {
+    jest.spyOn(tokenStorage, "getAccessToken").mockResolvedValue(null);
+    const requestMock = jest.spyOn(recipesApi, "updateRecipe");
+
+    await expect(saveRecipeChanges(RECIPE_ID, payload)).rejects.toThrow(TOKEN_ERROR_MESSAGE);
+    expect(requestMock).not.toHaveBeenCalled();
+  });
+
+  it("preserves storage errors without updating a recipe", async () => {
+    const error = new Error(STORAGE_ERROR_MESSAGE);
+
+    jest.spyOn(tokenStorage, "getAccessToken").mockRejectedValue(error);
+    const requestMock = jest.spyOn(recipesApi, "updateRecipe");
+
+    await expect(saveRecipeChanges(RECIPE_ID, payload)).rejects.toBe(error);
+    expect(requestMock).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { label: "unauthorized", error: new ApiError(401) },
+    { label: "not found", error: new ApiError(404) },
+    { label: "network failure", error: new Error(NETWORK_ERROR_MESSAGE) },
+  ])("propagates update errors unchanged: $label", async ({ error }) => {
+    jest.spyOn(tokenStorage, "getAccessToken").mockResolvedValue(ACCESS_TOKEN);
+    jest.spyOn(recipesApi, "updateRecipe").mockRejectedValue(error);
+
+    await expect(saveRecipeChanges(RECIPE_ID, payload)).rejects.toBe(error);
   });
 });

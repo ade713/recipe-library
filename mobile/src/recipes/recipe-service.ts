@@ -1,8 +1,13 @@
-import { createRecipe, getRecipe, listRecipes, setRecipeFavorite } from "@/api/recipes";
+import { createRecipe, getRecipe, listRecipes, setRecipeFavorite, updateRecipe } from "@/api/recipes";
 import type { ListRecipesOptions } from "@/api/recipes";
 import { getAccessToken } from "@/auth/token-storage";
 
-import type { RecipeCreateRequest, RecipeDetailResponse, RecipeListResponse } from "@/types/recipe";
+import type {
+  RecipeCreateRequest,
+  RecipeDetailResponse,
+  RecipeListResponse,
+  RecipeUpdateRequest,
+} from "@/types/recipe";
 
 const TOKEN_ERROR_MESSAGE = "No access token available";
 
@@ -48,4 +53,15 @@ export async function saveRecipe(payload: RecipeCreateRequest): Promise<RecipeDe
   }
 
   return createRecipe(accessToken, payload);
+}
+
+/** Save changes to an existing recipe using the stored access token. */
+export async function saveRecipeChanges(recipeId: string, payload: RecipeUpdateRequest): Promise<RecipeDetailResponse> {
+  const accessToken = await getAccessToken();
+
+  if (accessToken === null) {
+    throw new Error(TOKEN_ERROR_MESSAGE);
+  }
+
+  return updateRecipe(accessToken, recipeId, payload);
 }
