@@ -16,6 +16,7 @@ import { RegisterScreen } from "../register-screen";
 import * as auth from "../../api/auth";
 import * as session from "../session";
 import NewRecipeScreen from "../../../app/recipes/new";
+import EditRecipeRoute from "../../../app/recipes/[id]/edit";
 import RecipeDetailRoute from "../../../app/recipes/[id]";
 import RecipeLibraryScreen from "../../../app/index";
 import RootLayout from "../../../app/_layout";
@@ -31,6 +32,7 @@ const LOADING_RECIPE_TEXT = "Loading recipe...";
 const LOGIN_PATH = "/login";
 const LOGIN_TEXT = "Login route";
 const PASSWORD = "testPassword1";
+const PRIVATE_ERROR_MESSAGE = "Private failure";
 const RECIPE_DETAIL_PATH = "/recipes/recipe-1";
 const RECIPE_DETAIL_TEXT = "Recipe detail route";
 const RECIPE_ID = "recipe-1";
@@ -38,6 +40,7 @@ const RECIPE_TITLE = "Chicken Soup";
 const RECIPE_TITLE_LABEL = "Recipe title";
 const REGISTER_PATH = "/register";
 const REGISTER_TEXT = "Registration route";
+const SAVE_CHANGES_LABEL = "Save changes";
 const SAVE_RECIPE_TEXT = "Save recipe";
 const SEARCH_TAGS_LABEL = "Search tags";
 const SIGN_IN_TEXT = "Sign in";
@@ -54,6 +57,7 @@ const TAGS_SEARCH_EMPTY_MESSAGE = "No matching tags.";
 type RouteOptions = {
   createRecipe?: () => ReactElement;
   detail?: () => ReactElement | null;
+  editRecipe?: () => ReactElement | null;
   index?: () => ReactElement;
   login?: () => ReactElement;
   register?: () => ReactElement;
@@ -64,6 +68,7 @@ const renderRouteNavigation = async (
   {
     createRecipe = () => <Text>{CREATE_RECIPE_TEXT}</Text>,
     detail = () => <Text>{RECIPE_DETAIL_TEXT}</Text>,
+    editRecipe = EditRecipeRoute,
     index = () => <Text>{LIBRARY_TEXT}</Text>,
     login = () => <Text>{LOGIN_TEXT}</Text>,
     register = () => <Text>{REGISTER_TEXT}</Text>,
@@ -77,6 +82,7 @@ const renderRouteNavigation = async (
       login,
       register,
       "recipes/[id]": detail,
+      "recipes/[id]/edit": editRecipe,
     },
     { initialUrl },
   );
@@ -663,7 +669,7 @@ describe("AppNavigator", () => {
   it.each([
     {
       label: "network failure",
-      error: new Error("Private failure"),
+      error: new Error(PRIVATE_ERROR_MESSAGE),
       message: "Unable to create tag. Please try again.",
     },
     { label: "duplicate name", error: new ApiError(409), message: "A tag with this name already exists." },
@@ -842,4 +848,86 @@ describe("AppNavigator", () => {
 
     expect(navigation.getPathname()).toBe(CREATE_RECIPE_PATH);
   });
+
+  it("protects the edit route from signed-out users", async () => {
+    jest.spyOn(session, "restoreSession").mockResolvedValue(null);
+    const loadMock = jest.spyOn(recipeService, "loadRecipe");
+
+    const { navigation } = await renderRouteNavigation(`/recipes/${RECIPE_ID}/edit`);
+
+    expect(await screen.findByText(LOGIN_TEXT)).toBeTruthy();
+    expect(navigation.getPathname()).toBe(LOGIN_PATH);
+    expect(loadMock).not.toHaveBeenCalled();
+  });
+
+  it("opens the selected recipe editor from detail and shows the saved title afterward", async () => {
+    const editedTitle = "Updated soup";
+    const editRecipeButtonLabel = "Edit recipe";
+    const recipe = makeRecipeDetailResponse({ id: RECIPE_ID, title: RECIPE_TITLE });
+    const updated = makeRecipeDetailResponse({ id: RECIPE_ID, title: editedTitle });
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(makeUserResponse());
+    const loadMock = jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+    const saveMock = jest.spyOn(recipeService, "saveRecipeChanges").mockImplementation(async () => {
+      loadMock.mockResolvedValue(updated);
+      return updated;
+    });
+
+    const { navigation } = await renderRouteNavigation(INDEX_PATH, { detail: RecipeDetailRoute });
+    await screen.findByText(LIBRARY_TEXT);
+    await act(async () => { router.push(RECIPE_DETAIL_PATH); });
+
+    await screen.findByText(RECIPE_TITLE);
+
+    await fireEvent.press(screen.getByRole("button", { name: editRecipeButtonLabel }));
+
+    expect(await screen.findByLabelText(RECIPE_TITLE_LABEL)).toHaveDisplayValue(RECIPE_TITLE);
+    expect(navigation.getPathname()).toBe(`/recipes/${RECIPE_ID}/edit`);
+
+    await fireEvent.changeText(screen.getByLabelText(RECIPE_TITLE_LABEL), `  ${editedTitle}  `);
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_CHANGES_LABEL }));
+
+    expect(await screen.findByText(updated.title)).toBeTruthy();
+    expect(navigation.getPathname()).toBe(RECIPE_DETAIL_PATH);
+    expect(saveMock).toHaveBeenCalledWith(RECIPE_ID, { title: updated.title });
+
+    await act(async () => { router.back(); });
+    expect(await screen.findByText(LIBRARY_TEXT)).toBeTruthy();
+    expect(navigation.getPathname()).toBe(INDEX_PATH);
+  });
+
+  it("stays on edit with entered text after a failed save", async () => {
+    const unsavedTitle = "Unsaved title";
+    const editPath = `/recipes/${RECIPE_ID}/edit`;
+    const saveErrorMessage = "Unable to save changes. Please try again.";
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(makeUserResponse());
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(makeRecipeDetailResponse({ id: RECIPE_ID }));
+    jest.spyOn(recipeService, "saveRecipeChanges").mockRejectedValue(new Error(PRIVATE_ERROR_MESSAGE));
+
+    const { navigation } = await renderRouteNavigation(editPath);
+
+    await fireEvent.changeText(await screen.findByLabelText(RECIPE_TITLE_LABEL), unsavedTitle);
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_CHANGES_LABEL }));
+
+    expect(await screen.findByText(saveErrorMessage)).toBeTruthy();
+    expect(screen.getByLabelText(RECIPE_TITLE_LABEL)).toHaveDisplayValue(unsavedTitle);
+    expect(navigation.getPathname()).toBe(editPath);
+  });
+
+  it("returns to detail after saving when edit was opened directly", async () => {
+    const updated = makeRecipeDetailResponse({ id: RECIPE_ID, title: "Direct edit saved" });
+    jest.spyOn(session, "restoreSession").mockResolvedValue(makeUserResponse());
+    const loadMock = jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(makeRecipeDetailResponse({ id: RECIPE_ID }));
+    jest.spyOn(recipeService, "saveRecipeChanges").mockImplementation(async () => {
+      loadMock.mockResolvedValue(updated);
+      return updated;
+    });
+    const { navigation } = await renderRouteNavigation(`/recipes/${RECIPE_ID}/edit`, { detail: RecipeDetailRoute });
+    await fireEvent.changeText(await screen.findByLabelText(RECIPE_TITLE_LABEL), updated.title);
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_CHANGES_LABEL }));
+    expect(await screen.findByText(updated.title)).toBeTruthy();
+    expect(navigation.getPathname()).toBe(RECIPE_DETAIL_PATH);
+  });
+
 });

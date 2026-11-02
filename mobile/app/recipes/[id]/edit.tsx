@@ -1,5 +1,17 @@
-// Planned screen: Edit Recipe
-// Create the real Expo app before using this file.
-export default function EditRecipeScreen() {
-  return null;
+import { useLocalSearchParams, useRouter } from "expo-router";
+
+import { RecipeTitleEditScreen } from "@/recipes/recipe-title-edit-screen";
+
+export default function EditRecipeRoute() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
+
+  return (
+    <RecipeTitleEditScreen
+      recipeId={id}
+      onSaved={(savedRecipe) => {
+        router.dismissTo(`/recipes/${savedRecipe.id}`);
+      }}
+    />
+  );
 }

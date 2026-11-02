@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Button, StyleSheet, Text, TextInput, View } from "react-native";
 
-const TITLE_BLANK_ERROR = "Enter a recipe title.";
-const TITLE_LENGTH_ERROR = "Recipe titles must be 255 characters or fewer.";
+const MAX_TITLE_LENGTH = 255;
 const SAVE_LABEL = "Save changes";
 const SAVE_UPDATE_ERROR = "Unable to save changes. Please try again.";
-const MAX_TITLE_LENGTH = 255;
+const TITLE_BLANK_ERROR = "Enter a recipe title.";
 const TITLE_LABEL = "Recipe title";
+const TITLE_LENGTH_ERROR = "Recipe titles must be 255 characters or fewer.";
 
 type RecipeTitleEditFormProps = {
   initialTitle: string;
@@ -70,9 +70,6 @@ export function RecipeTitleEditForm({ initialTitle, onSubmit }: RecipeTitleEditF
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   formInput: {
     minWidth: 0,
     borderRadius: 2,

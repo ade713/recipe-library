@@ -8,6 +8,7 @@ import { loadRecipe, updateRecipeFavorite } from "./recipe-service";
 
 const ADD_FAVORITE_TEXT = "Add to favorites";
 const DESCRIPTION_TEST_ID = "recipe-description";
+const EDIT_RECIPE_LABEL = "Edit recipe";
 const IMAGE_ERROR_MESSAGE = "Recipe image unavailable.";
 const INGREDIENTS_HEADER_TEXT = "Ingredients";
 const INSTRUCTIONS_HEADER_TEXT = "Instructions";
@@ -25,9 +26,11 @@ const UPDATE_FAVORITE_ERROR_MESSAGE = "Unable to update favorite. Please try aga
 
 type RecipeDetailScreenProps = {
   recipeId: string;
+  isFocused?: boolean;
+  onEdit?: () => void;
 };
 
-export function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps) {
+export function RecipeDetailScreen({ recipeId, isFocused = true, onEdit }: RecipeDetailScreenProps) {
   const [recipe, setRecipe] = useState<RecipeDetailResponse | null>(null);
   const [loadingAttempt, setLoadingAttempt] = useState(0);
   const [loadRecipeError, setLoadRecipeError] = useState<string | null>(null);
@@ -83,6 +86,10 @@ export function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps) {
   };
 
   useEffect(() => {
+    if (!isFocused) {
+      return;
+    }
+
     let active = true;
 
     setIsLoadingRecipe(true);
@@ -113,7 +120,7 @@ export function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps) {
     return () => {
       active = false;
     };
-  }, [recipeId, loadingAttempt]);
+  }, [recipeId, loadingAttempt, isFocused]);
 
   if (loadRecipeError) {
     return (
@@ -152,6 +159,10 @@ export function RecipeDetailScreen({ recipeId }: RecipeDetailScreenProps) {
                 style={styles.recipeImage}
               />
             ))}
+
+          {onEdit !== undefined && (
+            <Button accessibilityLabel={EDIT_RECIPE_LABEL} title={EDIT_RECIPE_LABEL} onPress={onEdit} />
+          )}
 
           <Button title={favoriteButtonTitle} onPress={handleUpdateRecipeFavorite} disabled={isUpdatingFavorite} />
           {updateFavoriteError !== null && <Text>{updateFavoriteError}</Text>}
