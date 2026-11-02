@@ -404,9 +404,38 @@ future update would explicitly clear tags rather than leave them untouched.
 Eight helper tests cover title-only serialization, omitted title, missing
 response, and unauthorized/not-found/validation/server/network failures. All
 354 mobile tests across twenty-two suites, TypeScript, and whitespace checks
-pass. This helper is not connected to a screen yet, so no Android check is
-required for this milestone. Service integration, an Edit action, a prefilled
-form, and additional editable fields remain separate follow-up work.
+passed for the API foundation milestone. The helper is now connected to the
+title-editing flow below. Additional editable fields remain separate work.
+
+## Editing recipe titles
+
+Recipe detail exposes an Edit recipe action leading to the protected
+`/recipes/[id]/edit` route. The editor loads the requested recipe with safe
+loading/error/retry states. Effect cleanup guards both late successes and
+failures. The form mounts after loading, initializes local title state from the
+saved title, and preserves edits after failed saves.
+
+Submission trims surrounding whitespace, rejects blank titles and titles over
+255 Unicode code points, and disables input and repeated saves while pending.
+`saveRecipeChanges` retrieves stored credentials and forwards only the update
+payload. Save failures stay in the form; success passes the saved recipe to the
+route through onSaved. Other recipe fields remain unchanged.
+
+Opening Edit pushes a route so Back can discard edits and return to detail.
+After saving, dismissTo returns to the existing detail entry, or replaces Edit
+when no detail entry exists. The detail route passes its focus state to the
+screen; the loading effect refreshes when focus returns. This prevents both a
+duplicate detail entry and a stale title after saving. The optional focus prop
+defaults to true for callers without navigation context.
+
+All 378 mobile tests across twenty-four suites, TypeScript, and whitespace checks
+pass. Coverage includes service failures, form validation/retry, stale loading
+responses, protected navigation, direct edit entry, and the complete save/Back
+flow. Android verified validation, title changes on detail and library, failed-save
+preservation/retry, cancelling without saving, keyboard access, and one Back
+press from updated detail returning to the library. The final ScrollView cleanup
+adds keyboardShouldPersistTaps="handled"; this last tap-handling change has not
+been separately rechecked on device.
 
 ## Manual recipe time entry
 
