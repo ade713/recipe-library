@@ -1042,3 +1042,26 @@ Learned:
 Next:
 
 - Submit the focused update API PR before adding the editing service and UI.
+
+
+## Recipe Title Editing — 2026-11-02
+
+Built:
+
+- Added stored-token updates and a prefilled title form with trimming, length validation, pending controls, and failed-save preservation.
+- Connected protected edit navigation, guarded recipe loading/retry, and success callbacks.
+- Returned to existing detail with dismissTo and refreshed on focus, fixing duplicate detail entries and stale titles.
+- All 378 mobile tests across twenty-four suites, TypeScript, and whitespace checks pass.
+- Android verified validation, detail/library updates, failure/retry, cancelling, keyboard access, and the corrected save/Back flow. The final ScrollView tap-handling cleanup has not been separately device-rechecked.
+
+Learned:
+
+- Updates need an existing recipe ID and must omit unrelated fields.
+- Local state initialized from a prop allows editing; trim on submission to preserve natural typing.
+- Save errors belong in the mounted form; loading errors precede it.
+- A callback passed during rendering runs later when invoked after a successful save.
+- dismissTo fixes the navigation stack; focus-triggered loading refreshes the retained screen's content.
+
+Next:
+
+- Submit the focused title-editing PR before expanding to other fields.
