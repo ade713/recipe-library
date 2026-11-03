@@ -1143,3 +1143,23 @@ Learned:
 Next:
 
 - Submit the focused servings-editing PR before expanding to other fields.
+
+
+## Recipe Image URL Editing — 2026-11-03
+
+Built:
+
+- Added a prefilled image URL input with HTTP/HTTPS validation and trimming at submission.
+- Preserved untouched values, sent null when cleared, disabled pending input, and retained failed-save edits.
+- Added form, screen, and API serialization coverage; all 437 mobile tests across twenty-seven suites, TypeScript, and whitespace checks pass.
+- Android verified preservation, replacement in detail/library, clearing, validation/correction, broken-image recovery, and retry.
+
+Learned:
+
+- new URL() parses multiple protocols; a successful parse alone does not enforce HTTP/HTTPS.
+- Returning the trimmed input preserves its spelling, while url.toString() can normalize it.
+- Blank edit values use null to clear stored data, whereas undefined PATCH fields remain unchanged.
+
+Next:
+
+- Submit the focused image URL editing PR before expanding to other fields.
