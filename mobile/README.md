@@ -391,7 +391,7 @@ npm test -- auth-form.test.tsx --runInBand
 
 ## Recipe update API foundation
 
-`RecipeUpdateRequest` currently supports an optional title. The
+`RecipeUpdateRequest` supports an optional title and nullable description. The
 `updateRecipe(token, recipeId, payload)` helper sends an authenticated PATCH to
 `/recipes/{id}` and returns the saved `RecipeDetailResponse`. A missing response
 is rejected; API and network errors propagate unchanged.
@@ -405,18 +405,24 @@ Eight helper tests cover title-only serialization, omitted title, missing
 response, and unauthorized/not-found/validation/server/network failures. All
 354 mobile tests across twenty-two suites, TypeScript, and whitespace checks
 passed for the API foundation milestone. The helper is now connected to the
-title-editing flow below. Additional editable fields remain separate work.
+editing flow below. Additional editable fields remain separate work.
 
-## Editing recipe titles
+## Editing recipe titles and descriptions
 
 Recipe detail exposes an Edit recipe action leading to the protected
 `/recipes/[id]/edit` route. The editor loads the requested recipe with safe
 loading/error/retry states. Effect cleanup guards both late successes and
 failures. The form mounts after loading, initializes local title state from the
-saved title, and preserves edits after failed saves.
+saved title and description, and preserves both edits after failed saves.
+The components are named RecipeEditForm and RecipeEditScreen; the shared
+RecipeEditFormValues type keeps the form and screen submission contract aligned.
 
 Submission trims surrounding whitespace, rejects blank titles and titles over
-255 Unicode code points, and disables input and repeated saves while pending.
+255 Unicode code points, and disables inputs and repeated saves while pending.
+The multiline description preserves internal line breaks and trims surrounding
+whitespace only on submission. Blank descriptions are sent as null to clear the
+saved value; undefined is omitted and would leave it unchanged. Existing
+descriptions are prefilled so editing only the title preserves their content.
 `saveRecipeChanges` retrieves stored credentials and forwards only the update
 payload. Save failures stay in the form; success passes the saved recipe to the
 route through onSaved. Other recipe fields remain unchanged.
@@ -428,14 +434,15 @@ screen; the loading effect refreshes when focus returns. This prevents both a
 duplicate detail entry and a stale title after saving. The optional focus prop
 defaults to true for callers without navigation context.
 
-All 378 mobile tests across twenty-four suites, TypeScript, and whitespace checks
-pass. Coverage includes service failures, form validation/retry, stale loading
-responses, protected navigation, direct edit entry, and the complete save/Back
-flow. Android verified validation, title changes on detail and library, failed-save
-preservation/retry, cancelling without saving, keyboard access, and one Back
-press from updated detail returning to the library. The final ScrollView cleanup
-adds keyboardShouldPersistTaps="handled"; this last tap-handling change has not
-been separately rechecked on device.
+All 389 mobile tests across twenty-four suites, TypeScript, and whitespace checks
+pass. Coverage includes description prefilling, editing, clearing, untouched
+values, failed-save preservation, and null-versus-undefined serialization, along
+with the existing title and navigation coverage. Android verified multiline
+editing, clearing, title-only preservation, failed-save retry, keyboard access,
+and Back navigation.
+
+Recipe library card border/spacing changes used during visual testing are kept
+out of this milestone. A small styling follow-up is planned after this PR merges.
 
 ## Manual recipe time entry
 

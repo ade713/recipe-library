@@ -1065,3 +1065,25 @@ Learned:
 Next:
 
 - Submit the focused title-editing PR before expanding to other fields.
+
+
+## Recipe Description Editing — 2026-11-02
+
+Built:
+
+- Renamed the edit form/screen to general recipe-edit names and shared their form-values type.
+- Prefilled a multiline description, trimmed at submission, and sent null when cleared.
+- Preserved untouched descriptions and both edited fields after failed saves.
+- Added form, screen, and API serialization coverage; all 389 mobile tests across twenty-four suites, TypeScript, and whitespace checks pass.
+- Android verified prefilling, multiline editing, clearing, title-only preservation, failed-save retry, keyboard access, and Back navigation.
+
+Learned:
+
+- Null explicitly clears a saved description; undefined is omitted and preserves it.
+- Nullish coalescing supplies an empty string for controlled inputs when initial data is absent or null.
+- A typed fixture response retains nullable properties even when a particular test supplies a string.
+
+Next:
+
+- Submit the focused description-editing PR.
+- Keep visual-testing card border/spacing changes uncommitted until a quick styling follow-up after merge.
