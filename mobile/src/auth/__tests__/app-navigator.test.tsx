@@ -874,11 +874,13 @@ describe("AppNavigator", () => {
     });
 
     const { navigation } = await renderRouteNavigation(INDEX_PATH, { detail: RecipeDetailRoute });
+
     await screen.findByText(LIBRARY_TEXT);
-    await act(async () => { router.push(RECIPE_DETAIL_PATH); });
+    await act(async () => {
+      router.push(RECIPE_DETAIL_PATH);
+    });
 
     await screen.findByText(RECIPE_TITLE);
-
     await fireEvent.press(screen.getByRole("button", { name: editRecipeButtonLabel }));
 
     expect(await screen.findByLabelText(RECIPE_TITLE_LABEL)).toHaveDisplayValue(RECIPE_TITLE);
@@ -889,9 +891,19 @@ describe("AppNavigator", () => {
 
     expect(await screen.findByText(updated.title)).toBeTruthy();
     expect(navigation.getPathname()).toBe(RECIPE_DETAIL_PATH);
-    expect(saveMock).toHaveBeenCalledWith(RECIPE_ID, { title: updated.title, description: null, prep_time_minutes: null, cook_time_minutes: null, total_time_minutes: null });
+    expect(saveMock).toHaveBeenCalledWith(RECIPE_ID, {
+      title: updated.title,
+      description: null,
+      prep_time_minutes: null,
+      cook_time_minutes: null,
+      total_time_minutes: null,
+      base_servings: null,
+      servings_unit: null,
+    });
 
-    await act(async () => { router.back(); });
+    await act(async () => {
+      router.back();
+    });
     expect(await screen.findByText(LIBRARY_TEXT)).toBeTruthy();
     expect(navigation.getPathname()).toBe(INDEX_PATH);
   });
@@ -917,17 +929,22 @@ describe("AppNavigator", () => {
 
   it("returns to detail after saving when edit was opened directly", async () => {
     const updated = makeRecipeDetailResponse({ id: RECIPE_ID, title: "Direct edit saved" });
+
     jest.spyOn(session, "restoreSession").mockResolvedValue(makeUserResponse());
-    const loadMock = jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(makeRecipeDetailResponse({ id: RECIPE_ID }));
+    const loadMock = jest
+      .spyOn(recipeService, "loadRecipe")
+      .mockResolvedValue(makeRecipeDetailResponse({ id: RECIPE_ID }));
     jest.spyOn(recipeService, "saveRecipeChanges").mockImplementation(async () => {
       loadMock.mockResolvedValue(updated);
       return updated;
     });
+
     const { navigation } = await renderRouteNavigation(`/recipes/${RECIPE_ID}/edit`, { detail: RecipeDetailRoute });
+
     await fireEvent.changeText(await screen.findByLabelText(RECIPE_TITLE_LABEL), updated.title);
     await fireEvent.press(screen.getByRole("button", { name: SAVE_CHANGES_LABEL }));
+
     expect(await screen.findByText(updated.title)).toBeTruthy();
     expect(navigation.getPathname()).toBe(RECIPE_DETAIL_PATH);
   });
-
 });
