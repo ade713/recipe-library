@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button, StyleSheet, Text, TextInput, View } from "react-native";
 
+const DESCRIPTION_LABEL = "Description (optional)";
 const MAX_TITLE_LENGTH = 255;
 const SAVE_LABEL = "Save changes";
 const SAVE_UPDATE_ERROR = "Unable to save changes. Please try again.";
@@ -8,13 +9,20 @@ const TITLE_BLANK_ERROR = "Enter a recipe title.";
 const TITLE_LABEL = "Recipe title";
 const TITLE_LENGTH_ERROR = "Recipe titles must be 255 characters or fewer.";
 
-type RecipeTitleEditFormProps = {
-  initialTitle: string;
-  onSubmit: (values: { title: string }) => Promise<void>;
+export type RecipeEditFormValues = {
+  title: string;
+  description: string | null;
 };
 
-export function RecipeTitleEditForm({ initialTitle, onSubmit }: RecipeTitleEditFormProps) {
+type RecipeEditFormProps = {
+  initialTitle: string;
+  initialDescription?: string | null;
+  onSubmit: (values: RecipeEditFormValues) => Promise<void>;
+};
+
+export function RecipeEditForm({ initialTitle, initialDescription, onSubmit }: RecipeEditFormProps) {
   const [currentTitle, setCurrentTitle] = useState(initialTitle);
+  const [currentDescription, setCurrentDescription] = useState(initialDescription ?? "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -34,11 +42,14 @@ export function RecipeTitleEditForm({ initialTitle, onSubmit }: RecipeTitleEditF
       return;
     }
 
+    const trimmedDescription = currentDescription.trim();
+    const normalizedDescription = trimmedDescription.length > 0 ? trimmedDescription : null;
+
     setErrorMessage(null);
     setIsSubmitting(true);
 
     try {
-      await onSubmit({ title: trimmedTitle });
+      await onSubmit({ title: trimmedTitle, description: normalizedDescription });
     } catch {
       setErrorMessage(SAVE_UPDATE_ERROR);
     } finally {
@@ -53,8 +64,20 @@ export function RecipeTitleEditForm({ initialTitle, onSubmit }: RecipeTitleEditF
         accessibilityLabel={TITLE_LABEL}
         editable={!isSubmitting}
         value={currentTitle}
+        autoCorrect={false}
         onChangeText={setCurrentTitle}
         style={styles.formInput}
+      />
+
+      <TextInput
+        accessibilityLabel={DESCRIPTION_LABEL}
+        editable={!isSubmitting}
+        value={currentDescription}
+        multiline={true}
+        textAlignVertical='top'
+        autoCorrect={false}
+        onChangeText={setCurrentDescription}
+        style={[styles.formInput, styles.descriptionInput]}
       />
 
       <Button
@@ -78,6 +101,9 @@ const styles = StyleSheet.create({
     borderStyle: "solid",
     marginTop: 2,
     marginBottom: 2,
+  },
+  descriptionInput: {
+    minHeight: 96,
   },
   errorMessage: {
     color: "#f32121",

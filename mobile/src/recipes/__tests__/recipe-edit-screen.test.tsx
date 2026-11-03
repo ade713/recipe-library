@@ -3,23 +3,23 @@ import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { makeRecipeDetailResponse } from "@/test/fixtures/recipes";
 import type { RecipeDetailResponse } from "@/types/recipe";
 import * as recipeService from "../recipe-service";
-import { RecipeTitleEditScreen } from "../recipe-title-edit-screen";
+import { RecipeEditScreen } from "../recipe-edit-screen";
 
+const CURRENT_RECIPE_TITLE = "Current recipe";
 const EDITED_TITLE = "Updated soup";
+const LOAD_ERROR = "Unable to load recipe.";
+const LOADING_TEXT = "Loading recipe...";
 const RECIPE_ID = "recipe-one";
 const RECIPE_ID_2 = "recipe-two";
 const RECIPE_TITLE = "Soup";
-const CURRENT_RECIPE_TITLE = "Current recipe";
-const TITLE_LABEL = "Recipe title";
-const LOADING_TEXT = "Loading recipe...";
-const LOAD_ERROR = "Unable to load recipe.";
 const SAVE_CHANGES_LABEL = "Save changes";
+const TITLE_LABEL = "Recipe title";
 
 const renderScreen = async (onSaved = jest.fn()) => {
-  await render(<RecipeTitleEditScreen recipeId={RECIPE_ID} onSaved={onSaved} />);
+  await render(<RecipeEditScreen recipeId={RECIPE_ID} onSaved={onSaved} />);
 };
 
-describe("RecipeTitleEditScreen", () => {
+describe("RecipeEditScreen", () => {
   it("loads the requested recipe without exposing an empty editable form", async () => {
     const loadMock = jest.spyOn(recipeService, "loadRecipe").mockImplementation(() => new Promise(() => {}));
 
@@ -74,7 +74,7 @@ describe("RecipeTitleEditScreen", () => {
 
     await fireEvent.changeText(await screen.findByLabelText(TITLE_LABEL), editedTitleText);
 
-    await screen.rerender(<RecipeTitleEditScreen recipeId={second.id} onSaved={jest.fn()} />);
+    await screen.rerender(<RecipeEditScreen recipeId={second.id} onSaved={jest.fn()} />);
     expect(await screen.findByDisplayValue(second.title)).toBeTruthy();
     expect(screen.queryByDisplayValue(editedTitleText)).toBeNull();
   });
@@ -91,7 +91,7 @@ describe("RecipeTitleEditScreen", () => {
 
     await renderScreen();
 
-    await screen.rerender(<RecipeTitleEditScreen recipeId={second.id} onSaved={jest.fn()} />);
+    await screen.rerender(<RecipeEditScreen recipeId={second.id} onSaved={jest.fn()} />);
     expect(await screen.findByLabelText(TITLE_LABEL)).toHaveDisplayValue(second.title);
 
     await act(async () => {
@@ -111,7 +111,7 @@ describe("RecipeTitleEditScreen", () => {
 
     await renderScreen();
 
-    await screen.rerender(<RecipeTitleEditScreen recipeId={second.id} onSaved={jest.fn()} />);
+    await screen.rerender(<RecipeEditScreen recipeId={second.id} onSaved={jest.fn()} />);
     expect(await screen.findByLabelText(TITLE_LABEL)).toHaveDisplayValue(second.title);
 
     await act(async () => {
@@ -122,7 +122,7 @@ describe("RecipeTitleEditScreen", () => {
     expect(screen.getByLabelText(TITLE_LABEL)).toHaveDisplayValue(second.title);
   });
 
-  it("saves only the edited title for the loaded recipe and reports the saved response", async () => {
+  it("saves the edited title and empty description for the loaded recipe and reports the saved response", async () => {
     const recipe = makeRecipeDetailResponse({ id: RECIPE_ID, title: RECIPE_TITLE });
     const savedRecipe = makeRecipeDetailResponse({ id: RECIPE_ID, title: EDITED_TITLE });
 
@@ -135,7 +135,7 @@ describe("RecipeTitleEditScreen", () => {
     await fireEvent.changeText(await screen.findByLabelText(TITLE_LABEL), `  ${EDITED_TITLE}  `);
     await fireEvent.press(screen.getByRole("button", { name: SAVE_CHANGES_LABEL }));
 
-    expect(saveMock).toHaveBeenCalledWith(RECIPE_ID, { title: EDITED_TITLE });
+    expect(saveMock).toHaveBeenCalledWith(RECIPE_ID, { title: EDITED_TITLE, description: null });
     expect(onSaved).toHaveBeenCalledWith(savedRecipe);
     expect(onSaved).toHaveBeenCalledTimes(1);
   });
@@ -164,8 +164,34 @@ describe("RecipeTitleEditScreen", () => {
     expect(screen.queryByText(privateError)).toBeNull();
 
     await fireEvent.press(screen.getByRole("button", { name: SAVE_CHANGES_LABEL }));
-    expect(saveMock).toHaveBeenNthCalledWith(2, RECIPE_ID, { title: EDITED_TITLE });
+    expect(saveMock).toHaveBeenNthCalledWith(2, RECIPE_ID, { title: EDITED_TITLE, description: null });
     expect(onSaved).toHaveBeenCalledWith(savedRecipe);
     expect(screen.queryByText(saveError)).toBeNull();
+  });
+
+  it.each([
+    { label: "untouched", input: undefined, expected: "Original description" },
+    { label: "edited", input: "  First line.\nSecond line.  ", expected: "First line.\nSecond line." },
+    { label: "cleared", input: "  ", expected: null },
+  ])("prefills and submits the recipe description: $label", async ({ input, expected }) => {
+    const originalDescription = "Original description";
+    const recipe = makeRecipeDetailResponse({ id: RECIPE_ID, description: originalDescription });
+    const savedRecipe = makeRecipeDetailResponse({ id: RECIPE_ID, description: expected });
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+    const saveMock = jest.spyOn(recipeService, "saveRecipeChanges").mockResolvedValue(savedRecipe);
+    const onSaved = jest.fn();
+
+    await renderScreen(onSaved);
+
+    const descriptionInput = await screen.findByLabelText("Description (optional)");
+    expect(descriptionInput).toHaveDisplayValue(originalDescription);
+
+    if (input !== undefined) {
+      await fireEvent.changeText(descriptionInput, input);
+    }
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_CHANGES_LABEL }));
+    expect(saveMock).toHaveBeenCalledWith(RECIPE_ID, { title: recipe.title, description: expected });
+    expect(onSaved).toHaveBeenCalledWith(savedRecipe);
   });
 });

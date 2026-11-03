@@ -113,4 +113,5 @@ export type RecipeCreateRequest = {
 /** Fields currently supported by mobile recipe editing. */
 export type RecipeUpdateRequest = {
   title?: string;
+  description?: string | null;
 };
