@@ -1087,3 +1087,16 @@ Next:
 
 - Submit the focused description-editing PR.
 - Keep visual-testing card border/spacing changes uncommitted until a quick styling follow-up after merge.
+
+
+## Library Card Visual Separation — 2026-11-02
+
+Built:
+
+- Added borders, rounded corners, padding, and spacing to separate library recipe cards.
+- Kept the styling separate from description editing as a focused follow-up.
+- All 17 existing card tests pass; Android verified separation, long-title/tag readability, and correct tap navigation.
+
+Next:
+
+- Submit the focused card-styling PR.
