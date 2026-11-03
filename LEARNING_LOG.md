@@ -1100,3 +1100,24 @@ Built:
 Next:
 
 - Submit the focused card-styling PR.
+
+
+## Recipe Time Editing — 2026-11-03
+
+Built:
+
+- Added prefilled prep, cook, and total inputs with independent total-time editing.
+- Validated nonnegative safe integer minutes, preserved zero, and sent null when clearing.
+- Preserved entered values after failed saves and forwarded saved times from the screen.
+- All 404 mobile tests across twenty-five suites, TypeScript, and whitespace checks pass.
+- Android verified prefilling, independent total, clearing, correction, retry, and keyboard access. Added the visible unit heading during final cleanup afterward.
+
+Learned:
+
+- Nullish initialization preserves zero, unlike a truthiness check.
+- Check blanks before Number(), which would otherwise convert an empty string to zero.
+- Total can include resting/cooling time and should not be automatically overwritten.
+
+Next:
+
+- Submit the focused time-editing PR before adding servings or other fields.

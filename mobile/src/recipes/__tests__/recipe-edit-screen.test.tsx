@@ -135,7 +135,7 @@ describe("RecipeEditScreen", () => {
     await fireEvent.changeText(await screen.findByLabelText(TITLE_LABEL), `  ${EDITED_TITLE}  `);
     await fireEvent.press(screen.getByRole("button", { name: SAVE_CHANGES_LABEL }));
 
-    expect(saveMock).toHaveBeenCalledWith(RECIPE_ID, { title: EDITED_TITLE, description: null });
+    expect(saveMock).toHaveBeenCalledWith(RECIPE_ID, { title: EDITED_TITLE, description: null, prep_time_minutes: null, cook_time_minutes: null, total_time_minutes: null });
     expect(onSaved).toHaveBeenCalledWith(savedRecipe);
     expect(onSaved).toHaveBeenCalledTimes(1);
   });
@@ -164,7 +164,7 @@ describe("RecipeEditScreen", () => {
     expect(screen.queryByText(privateError)).toBeNull();
 
     await fireEvent.press(screen.getByRole("button", { name: SAVE_CHANGES_LABEL }));
-    expect(saveMock).toHaveBeenNthCalledWith(2, RECIPE_ID, { title: EDITED_TITLE, description: null });
+    expect(saveMock).toHaveBeenNthCalledWith(2, RECIPE_ID, { title: EDITED_TITLE, description: null, prep_time_minutes: null, cook_time_minutes: null, total_time_minutes: null });
     expect(onSaved).toHaveBeenCalledWith(savedRecipe);
     expect(screen.queryByText(saveError)).toBeNull();
   });
@@ -191,7 +191,33 @@ describe("RecipeEditScreen", () => {
       await fireEvent.changeText(descriptionInput, input);
     }
     await fireEvent.press(screen.getByRole("button", { name: SAVE_CHANGES_LABEL }));
-    expect(saveMock).toHaveBeenCalledWith(RECIPE_ID, { title: recipe.title, description: expected });
+    expect(saveMock).toHaveBeenCalledWith(RECIPE_ID, { title: recipe.title, description: expected, prep_time_minutes: null, cook_time_minutes: null, total_time_minutes: null });
     expect(onSaved).toHaveBeenCalledWith(savedRecipe);
   });
+
+  it.each([
+    { label: "untouched", prep: undefined, cook: undefined, total: undefined, expected: [0, 20, 45] },
+    { label: "edited", prep: "10", cook: "0", total: "90", expected: [10, 0, 90] },
+    { label: "cleared", prep: "", cook: "  ", total: "", expected: [null, null, null] },
+  ])("prefills and submits saved times: $label", async ({ prep, cook, total, expected }) => {
+    const recipe = makeRecipeDetailResponse({ id: RECIPE_ID, prep_time_minutes: 0, cook_time_minutes: 20, total_time_minutes: 45 });
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+    const saveMock = jest.spyOn(recipeService, "saveRecipeChanges").mockResolvedValue(recipe);
+    await renderScreen();
+
+    const fields = ["Prep time (minutes)", "Cook time (minutes)", "Total time (minutes)"];
+    const inputs = [prep, cook, total];
+    await screen.findByLabelText(fields[0]);
+    for (const [index, value] of ["0", "20", "45"].entries()) {
+      expect(screen.getByLabelText(fields[index])).toHaveDisplayValue(value);
+      const input = inputs[index];
+      if (input !== undefined) await fireEvent.changeText(screen.getByLabelText(fields[index]), input);
+    }
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_CHANGES_LABEL }));
+    expect(saveMock).toHaveBeenCalledWith(RECIPE_ID, {
+      title: recipe.title, description: null,
+      prep_time_minutes: expected[0], cook_time_minutes: expected[1], total_time_minutes: expected[2],
+    });
+  });
+
 });

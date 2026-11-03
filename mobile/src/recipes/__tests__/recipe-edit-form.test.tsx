@@ -29,7 +29,7 @@ describe("RecipeEditForm", () => {
     expect(input).toHaveDisplayValue(`  ${EDITED_TITLE}  `);
 
     await fireEvent.press(screen.getByRole("button", { name: SAVE_LABEL }));
-    expect(onSubmit).toHaveBeenCalledWith({ title: EDITED_TITLE, description: null });
+    expect(onSubmit).toHaveBeenCalledWith({ title: EDITED_TITLE, description: null, prep_time_minutes: null, cook_time_minutes: null, total_time_minutes: null });
   });
 
   it.each(["", "   "])("rejects a blank title and allows correction: %p", async (title) => {
@@ -44,7 +44,7 @@ describe("RecipeEditForm", () => {
 
     await fireEvent.changeText(screen.getByLabelText(TITLE_LABEL), INITIAL_TITLE);
     await fireEvent.press(screen.getByRole("button", { name: SAVE_LABEL }));
-    expect(onSubmit).toHaveBeenCalledWith({ title: INITIAL_TITLE, description: null });
+    expect(onSubmit).toHaveBeenCalledWith({ title: INITIAL_TITLE, description: null, prep_time_minutes: null, cook_time_minutes: null, total_time_minutes: null });
     expect(screen.queryByText(TITLE_BLANK_ERROR)).toBeNull();
   });
 
@@ -63,7 +63,7 @@ describe("RecipeEditForm", () => {
 
     await fireEvent.changeText(screen.getByLabelText(TITLE_LABEL), `  ${validTitle}  `);
     await fireEvent.press(screen.getByRole("button", { name: SAVE_LABEL }));
-    expect(onSubmit).toHaveBeenCalledWith({ title: validTitle, description: null });
+    expect(onSubmit).toHaveBeenCalledWith({ title: validTitle, description: null, prep_time_minutes: null, cook_time_minutes: null, total_time_minutes: null });
     expect(screen.queryByText(TITLE_LENGTH_ERROR)).toBeNull();
   });
 
@@ -80,7 +80,7 @@ describe("RecipeEditForm", () => {
     expect(screen.getByRole("button", { name: SAVE_LABEL })).toBeEnabled();
 
     await fireEvent.press(screen.getByRole("button", { name: SAVE_LABEL }));
-    expect(onSubmit).toHaveBeenNthCalledWith(2, { title: EDITED_TITLE, description: null });
+    expect(onSubmit).toHaveBeenNthCalledWith(2, { title: EDITED_TITLE, description: null, prep_time_minutes: null, cook_time_minutes: null, total_time_minutes: null });
     expect(screen.queryByText(SAVE_ERROR)).toBeNull();
   });
 
@@ -124,7 +124,7 @@ describe("RecipeEditForm", () => {
     expect(input).toHaveDisplayValue(edited);
 
     await fireEvent.press(screen.getByRole("button", { name: SAVE_LABEL }));
-    expect(onSubmit).toHaveBeenCalledWith({ title: INITIAL_TITLE, description: edited.trim() });
+    expect(onSubmit).toHaveBeenCalledWith({ title: INITIAL_TITLE, description: edited.trim(), prep_time_minutes: null, cook_time_minutes: null, total_time_minutes: null });
   });
 
   it.each(["", "  \n  "])("sends null when an existing description is cleared: %p", async (description) => {
@@ -136,7 +136,7 @@ describe("RecipeEditForm", () => {
 
     await fireEvent.changeText(screen.getByLabelText(DESCRIPTION_LABEL), description);
     await fireEvent.press(screen.getByRole("button", { name: SAVE_LABEL }));
-    expect(onSubmit).toHaveBeenCalledWith({ title: INITIAL_TITLE, description: null });
+    expect(onSubmit).toHaveBeenCalledWith({ title: INITIAL_TITLE, description: null, prep_time_minutes: null, cook_time_minutes: null, total_time_minutes: null });
   });
 
   it("shows an empty input for a null description", async () => {
@@ -161,6 +161,6 @@ describe("RecipeEditForm", () => {
     expect(screen.getByLabelText(DESCRIPTION_LABEL)).toHaveDisplayValue(updatedDescription);
 
     await fireEvent.press(screen.getByRole("button", { name: SAVE_LABEL }));
-    expect(onSubmit).toHaveBeenNthCalledWith(2, { title: updatedTitle, description: updatedDescription });
+    expect(onSubmit).toHaveBeenNthCalledWith(2, { title: updatedTitle, description: updatedDescription, prep_time_minutes: null, cook_time_minutes: null, total_time_minutes: null });
   });
 });

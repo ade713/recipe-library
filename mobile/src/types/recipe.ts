@@ -114,4 +114,7 @@ export type RecipeCreateRequest = {
 export type RecipeUpdateRequest = {
   title?: string;
   description?: string | null;
+  prep_time_minutes?: number | null;
+  cook_time_minutes?: number | null;
+  total_time_minutes?: number | null;
 };
