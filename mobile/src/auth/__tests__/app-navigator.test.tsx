@@ -899,6 +899,7 @@ describe("AppNavigator", () => {
       total_time_minutes: null,
       base_servings: null,
       servings_unit: null,
+      image_url: null,
     });
 
     await act(async () => {

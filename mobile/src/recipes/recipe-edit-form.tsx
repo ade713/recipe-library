@@ -5,6 +5,9 @@ const BASE_SERVINGS_LABEL = "Servings or yield quantity";
 const COOK_TEXT = "Cook";
 const COOK_TIME_LABEL = "Cook time (minutes)";
 const DESCRIPTION_LABEL = "Description (optional)";
+const IMAGE_URL_LABEL = "Image URL (optional)";
+const INVALID_IMAGE_URL_MESSAGE = "Enter a valid HTTP or HTTPS image URL.";
+const INVALID_PROTOCOL_MESSAGE = "Expected an HTTP or HTTPS URL.";
 const INVALID_SERVINGS_MESSAGE = "Enter a servings or yield quantity of zero or greater.";
 const MAX_TITLE_LENGTH = 255;
 const PREP_TEXT = "Prep";
@@ -26,6 +29,7 @@ const TOTAL_TIME_LABEL = "Total time (minutes)";
 export type RecipeEditFormValues = {
   title: string;
   description: string | null;
+  image_url: string | null;
   prep_time_minutes: number | null;
   cook_time_minutes: number | null;
   total_time_minutes: number | null;
@@ -36,6 +40,7 @@ export type RecipeEditFormValues = {
 type RecipeEditFormProps = {
   initialTitle: string;
   initialDescription?: string | null;
+  initialImageUrl?: string | null;
   initialPrepTimeMinutes?: number | null;
   initialCookTimeMinutes?: number | null;
   initialTotalTimeMinutes?: number | null;
@@ -72,9 +77,24 @@ const parseServings = (value: string): number | null => {
   return servings;
 };
 
+const parseHttpUrl = (value: string): string | null => {
+  const trimmedValue = value.trim();
+  if (trimmedValue.length === 0) {
+    return null;
+  }
+
+  const url = new URL(trimmedValue);
+  if (!["http:", "https:"].includes(url.protocol)) {
+    throw new Error(INVALID_PROTOCOL_MESSAGE);
+  }
+
+  return trimmedValue;
+};
+
 export function RecipeEditForm({
   initialTitle,
   initialDescription,
+  initialImageUrl,
   initialPrepTimeMinutes,
   initialCookTimeMinutes,
   initialTotalTimeMinutes,
@@ -84,6 +104,7 @@ export function RecipeEditForm({
 }: RecipeEditFormProps) {
   const [currentTitle, setCurrentTitle] = useState(initialTitle);
   const [currentDescription, setCurrentDescription] = useState(initialDescription ?? "");
+  const [currentImageUrl, setCurrentImageUrl] = useState(initialImageUrl ?? "");
   const [currentPrepTime, setCurrentPrepTime] = useState(initialPrepTimeMinutes?.toString() ?? "");
   const [currentCookTime, setCurrentCookTime] = useState(initialCookTimeMinutes?.toString() ?? "");
   const [currentTotalTime, setCurrentTotalTime] = useState(initialTotalTimeMinutes?.toString() ?? "");
@@ -135,6 +156,14 @@ export function RecipeEditForm({
     const trimmedUnit = currentServingsUnit.trim();
     const normalizedServingsUnit = trimmedUnit.length > 0 ? trimmedUnit : null;
 
+    let imageUrl: string | null;
+    try {
+      imageUrl = parseHttpUrl(currentImageUrl);
+    } catch {
+      setErrorMessage(INVALID_IMAGE_URL_MESSAGE);
+      return;
+    }
+
     setErrorMessage(null);
     setIsSubmitting(true);
 
@@ -142,6 +171,7 @@ export function RecipeEditForm({
       await onSubmit({
         title: trimmedTitle,
         description: normalizedDescription,
+        image_url: imageUrl,
         base_servings: baseServings,
         servings_unit: normalizedServingsUnit,
         ...times,
@@ -174,6 +204,18 @@ export function RecipeEditForm({
         autoCorrect={false}
         onChangeText={setCurrentDescription}
         style={[styles.formInput, styles.descriptionInput]}
+      />
+
+      <Text>{IMAGE_URL_LABEL}</Text>
+      <TextInput
+        accessibilityLabel={IMAGE_URL_LABEL}
+        editable={!isSubmitting}
+        value={currentImageUrl}
+        autoCapitalize='none'
+        autoCorrect={false}
+        keyboardType='url'
+        onChangeText={setCurrentImageUrl}
+        style={styles.formInput}
       />
 
       <Text>{TIME_HEADING}</Text>

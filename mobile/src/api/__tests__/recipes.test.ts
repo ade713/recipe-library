@@ -328,6 +328,24 @@ describe("createRecipe", () => {
 
 describe("updateRecipe", () => {
   it.each([
+    { imageUrl: "https://example.com/photo.jpg", body: '{"image_url":"https://example.com/photo.jpg"}' },
+    { imageUrl: null, body: '{"image_url":null}' },
+    { imageUrl: undefined, body: "{}" },
+  ])("serializes image URL updates: $body", async ({ imageUrl, body }) => {
+    const payload: RecipeUpdateRequest = { image_url: imageUrl };
+
+    const requestMock = jest.spyOn(client, "apiFetch").mockResolvedValue(makeRecipeDetailResponse());
+
+    await updateRecipe(ACCESS_TOKEN, RECIPE_ID, payload);
+
+    expect(requestMock).toHaveBeenCalledWith(`${RECIPES_PATH}/${RECIPE_ID}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
+      body,
+    });
+  });
+
+  it.each([
     { quantity: 1.5, unit: "loaves", body: '{"base_servings":1.5,"servings_unit":"loaves"}' },
     { quantity: 0, unit: null, body: '{"base_servings":0,"servings_unit":null}' },
     { quantity: null, unit: "loaves", body: '{"base_servings":null,"servings_unit":"loaves"}' },

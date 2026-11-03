@@ -37,6 +37,7 @@ describe("RecipeEditForm", () => {
       total_time_minutes: null,
       base_servings: null,
       servings_unit: null,
+      image_url: null,
     });
   });
 
@@ -60,6 +61,7 @@ describe("RecipeEditForm", () => {
       total_time_minutes: null,
       base_servings: null,
       servings_unit: null,
+      image_url: null,
     });
     expect(screen.queryByText(TITLE_BLANK_ERROR)).toBeNull();
   });
@@ -87,6 +89,7 @@ describe("RecipeEditForm", () => {
       total_time_minutes: null,
       base_servings: null,
       servings_unit: null,
+      image_url: null,
     });
     expect(screen.queryByText(TITLE_LENGTH_ERROR)).toBeNull();
   });
@@ -112,6 +115,7 @@ describe("RecipeEditForm", () => {
       total_time_minutes: null,
       base_servings: null,
       servings_unit: null,
+      image_url: null,
     });
     expect(screen.queryByText(SAVE_ERROR)).toBeNull();
   });
@@ -166,6 +170,7 @@ describe("RecipeEditForm", () => {
       total_time_minutes: null,
       base_servings: null,
       servings_unit: null,
+      image_url: null,
     });
   });
 
@@ -186,6 +191,7 @@ describe("RecipeEditForm", () => {
       total_time_minutes: null,
       base_servings: null,
       servings_unit: null,
+      image_url: null,
     });
   });
 
@@ -219,6 +225,7 @@ describe("RecipeEditForm", () => {
       total_time_minutes: null,
       base_servings: null,
       servings_unit: null,
+      image_url: null,
     });
   });
 });

@@ -91,6 +91,7 @@ export function RecipeEditScreen({ recipeId, onSaved }: RecipeEditScreenProps) {
           <RecipeEditForm
             initialTitle={recipe.title}
             initialDescription={recipe.description}
+            initialImageUrl={recipe.image_url}
             initialPrepTimeMinutes={recipe.prep_time_minutes}
             initialCookTimeMinutes={recipe.cook_time_minutes}
             initialTotalTimeMinutes={recipe.total_time_minutes}
