@@ -441,8 +441,10 @@ with the existing title and navigation coverage. Android verified multiline
 editing, clearing, title-only preservation, failed-save retry, keyboard access,
 and Back navigation.
 
-Recipe library card border/spacing changes used during visual testing are kept
-out of this milestone. A small styling follow-up is planned after this PR merges.
+Recipe library cards now use a blue border, rounded corners, inner padding, and
+spacing between cards to separate their content visually. This styling is a
+focused follow-up to description editing. All 17 card tests pass; Android checks
+verified separation, long-title/tag readability, and navigation by tapping cards.
 
 ## Manual recipe time entry
 
