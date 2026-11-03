@@ -446,6 +446,25 @@ spacing between cards to separate their content visually. This styling is a
 focused follow-up to description editing. All 17 card tests pass; Android checks
 verified separation, long-title/tag readability, and navigation by tapping cards.
 
+## Editing recipe times
+
+The edit form prefills prep, cook, and total times in a three-column row labeled
+Times (minutes). Null or absent times appear blank; zero remains visible. Each
+field is independently editable, including total time, which is not calculated
+from prep and cook times.
+
+Submission trims input, accepts nonnegative safe integers, and sends null for
+cleared fields. Invalid values show validation feedback before saving starts.
+The update request preserves explicit zero/null and omits undefined properties.
+The screen passes saved times into the form so edits to other fields do not
+accidentally clear them. Failed saves preserve entered values for retry.
+
+All 404 mobile tests across twenty-five suites, TypeScript, and whitespace checks
+pass. Android verified prefilling including zero, independent total edits,
+clearing, validation/correction, failed-save retry, and keyboard access. The
+visible time-unit heading was added during final cleanup after that verification.
+Servings and other editable fields remain separate milestones.
+
 ## Manual recipe time entry
 
 The creation form accepts optional prep, cook, and total times in minutes.
