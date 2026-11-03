@@ -889,7 +889,7 @@ describe("AppNavigator", () => {
 
     expect(await screen.findByText(updated.title)).toBeTruthy();
     expect(navigation.getPathname()).toBe(RECIPE_DETAIL_PATH);
-    expect(saveMock).toHaveBeenCalledWith(RECIPE_ID, { title: updated.title, description: null });
+    expect(saveMock).toHaveBeenCalledWith(RECIPE_ID, { title: updated.title, description: null, prep_time_minutes: null, cook_time_minutes: null, total_time_minutes: null });
 
     await act(async () => { router.back(); });
     expect(await screen.findByText(LIBRARY_TEXT)).toBeTruthy();

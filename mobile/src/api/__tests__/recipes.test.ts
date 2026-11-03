@@ -328,6 +328,24 @@ describe("createRecipe", () => {
 
 describe("updateRecipe", () => {
   it.each([
+    { label: "values including zero", value: 0 },
+    { label: "explicit clearing", value: null },
+    { label: "omitted fields", value: undefined },
+  ])("serializes time updates: $label", async ({ value }) => {
+    const payload: RecipeUpdateRequest = {
+      prep_time_minutes: value, cook_time_minutes: value, total_time_minutes: value,
+    };
+    const requestMock = jest.spyOn(client, "apiFetch").mockResolvedValue(makeRecipeDetailResponse());
+    await updateRecipe(ACCESS_TOKEN, RECIPE_ID, payload);
+    const expectedBody = value === undefined ? {} : {
+      prep_time_minutes: value, cook_time_minutes: value, total_time_minutes: value,
+    };
+    expect(requestMock).toHaveBeenCalledWith(`${RECIPES_PATH}/${RECIPE_ID}`, {
+      method: "PATCH", headers: { Authorization: `Bearer ${ACCESS_TOKEN}` }, body: JSON.stringify(expectedBody),
+    });
+  });
+
+  it.each([
     { description: "First line.\nSecond line.", body: '{"description":"First line.\\nSecond line."}' },
     { description: null, body: '{"description":null}' },
     { description: undefined, body: '{}' },
