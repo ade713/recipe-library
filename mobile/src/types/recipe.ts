@@ -117,4 +117,6 @@ export type RecipeUpdateRequest = {
   prep_time_minutes?: number | null;
   cook_time_minutes?: number | null;
   total_time_minutes?: number | null;
+  base_servings?: number | null;
+  servings_unit?: string | null;
 };

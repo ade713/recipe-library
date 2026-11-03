@@ -1,14 +1,20 @@
 import { useState } from "react";
 import { Button, StyleSheet, Text, TextInput, View } from "react-native";
 
+const BASE_SERVINGS_LABEL = "Servings or yield quantity";
 const COOK_TEXT = "Cook";
 const COOK_TIME_LABEL = "Cook time (minutes)";
 const DESCRIPTION_LABEL = "Description (optional)";
+const INVALID_SERVINGS_MESSAGE = "Enter a servings or yield quantity of zero or greater.";
 const MAX_TITLE_LENGTH = 255;
 const PREP_TEXT = "Prep";
 const PREP_TIME_LABEL = "Prep time (minutes)";
 const SAVE_LABEL = "Save changes";
 const SAVE_UPDATE_ERROR_MESSAGE = "Unable to save changes. Please try again.";
+const SERVINGS_HEADING = "Servings / yield";
+const SERVINGS_QUANTITY_TEXT = "Quantity";
+const SERVINGS_UNIT_LABEL = "Yield unit (optional)";
+const SERVINGS_UNIT_TEXT = "Unit (optional)";
 const TIME_HEADING = "Times (minutes)";
 const TIME_INPUT_ERROR_MESSAGE = "Enter times as whole minutes, zero or greater.";
 const TITLE_BLANK_ERROR_MESSAGE = "Enter a recipe title.";
@@ -23,18 +29,22 @@ export type RecipeEditFormValues = {
   prep_time_minutes: number | null;
   cook_time_minutes: number | null;
   total_time_minutes: number | null;
+  base_servings: number | null;
+  servings_unit: string | null;
 };
 
 type RecipeEditFormProps = {
   initialTitle: string;
+  initialDescription?: string | null;
   initialPrepTimeMinutes?: number | null;
   initialCookTimeMinutes?: number | null;
   initialTotalTimeMinutes?: number | null;
-  initialDescription?: string | null;
+  initialBaseServings?: string | null;
+  initialServingsUnit?: string | null;
   onSubmit: (values: RecipeEditFormValues) => Promise<void>;
 };
 
-const parseTimeInput = (value: string): number | null => {
+const parseTime = (value: string): number | null => {
   const trimmedValue = value.trim();
   if (trimmedValue.length === 0) {
     return null;
@@ -48,12 +58,28 @@ const parseTimeInput = (value: string): number | null => {
   return parsedValue;
 };
 
+const parseServings = (value: string): number | null => {
+  const trimmedValue = value.trim();
+  if (trimmedValue.length === 0) {
+    return null;
+  }
+
+  const servings = Number(trimmedValue);
+  if (servings < 0 || !Number.isFinite(servings)) {
+    throw new Error(INVALID_SERVINGS_MESSAGE);
+  }
+
+  return servings;
+};
+
 export function RecipeEditForm({
   initialTitle,
   initialDescription,
   initialPrepTimeMinutes,
   initialCookTimeMinutes,
   initialTotalTimeMinutes,
+  initialBaseServings,
+  initialServingsUnit,
   onSubmit,
 }: RecipeEditFormProps) {
   const [currentTitle, setCurrentTitle] = useState(initialTitle);
@@ -61,6 +87,8 @@ export function RecipeEditForm({
   const [currentPrepTime, setCurrentPrepTime] = useState(initialPrepTimeMinutes?.toString() ?? "");
   const [currentCookTime, setCurrentCookTime] = useState(initialCookTimeMinutes?.toString() ?? "");
   const [currentTotalTime, setCurrentTotalTime] = useState(initialTotalTimeMinutes?.toString() ?? "");
+  const [currentBaseServings, setCurrentBaseServings] = useState(initialBaseServings ?? "");
+  const [currentServingsUnit, setCurrentServingsUnit] = useState(initialServingsUnit ?? "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -87,14 +115,25 @@ export function RecipeEditForm({
 
     try {
       times = {
-        prep_time_minutes: parseTimeInput(currentPrepTime),
-        cook_time_minutes: parseTimeInput(currentCookTime),
-        total_time_minutes: parseTimeInput(currentTotalTime),
+        prep_time_minutes: parseTime(currentPrepTime),
+        cook_time_minutes: parseTime(currentCookTime),
+        total_time_minutes: parseTime(currentTotalTime),
       };
     } catch {
       setErrorMessage(TIME_INPUT_ERROR_MESSAGE);
       return;
     }
+
+    let baseServings: number | null;
+    try {
+      baseServings = parseServings(currentBaseServings);
+    } catch {
+      setErrorMessage(INVALID_SERVINGS_MESSAGE);
+      return;
+    }
+
+    const trimmedUnit = currentServingsUnit.trim();
+    const normalizedServingsUnit = trimmedUnit.length > 0 ? trimmedUnit : null;
 
     setErrorMessage(null);
     setIsSubmitting(true);
@@ -103,6 +142,8 @@ export function RecipeEditForm({
       await onSubmit({
         title: trimmedTitle,
         description: normalizedDescription,
+        base_servings: baseServings,
+        servings_unit: normalizedServingsUnit,
         ...times,
       });
     } catch {
@@ -169,6 +210,34 @@ export function RecipeEditForm({
             value={currentTotalTime}
             onChangeText={setCurrentTotalTime}
             keyboardType='number-pad'
+            style={[styles.formInput, styles.compactInput]}
+          />
+        </View>
+      </View>
+
+      <Text>{SERVINGS_HEADING}</Text>
+      <View style={styles.fieldsRow}>
+        <View style={styles.fieldColumn}>
+          <Text>{SERVINGS_QUANTITY_TEXT}</Text>
+          <TextInput
+            accessibilityLabel={BASE_SERVINGS_LABEL}
+            editable={!isSubmitting}
+            value={currentBaseServings}
+            onChangeText={setCurrentBaseServings}
+            keyboardType='decimal-pad'
+            style={[styles.formInput, styles.compactInput]}
+          />
+        </View>
+
+        <View style={styles.fieldColumn}>
+          <Text>{SERVINGS_UNIT_TEXT}</Text>
+          <TextInput
+            accessibilityLabel={SERVINGS_UNIT_LABEL}
+            editable={!isSubmitting}
+            autoCorrect={false}
+            autoCapitalize='none'
+            value={currentServingsUnit}
+            onChangeText={setCurrentServingsUnit}
             style={[styles.formInput, styles.compactInput]}
           />
         </View>

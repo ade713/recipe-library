@@ -328,27 +328,58 @@ describe("createRecipe", () => {
 
 describe("updateRecipe", () => {
   it.each([
+    { quantity: 1.5, unit: "loaves", body: '{"base_servings":1.5,"servings_unit":"loaves"}' },
+    { quantity: 0, unit: null, body: '{"base_servings":0,"servings_unit":null}' },
+    { quantity: null, unit: "loaves", body: '{"base_servings":null,"servings_unit":"loaves"}' },
+    { quantity: undefined, unit: undefined, body: "{}" },
+  ])("serializes servings updates: $body", async ({ quantity, unit, body }) => {
+    const payload: RecipeUpdateRequest = { base_servings: quantity, servings_unit: unit };
+
+    const requestMock = jest.spyOn(client, "apiFetch").mockResolvedValue(makeRecipeDetailResponse());
+
+    await updateRecipe(ACCESS_TOKEN, RECIPE_ID, payload);
+
+    expect(requestMock).toHaveBeenCalledWith(`${RECIPES_PATH}/${RECIPE_ID}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
+      body,
+    });
+  });
+
+  it.each([
     { label: "values including zero", value: 0 },
     { label: "explicit clearing", value: null },
     { label: "omitted fields", value: undefined },
   ])("serializes time updates: $label", async ({ value }) => {
     const payload: RecipeUpdateRequest = {
-      prep_time_minutes: value, cook_time_minutes: value, total_time_minutes: value,
+      prep_time_minutes: value,
+      cook_time_minutes: value,
+      total_time_minutes: value,
     };
+
     const requestMock = jest.spyOn(client, "apiFetch").mockResolvedValue(makeRecipeDetailResponse());
+
     await updateRecipe(ACCESS_TOKEN, RECIPE_ID, payload);
-    const expectedBody = value === undefined ? {} : {
-      prep_time_minutes: value, cook_time_minutes: value, total_time_minutes: value,
-    };
+
+    const expectedBody =
+      value === undefined
+        ? {}
+        : {
+            prep_time_minutes: value,
+            cook_time_minutes: value,
+            total_time_minutes: value,
+          };
     expect(requestMock).toHaveBeenCalledWith(`${RECIPES_PATH}/${RECIPE_ID}`, {
-      method: "PATCH", headers: { Authorization: `Bearer ${ACCESS_TOKEN}` }, body: JSON.stringify(expectedBody),
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
+      body: JSON.stringify(expectedBody),
     });
   });
 
   it.each([
     { description: "First line.\nSecond line.", body: '{"description":"First line.\\nSecond line."}' },
     { description: null, body: '{"description":null}' },
-    { description: undefined, body: '{}' },
+    { description: undefined, body: "{}" },
   ])("serializes description updates without dropping explicit null: $description", async ({ description, body }) => {
     const requestMock = jest.spyOn(client, "apiFetch").mockResolvedValue(makeRecipeDetailResponse());
     const payload: RecipeUpdateRequest = { description };
@@ -388,8 +419,9 @@ describe("updateRecipe", () => {
   it("rejects a missing recipe response", async () => {
     jest.spyOn(client, "apiFetch").mockResolvedValue(undefined);
 
-    await expect(updateRecipe(ACCESS_TOKEN, RECIPE_ID, { title: RECIPE_TITLE }))
-      .rejects.toThrow(RECIPE_DETAIL_ERROR_MESSAGE);
+    await expect(updateRecipe(ACCESS_TOKEN, RECIPE_ID, { title: RECIPE_TITLE })).rejects.toThrow(
+      RECIPE_DETAIL_ERROR_MESSAGE,
+    );
   });
 
   it.each([

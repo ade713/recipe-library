@@ -463,7 +463,26 @@ All 404 mobile tests across twenty-five suites, TypeScript, and whitespace check
 pass. Android verified prefilling including zero, independent total edits,
 clearing, validation/correction, failed-save retry, and keyboard access. The
 visible time-unit heading was added during final cleanup after that verification.
-Servings and other editable fields remain separate milestones.
+Servings editing is covered below; other editable fields remain separate milestones.
+
+## Editing recipe servings and yield
+
+The edit form prefills the saved decimal quantity and unit in a shared row.
+Null values appear blank, and zero remains visible. Quantity accepts finite,
+nonnegative numbers, including fractions. Units retain spaces during typing
+and are trimmed when submitting.
+
+Clearing either field sends null independently, preserving the other value.
+Untouched saved values are included when saving other edits. Both inputs are
+disabled during submission, and failed saves preserve entered values for retry.
+The PATCH request type allows omitted fields; undefined properties are omitted
+from JSON while zero and explicit null are preserved. Editing this base yield
+metadata does not scale ingredients.
+
+All 419 mobile tests across twenty-six suites, TypeScript, and whitespace checks
+pass. Coverage includes prefilling, zero/fractions, independent clearing,
+validation/correction, pending controls, failed-save retry, and serialization.
+Android checks verified the servings editing flow.
 
 ## Manual recipe time entry
 

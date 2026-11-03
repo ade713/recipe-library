@@ -94,6 +94,8 @@ export function RecipeEditScreen({ recipeId, onSaved }: RecipeEditScreenProps) {
             initialPrepTimeMinutes={recipe.prep_time_minutes}
             initialCookTimeMinutes={recipe.cook_time_minutes}
             initialTotalTimeMinutes={recipe.total_time_minutes}
+            initialBaseServings={recipe.base_servings}
+            initialServingsUnit={recipe.servings_unit}
             onSubmit={handleSaveChanges}
           />
         </ScrollView>
