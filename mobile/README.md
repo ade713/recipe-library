@@ -484,6 +484,22 @@ pass. Coverage includes prefilling, zero/fractions, independent clearing,
 validation/correction, pending controls, failed-save retry, and serialization.
 Android checks verified the servings editing flow.
 
+## Editing recipe image URLs
+
+The edit form prefills the saved image URL and preserves it when other fields
+are saved. Submission trims surrounding whitespace, validates HTTP/HTTPS, and
+sends the original trimmed string rather than URL-normalized text. Blank input
+sends null to clear the image; omitted PATCH properties leave stored values
+unchanged. The input is disabled while saving, and failed saves preserve edits.
+
+All 437 mobile tests across twenty-seven suites, TypeScript, and whitespace
+checks pass. Form, screen, and API coverage includes unchanged/edited/cleared
+URLs, invalid protocols, correction, pending controls, retry, and serialization.
+Android verified prefilling, preservation, replacement in detail/library,
+clearing, invalid-input correction, recovery from a broken image URL, and
+failed-save preservation. This uses existing remote-image rendering and fallback
+behavior; uploads and source attribution editing remain separate work.
+
 ## Manual recipe time entry
 
 The creation form accepts optional prep, cook, and total times in minutes.

@@ -143,6 +143,7 @@ describe("RecipeEditScreen", () => {
       total_time_minutes: null,
       base_servings: null,
       servings_unit: null,
+      image_url: null,
     });
     expect(onSaved).toHaveBeenCalledWith(savedRecipe);
     expect(onSaved).toHaveBeenCalledTimes(1);
@@ -180,6 +181,7 @@ describe("RecipeEditScreen", () => {
       total_time_minutes: null,
       base_servings: null,
       servings_unit: null,
+      image_url: null,
     });
     expect(onSaved).toHaveBeenCalledWith(savedRecipe);
     expect(screen.queryByText(saveError)).toBeNull();
@@ -215,6 +217,7 @@ describe("RecipeEditScreen", () => {
       total_time_minutes: null,
       base_servings: null,
       servings_unit: null,
+      image_url: null,
     });
     expect(onSaved).toHaveBeenCalledWith(savedRecipe);
   });
@@ -254,6 +257,7 @@ describe("RecipeEditScreen", () => {
       total_time_minutes: expected[2],
       base_servings: null,
       servings_unit: null,
+      image_url: null,
     });
   });
 
@@ -285,5 +289,36 @@ describe("RecipeEditScreen", () => {
         servings_unit: expectedUnit,
       }),
     );
+  });
+
+  it.each([
+    { label: "untouched", input: undefined, expected: "https://example.com/original.jpg" },
+    {
+      label: "edited",
+      input: "  https://example.com/replacement.jpg  ",
+      expected: "https://example.com/replacement.jpg",
+    },
+    { label: "cleared", input: "  ", expected: null },
+  ])("prefills and submits the saved image URL: $label", async ({ input, expected }) => {
+    const originalUrl = "https://example.com/original.jpg";
+    const imageInputLabel = "Image URL (optional)";
+    const recipe = makeRecipeDetailResponse({ id: RECIPE_ID, image_url: originalUrl });
+    const savedRecipe = makeRecipeDetailResponse({ id: RECIPE_ID, image_url: expected });
+
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+
+    const saveMock = jest.spyOn(recipeService, "saveRecipeChanges").mockResolvedValue(savedRecipe);
+    const onSaved = jest.fn();
+
+    await renderScreen(onSaved);
+
+    const imageInput = await screen.findByLabelText(imageInputLabel);
+    expect(imageInput).toHaveDisplayValue(originalUrl);
+
+    if (input !== undefined) await fireEvent.changeText(imageInput, input);
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_CHANGES_LABEL }));
+
+    expect(saveMock).toHaveBeenCalledWith(RECIPE_ID, expect.objectContaining({ image_url: expected }));
+    expect(onSaved).toHaveBeenCalledWith(savedRecipe);
   });
 });
