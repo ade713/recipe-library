@@ -327,6 +327,21 @@ describe("createRecipe", () => {
 });
 
 describe("updateRecipe", () => {
+  it.each([
+    { description: "First line.\nSecond line.", body: '{"description":"First line.\\nSecond line."}' },
+    { description: null, body: '{"description":null}' },
+    { description: undefined, body: '{}' },
+  ])("serializes description updates without dropping explicit null: $description", async ({ description, body }) => {
+    const requestMock = jest.spyOn(client, "apiFetch").mockResolvedValue(makeRecipeDetailResponse());
+    const payload: RecipeUpdateRequest = { description };
+    await updateRecipe(ACCESS_TOKEN, RECIPE_ID, payload);
+    expect(requestMock).toHaveBeenCalledWith(`${RECIPES_PATH}/${RECIPE_ID}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
+      body,
+    });
+  });
+
   it("patches only the supplied title and returns the saved recipe", async () => {
     const payload: RecipeUpdateRequest = { title: "Updated recipe title" };
     const response = makeRecipeDetailResponse({ id: RECIPE_ID, title: payload.title });

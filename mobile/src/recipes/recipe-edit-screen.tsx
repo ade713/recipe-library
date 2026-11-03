@@ -5,18 +5,19 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import type { RecipeDetailResponse } from "@/types/recipe";
 
 import { loadRecipe, saveRecipeChanges } from "./recipe-service";
-import { RecipeTitleEditForm } from "./recipe-title-edit-form";
+import { RecipeEditForm } from "./recipe-edit-form";
+import type { RecipeEditFormValues } from "./recipe-edit-form";
 
 const LOAD_RECIPE_ERROR_MESSAGE = "Unable to load recipe.";
 const LOADING_RECIPE_TEXT = "Loading recipe...";
 const RETRY_BUTTON = "Retry";
 
-type RecipeTitleEditScreenProps = {
+type RecipeEditScreenProps = {
   recipeId: string;
   onSaved: (recipe: RecipeDetailResponse) => void;
 };
 
-export function RecipeTitleEditScreen({ recipeId, onSaved }: RecipeTitleEditScreenProps) {
+export function RecipeEditScreen({ recipeId, onSaved }: RecipeEditScreenProps) {
   const [recipe, setRecipe] = useState<RecipeDetailResponse | null>(null);
   const [isLoadingRecipe, setIsLoadingRecipe] = useState(true);
   const [loadRecipeError, setLoadRecipeError] = useState<string | null>(null);
@@ -54,7 +55,7 @@ export function RecipeTitleEditScreen({ recipeId, onSaved }: RecipeTitleEditScre
     };
   }, [recipeId, loadingAttempt]);
 
-  const handleSaveChanges = async (values: { title: string }): Promise<void> => {
+  const handleSaveChanges = async (values: RecipeEditFormValues): Promise<void> => {
     const recipeDetailResponse = await saveRecipeChanges(recipeId, values);
     onSaved(recipeDetailResponse);
   };
@@ -87,7 +88,11 @@ export function RecipeTitleEditScreen({ recipeId, onSaved }: RecipeTitleEditScre
     return (
       <SafeAreaView edges={["bottom"]} style={styles.container}>
         <ScrollView keyboardShouldPersistTaps='handled'>
-          <RecipeTitleEditForm initialTitle={recipe.title} onSubmit={handleSaveChanges} />
+          <RecipeEditForm
+            initialTitle={recipe.title}
+            initialDescription={recipe.description}
+            onSubmit={handleSaveChanges}
+          />
         </ScrollView>
       </SafeAreaView>
     );
