@@ -1121,3 +1121,25 @@ Learned:
 Next:
 
 - Submit the focused time-editing PR before adding servings or other fields.
+
+
+## Recipe Servings and Yield Editing — 2026-11-03
+
+Built:
+
+- Prefilled saved quantity strings and units in the edit form.
+- Accepted finite nonnegative quantities, including zero and fractions; trimmed units only when submitting.
+- Cleared either field independently with null, disabled inputs during saving, and preserved failed-save edits.
+- Added form, screen, and API coverage; all 419 mobile tests across twenty-six suites, TypeScript, and whitespace checks pass.
+- Android checks verified the servings editing flow.
+
+Learned:
+
+- Form callback fields are required because every submission supplies values, including null for blanks.
+- PATCH request fields are optional so callers can leave stored fields unchanged.
+- JSON.stringify omits undefined object properties but preserves empty strings and null; null explicitly clears a stored field.
+- Submission normalization happens in the submit handler before calling onSubmit, preserving spaces while typing.
+
+Next:
+
+- Submit the focused servings-editing PR before expanding to other fields.
