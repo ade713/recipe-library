@@ -1163,3 +1163,24 @@ Learned:
 Next:
 
 - Submit the focused image URL editing PR before expanding to other fields.
+
+
+## Recipe Favorite Editing — 2026-11-03
+
+Built:
+
+- Prefilled a controlled Favorite switch and submitted explicit true/false values.
+- Disabled the switch while saving and preserved the selected value after failure for retry.
+- Added form, screen, and API serialization tests; all 450 mobile tests across twenty-eight suites, TypeScript, and whitespace checks pass.
+- Android verified initial values, both toggle directions, persistence, detail/library updates, untouched preservation, and pending/failure behavior.
+
+Learned:
+
+- False removes favorite status; omitting the PATCH field leaves it unchanged. Favorites are separate from recipe tags.
+- Initial props seed local state, which then tracks the user's edits.
+- Switch onValueChange supplies the new boolean directly to the state setter.
+- The installed toBeDisabled matcher inspects accessibility state; the iOS native switch exposes a disabled prop that can be asserted directly.
+
+Next:
+
+- Submit the focused favorite-editing PR before expanding to other fields.

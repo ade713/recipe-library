@@ -500,6 +500,21 @@ clearing, invalid-input correction, recovery from a broken image URL, and
 failed-save preservation. This uses existing remote-image rendering and fallback
 behavior; uploads and source attribution editing remain separate work.
 
+## Editing recipe favorite status
+
+The edit form prefills a Favorite switch from the saved recipe. Local boolean
+state tracks changes, and submission always includes is_favorite, including
+false to remove favorite status. Omitting the optional PATCH field leaves the
+stored value unchanged. Saving other fields preserves the existing selection.
+The switch is disabled during saving and retains its selection after failure
+for retry. Favorite status is separate from recipe tags.
+
+All 450 mobile tests across twenty-eight suites, TypeScript, and whitespace
+checks pass. Form, screen, and API tests cover both initial values, toggling,
+pending controls, failure/retry, and true/false/undefined serialization.
+Android verified prefilling, both toggle directions, persistence, detail/library
+updates, untouched preservation, and pending/failure behavior.
+
 ## Manual recipe time entry
 
 The creation form accepts optional prep, cook, and total times in minutes.
