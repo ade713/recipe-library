@@ -716,7 +716,25 @@ All 324 mobile tests across twenty-two suites, TypeScript, and whitespace checks
 pass. Coverage includes search limits, selection/removal, request serialization,
 and failed-save preservation. Android checks verified selection, removal,
 selected-chip wrapping, saving with and without tags, and failed-save retry.
-The later change to wrapping suggestion buttons still needs a device layout check.
+Suggestion and selected-chip wrapping were subsequently verified on Android during the picker extraction.
+
+## Reusable searchable tag picker
+
+`src/tags/searchable-tag-picker.tsx` renders the controlled search input,
+matching suggestions, selected chips, and empty messages. Props supply available
+tags, selected IDs, search text, and callbacks. Matches are derived from these
+props rather than stored in additional state. The component preserves the
+existing labels, five-result limit, and wrapping styles.
+
+The creation screen retains selection/search state, loading/retry, inline tag
+creation, and recipe saving. Its callbacks clear search after selection and
+clear creation errors when typing. `searchDisabled` disables only the search
+input during tag creation, preserving existing behavior.
+
+All 450 existing mobile tests across twenty-eight suites, TypeScript, and
+whitespace checks pass. Android verified searching, selection/removal, chip
+wrapping, and inline creation. This extraction prepares reuse in recipe editing;
+editing saved recipe tags remains a separate milestone.
 
 ## Inline tag creation
 
