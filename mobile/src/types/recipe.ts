@@ -120,4 +120,5 @@ export type RecipeUpdateRequest = {
   total_time_minutes?: number | null;
   base_servings?: number | null;
   servings_unit?: string | null;
+  is_favorite?: boolean;
 };

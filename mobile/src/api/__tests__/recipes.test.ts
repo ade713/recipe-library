@@ -328,6 +328,24 @@ describe("createRecipe", () => {
 
 describe("updateRecipe", () => {
   it.each([
+    { isFavorite: true, body: '{"is_favorite":true}' },
+    { isFavorite: false, body: '{"is_favorite":false}' },
+    { isFavorite: undefined, body: "{}" },
+  ])("serializes favorite updates: $body", async ({ isFavorite, body }) => {
+    const payload: RecipeUpdateRequest = { is_favorite: isFavorite };
+
+    const requestMock = jest.spyOn(client, "apiFetch").mockResolvedValue(makeRecipeDetailResponse());
+
+    await updateRecipe(ACCESS_TOKEN, RECIPE_ID, payload);
+
+    expect(requestMock).toHaveBeenCalledWith(`${RECIPES_PATH}/${RECIPE_ID}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
+      body,
+    });
+  });
+
+  it.each([
     { imageUrl: "https://example.com/photo.jpg", body: '{"image_url":"https://example.com/photo.jpg"}' },
     { imageUrl: null, body: '{"image_url":null}' },
     { imageUrl: undefined, body: "{}" },

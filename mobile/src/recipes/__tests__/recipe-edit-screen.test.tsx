@@ -7,7 +7,7 @@ import { RecipeEditScreen } from "../recipe-edit-screen";
 
 const CURRENT_RECIPE_TITLE = "Current recipe";
 const EDITED_TITLE = "Updated soup";
-const LOAD_ERROR = "Unable to load recipe.";
+const LOAD_ERROR_MESSAGE = "Unable to load recipe.";
 const LOADING_TEXT = "Loading recipe...";
 const RECIPE_ID = "recipe-one";
 const RECIPE_ID_2 = "recipe-two";
@@ -53,13 +53,13 @@ describe("RecipeEditScreen", () => {
 
     await renderScreen();
 
-    expect(await screen.findByText(LOAD_ERROR)).toBeTruthy();
+    expect(await screen.findByText(LOAD_ERROR_MESSAGE)).toBeTruthy();
     expect(screen.queryByText(privateErrorMessage)).toBeNull();
     expect(screen.queryByLabelText(TITLE_LABEL)).toBeNull();
 
     await fireEvent.press(screen.getByRole("button", { name: retryButtonText }));
     expect(await screen.findByLabelText(TITLE_LABEL)).toHaveDisplayValue(recipe.title);
-    expect(screen.queryByText(LOAD_ERROR)).toBeNull();
+    expect(screen.queryByText(LOAD_ERROR_MESSAGE)).toBeNull();
     expect(loadMock).toHaveBeenCalledTimes(2);
   });
 
@@ -118,7 +118,7 @@ describe("RecipeEditScreen", () => {
       rejectFirst(new Error("Previous request failed"));
     });
 
-    expect(screen.queryByText(LOAD_ERROR)).toBeNull();
+    expect(screen.queryByText(LOAD_ERROR_MESSAGE)).toBeNull();
     expect(screen.getByLabelText(TITLE_LABEL)).toHaveDisplayValue(second.title);
   });
 
@@ -144,6 +144,7 @@ describe("RecipeEditScreen", () => {
       base_servings: null,
       servings_unit: null,
       image_url: null,
+      is_favorite: false,
     });
     expect(onSaved).toHaveBeenCalledWith(savedRecipe);
     expect(onSaved).toHaveBeenCalledTimes(1);
@@ -182,6 +183,7 @@ describe("RecipeEditScreen", () => {
       base_servings: null,
       servings_unit: null,
       image_url: null,
+      is_favorite: false,
     });
     expect(onSaved).toHaveBeenCalledWith(savedRecipe);
     expect(screen.queryByText(saveError)).toBeNull();
@@ -218,6 +220,7 @@ describe("RecipeEditScreen", () => {
       base_servings: null,
       servings_unit: null,
       image_url: null,
+      is_favorite: false,
     });
     expect(onSaved).toHaveBeenCalledWith(savedRecipe);
   });
@@ -258,6 +261,7 @@ describe("RecipeEditScreen", () => {
       base_servings: null,
       servings_unit: null,
       image_url: null,
+      is_favorite: false,
     });
   });
 
@@ -321,4 +325,27 @@ describe("RecipeEditScreen", () => {
     expect(saveMock).toHaveBeenCalledWith(RECIPE_ID, expect.objectContaining({ image_url: expected }));
     expect(onSaved).toHaveBeenCalledWith(savedRecipe);
   });
+
+  it.each([
+    { label: "preserve favorite", initial: true, selected: undefined, expected: true },
+    { label: "preserve nonfavorite", initial: false, selected: undefined, expected: false },
+    { label: "add favorite", initial: false, selected: true, expected: true },
+    { label: "remove favorite", initial: true, selected: false, expected: false },
+  ])("prefills and submits favorite status: $label", async ({ initial, selected, expected }) => {
+    const recipe = makeRecipeDetailResponse({ id: RECIPE_ID, is_favorite: initial });
+    const savedRecipe = makeRecipeDetailResponse({ id: RECIPE_ID, is_favorite: expected });
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+    const saveMock = jest.spyOn(recipeService, "saveRecipeChanges").mockResolvedValue(savedRecipe);
+    const onSaved = jest.fn();
+
+    await renderScreen(onSaved);
+    const favoriteSwitch = await screen.findByRole("switch", { name: "Favorite" });
+    expect(favoriteSwitch).toHaveProp("value", initial);
+    if (selected !== undefined) await fireEvent(favoriteSwitch, "valueChange", selected);
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_CHANGES_LABEL }));
+
+    expect(saveMock).toHaveBeenCalledWith(RECIPE_ID, expect.objectContaining({ is_favorite: expected }));
+    expect(onSaved).toHaveBeenCalledWith(savedRecipe);
+  });
+
 });
