@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Button, StyleSheet, Text, TextInput, View } from "react-native";
+import { Button, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 
 const BASE_SERVINGS_LABEL = "Servings or yield quantity";
 const COOK_TEXT = "Cook";
 const COOK_TIME_LABEL = "Cook time (minutes)";
 const DESCRIPTION_LABEL = "Description (optional)";
+const FAVORITE_LABEL = "Favorite";
 const IMAGE_URL_LABEL = "Image URL (optional)";
 const INVALID_IMAGE_URL_MESSAGE = "Enter a valid HTTP or HTTPS image URL.";
 const INVALID_PROTOCOL_MESSAGE = "Expected an HTTP or HTTPS URL.";
@@ -35,6 +36,7 @@ export type RecipeEditFormValues = {
   total_time_minutes: number | null;
   base_servings: number | null;
   servings_unit: string | null;
+  is_favorite: boolean;
 };
 
 type RecipeEditFormProps = {
@@ -46,6 +48,7 @@ type RecipeEditFormProps = {
   initialTotalTimeMinutes?: number | null;
   initialBaseServings?: string | null;
   initialServingsUnit?: string | null;
+  initialIsFavorite?: boolean;
   onSubmit: (values: RecipeEditFormValues) => Promise<void>;
 };
 
@@ -100,6 +103,7 @@ export function RecipeEditForm({
   initialTotalTimeMinutes,
   initialBaseServings,
   initialServingsUnit,
+  initialIsFavorite,
   onSubmit,
 }: RecipeEditFormProps) {
   const [currentTitle, setCurrentTitle] = useState(initialTitle);
@@ -110,6 +114,7 @@ export function RecipeEditForm({
   const [currentTotalTime, setCurrentTotalTime] = useState(initialTotalTimeMinutes?.toString() ?? "");
   const [currentBaseServings, setCurrentBaseServings] = useState(initialBaseServings ?? "");
   const [currentServingsUnit, setCurrentServingsUnit] = useState(initialServingsUnit ?? "");
+  const [currentIsFavorite, setCurrentIsFavorite] = useState(initialIsFavorite ?? false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -174,6 +179,7 @@ export function RecipeEditForm({
         image_url: imageUrl,
         base_servings: baseServings,
         servings_unit: normalizedServingsUnit,
+        is_favorite: currentIsFavorite,
         ...times,
       });
     } catch {
@@ -285,6 +291,16 @@ export function RecipeEditForm({
         </View>
       </View>
 
+      <View style={[styles.fieldsRow, styles.favoriteRow]}>
+        <Text>{FAVORITE_LABEL}</Text>
+        <Switch
+          accessibilityLabel={FAVORITE_LABEL}
+          disabled={isSubmitting}
+          value={currentIsFavorite}
+          onValueChange={setCurrentIsFavorite}
+        />
+      </View>
+
       <Button
         accessibilityLabel={SAVE_LABEL}
         title={SAVE_LABEL}
@@ -322,6 +338,9 @@ const styles = StyleSheet.create({
   compactInput: {
     minHeight: 48,
     paddingHorizontal: 8,
+  },
+  favoriteRow: {
+    alignItems: "center",
   },
   errorMessage: {
     color: "#f32121",

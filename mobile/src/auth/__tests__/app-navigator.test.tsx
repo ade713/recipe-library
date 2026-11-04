@@ -900,6 +900,7 @@ describe("AppNavigator", () => {
       base_servings: null,
       servings_unit: null,
       image_url: null,
+      is_favorite: false,
     });
 
     await act(async () => {
