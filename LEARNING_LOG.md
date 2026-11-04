@@ -1184,3 +1184,22 @@ Learned:
 Next:
 
 - Submit the focused favorite-editing PR before expanding to other fields.
+
+
+## Searchable Tag Picker Extraction — 2026-11-04
+
+Built:
+
+- Extracted the controlled search input, selected chips, matching suggestions, and related styles into SearchableTagPicker.
+- Kept search/selection state, loading/retry, inline creation, and recipe saving in the creation screen.
+- Preserved existing behavior; all 450 mobile tests across twenty-eight suites, TypeScript, and whitespace checks pass.
+- Android verified searching, selection/removal, chip wrapping, and inline creation.
+
+Learned:
+
+- Parent-owned state supports tag creation and recipe submission while callbacks keep the picker reusable.
+- Matching tags are derived from tags, search text, and selected IDs, avoiding duplicated state that could become stale.
+
+Next:
+
+- Submit the focused extraction PR before integrating saved-recipe tag editing.
