@@ -192,7 +192,7 @@ export function RecipeEditScreen({ recipeId, headerHeight = 0, onSaved }: Recipe
     if (tagError !== null) {
       return (
         <>
-          <Text>{tagError}</Text>
+          <Text style={styles.errorMessage}>{tagError}</Text>
           <Button
             accessibilityLabel={RETRY_TAGS_BUTTON_LABEL}
             title={RETRY_TAGS_BUTTON_LABEL}
