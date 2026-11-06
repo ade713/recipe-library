@@ -1227,5 +1227,5 @@ Discussed:
 Next:
 
 - Submit the focused existing-tag editing PR.
-- Complete the final review questions about omission versus [] and finally without catch.
+- Final review completed on 2026-11-06: omission preserves existing tags, [] explicitly clears them, and finally resets saving state while failures propagate to the form.
 - Keep inline tag creation in editing and shared hook extraction as follow-ups.
