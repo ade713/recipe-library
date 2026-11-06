@@ -761,7 +761,27 @@ All 465 mobile tests across twenty-nine suites, TypeScript, and whitespace check
 pass. Android verified prefilling, adding/removing and clearing tags, failure/retry,
 pending controls, tag-load failure with preserved form edits, keyboard access,
 and the existing creation flow. Temporary delay/error simulations were removed.
-Inline creation in editing and a shared tag-loading hook remain follow-up work.
+Inline creation in editing remains follow-up work. Shared tag loading is described below.
+
+## Shared available-tag loading
+
+`useAvailableTags` owns available tags, loading/error state, retry, and request
+cleanup for both creation and editing. An optional reload key triggers a fresh
+load; editing supplies recipeId. Starting a load clears old tags and errors.
+Active guards cover success, failure, and finally so stale requests cannot
+replace current data or prematurely clear loading state.
+
+Creation calls addTag after a successful creation request. Its functional update
+preserves consecutive additions. Search, selected IDs, creation requests, and
+saving remain in their screens. Editing also retains saved-name matching errors,
+combining them with the hook's loading error for display and safe submission.
+Each hook call owns independent state; this is shared logic, not a shared cache.
+
+All 472 mobile tests across thirty suites, TypeScript, and whitespace checks pass.
+Hook tests cover empty/populated results, retry, consecutive additions, reloads,
+and stale success/failure handling. Android verified creation, inline tag
+creation, edit prefilling/persistence, and loading failure/retry without losing
+form edits in either flow.
 
 ## Inline tag creation
 

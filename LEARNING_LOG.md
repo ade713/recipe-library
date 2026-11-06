@@ -1229,3 +1229,23 @@ Next:
 - Submit the focused existing-tag editing PR.
 - Final review completed on 2026-11-06: omission preserves existing tags, [] explicitly clears them, and finally resets saving state while failures propagate to the form.
 - Keep inline tag creation in editing and shared hook extraction as follow-ups.
+
+
+## Shared Available-Tag Hook — 2026-11-06
+
+Built:
+
+- Extracted loading, safe errors, retry, stale-response protection, and addTag into useAvailableTags.
+- Integrated independent hook instances in creation and editing; retained matching errors and selection state in the edit screen.
+- Added seven hook tests for responses, retry, additions, reloads, and stale completion behavior. All 472 mobile tests across thirty suites, TypeScript, and whitespace checks pass.
+- Android verified creation, inline creation, editing, and loading failure/retry while preserving form edits.
+
+Learned:
+
+- Guard finally as well as success/failure so old requests cannot clear a newer request's loading state.
+- Functional updates use the latest state and preserve consecutive additions.
+- Custom hooks reuse logic while each invocation owns independent state.
+
+Next:
+
+- Submit the focused loading-hook refactor before adding inline creation to editing.
