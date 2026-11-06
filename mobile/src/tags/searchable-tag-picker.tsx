@@ -13,6 +13,7 @@ export type SearchableTagPickerProps = {
   selectedTagIds: string[];
   searchTerm: string;
   searchDisabled?: boolean;
+  disabled?: boolean;
   onSearchChange: (value: string) => void;
   onSelectTag: (id: string) => void;
   onRemoveTag: (id: string) => void;
@@ -23,6 +24,7 @@ export function SearchableTagPicker({
   selectedTagIds,
   searchTerm,
   searchDisabled,
+  disabled,
   onSearchChange,
   onSelectTag,
   onRemoveTag,
@@ -41,6 +43,7 @@ export function SearchableTagPicker({
               key={tagId}
               accessibilityRole='button'
               accessibilityLabel={`Remove tag ${tag.name}`}
+              disabled={disabled}
               onPress={() => onRemoveTag(tagId)}
               style={[styles.tagButton, styles.selectedTag]}
             >
@@ -73,6 +76,7 @@ export function SearchableTagPicker({
             key={tag.id}
             accessibilityRole='button'
             accessibilityLabel={`Select tag ${tag.name}`}
+            disabled={disabled}
             onPress={() => onSelectTag(tag.id)}
             style={styles.tagButton}
           >
@@ -91,10 +95,10 @@ export function SearchableTagPicker({
         placeholder={TAGS_SEARCH_PLACEHOLDER}
         autoCorrect={false}
         autoCapitalize='none'
-        editable={!searchDisabled}
+        editable={!(disabled || searchDisabled)}
         value={searchTerm}
         onChangeText={onSearchChange}
-        style={[styles.formInput, searchDisabled && styles.disabledInput]}
+        style={[styles.formInput, (disabled || searchDisabled) && styles.disabledInput]}
       />
 
       {tags.length === 0 && <Text>{TAGS_EMPTY_MESSAGE}</Text>}

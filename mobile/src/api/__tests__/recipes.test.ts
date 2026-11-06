@@ -328,6 +328,23 @@ describe("createRecipe", () => {
 
 describe("updateRecipe", () => {
   it.each([
+    { tags: ["Dinner"], body: '{"tags":["Dinner"]}' },
+    { tags: [], body: '{"tags":[]}' },
+    { tags: undefined, body: "{}" },
+  ])("serializes tag updates: $body", async ({ tags, body }) => {
+    const payload: RecipeUpdateRequest = { tags };
+
+    const requestMock = jest.spyOn(client, "apiFetch").mockResolvedValue(makeRecipeDetailResponse());
+
+    await updateRecipe(ACCESS_TOKEN, RECIPE_ID, payload);
+    expect(requestMock).toHaveBeenCalledWith(`${RECIPES_PATH}/${RECIPE_ID}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
+      body,
+    });
+  });
+
+  it.each([
     { isFavorite: true, body: '{"is_favorite":true}' },
     { isFavorite: false, body: '{"is_favorite":false}' },
     { isFavorite: undefined, body: "{}" },

@@ -121,4 +121,5 @@ export type RecipeUpdateRequest = {
   base_servings?: number | null;
   servings_unit?: string | null;
   is_favorite?: boolean;
+  tags?: string[];
 };
