@@ -2,10 +2,9 @@ import { useEffect, useState } from "react";
 import { Button, KeyboardAvoidingView, ScrollView, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { loadTags } from "@/tags/tag-service";
 import { SearchableTagPicker } from "@/tags/searchable-tag-picker";
+import { useAvailableTags } from "@/tags/use-available-tags";
 import type { RecipeDetailResponse } from "@/types/recipe";
-import type { TagResponse } from "@/types/tag";
 
 import { loadRecipe, saveRecipeChanges } from "./recipe-service";
 import { RecipeEditForm } from "./recipe-edit-form";
@@ -16,7 +15,6 @@ const LOADING_RECIPE_TEXT = "Loading recipe...";
 const RETRY_BUTTON = "Retry";
 const RETRY_TAGS_BUTTON_LABEL = "Retry tags";
 const TAGS_MATCH_ERROR_MESSAGE = "Unable to match saved tags. Please retry.";
-const TAGS_LOADING_ERROR_MESSAGE = "Unable to load tags.";
 const TAGS_LOADING_MESSAGE = "Loading tags...";
 
 type RecipeEditScreenProps = {
@@ -26,17 +24,18 @@ type RecipeEditScreenProps = {
 };
 
 export function RecipeEditScreen({ recipeId, headerHeight = 0, onSaved }: RecipeEditScreenProps) {
+  const { tags, isLoadingTags, tagError: tagLoadingError, retryLoadingTags: reloadTags } = useAvailableTags(recipeId);
+
   const [recipe, setRecipe] = useState<RecipeDetailResponse | null>(null);
   const [isLoadingRecipe, setIsLoadingRecipe] = useState(true);
   const [loadRecipeError, setLoadRecipeError] = useState<string | null>(null);
   const [loadingAttempt, setLoadingAttempt] = useState(0);
-  const [tags, setTags] = useState<TagResponse[]>([]);
-  const [isLoadingTags, setIsLoadingTags] = useState(true);
-  const [tagError, setTagError] = useState<string | null>(null);
-  const [tagLoadingAttempt, setTagLoadingAttempt] = useState(0);
+  const [tagMatchError, setTagMatchError] = useState<string | null>(null);
   const [tagSearchTerm, setTagSearchTerm] = useState("");
   const [selectedTagIds, setSelectedTagIds] = useState<string[] | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  const tagError = tagLoadingError ?? tagMatchError;
 
   useEffect(() => {
     let active = true;
@@ -45,6 +44,7 @@ export function RecipeEditScreen({ recipeId, headerHeight = 0, onSaved }: Recipe
     setLoadRecipeError(null);
     setRecipe(null);
     setTagSearchTerm("");
+    setTagMatchError(null);
     setSelectedTagIds(null);
 
     const getRecipe = async (): Promise<void> => {
@@ -73,44 +73,13 @@ export function RecipeEditScreen({ recipeId, headerHeight = 0, onSaved }: Recipe
   }, [recipeId, loadingAttempt]);
 
   useEffect(() => {
-    let active = true;
-
-    setIsLoadingTags(true);
-    setTagError(null);
-    setTags([]);
-
-    const getTags = async (): Promise<void> => {
-      try {
-        const response = await loadTags();
-        if (active) {
-          setTags(response.items);
-        }
-      } catch {
-        if (active) {
-          setTagError(TAGS_LOADING_ERROR_MESSAGE);
-        }
-      } finally {
-        if (active) {
-          setIsLoadingTags(false);
-        }
-      }
-    };
-
-    void getTags();
-
-    return () => {
-      active = false;
-    };
-  }, [recipeId, tagLoadingAttempt]);
-
-  useEffect(() => {
     if (isLoadingRecipe || isLoadingTags || recipe === null || tagError !== null || selectedTagIds !== null) {
       return;
     }
 
     const currentSelectedTags = tags.filter((tag) => recipe.tags.includes(tag.name));
     if (currentSelectedTags.length !== recipe.tags.length) {
-      setTagError(TAGS_MATCH_ERROR_MESSAGE);
+      setTagMatchError(TAGS_MATCH_ERROR_MESSAGE);
       return;
     }
 
@@ -151,10 +120,8 @@ export function RecipeEditScreen({ recipeId, headerHeight = 0, onSaved }: Recipe
       return;
     }
 
-    setIsLoadingTags(true);
-    setTagError(null);
-
-    setTagLoadingAttempt((attempt) => attempt + 1);
+    setTagMatchError(null);
+    reloadTags();
   };
 
   const handleSelectTag = (newTagId: string): void => {
