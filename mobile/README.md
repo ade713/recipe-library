@@ -734,7 +734,34 @@ input during tag creation, preserving existing behavior.
 All 450 existing mobile tests across twenty-eight suites, TypeScript, and
 whitespace checks pass. Android verified searching, selection/removal, chip
 wrapping, and inline creation. This extraction prepares reuse in recipe editing;
-editing saved recipe tags remains a separate milestone.
+saved-recipe tag editing is described below.
+
+## Editing saved recipe tags
+
+RecipeEditScreen loads available tags independently of the recipe. Tag failures
+show local retry feedback while other fields remain editable; retry keeps the
+form mounted. Active flags prevent stale responses from updating state.
+
+Once both loads succeed, saved tag names are matched to available IDs. Null
+selection state means initialization is pending; an empty array means no tags
+are selected. If any saved name cannot be matched, the picker stays hidden with
+retry feedback so saving other fields does not silently remove tags.
+
+The shared picker supports searching, adding, and removing existing tags.
+Saving includes selected names only when initialization is complete and tag data
+is ready. An explicit empty array removes all tags; otherwise the tags property
+is omitted. Search text is never implicitly selected. Failed saves retain
+selections, and screen-level saving state disables search and both chip actions.
+The creation screen retains its separate search-only disabling behavior.
+
+KeyboardAvoidingView keeps the edit form accessible with the keyboard open.
+The edit route supplies header height; direct screen renders default to zero.
+
+All 465 mobile tests across twenty-nine suites, TypeScript, and whitespace checks
+pass. Android verified prefilling, adding/removing and clearing tags, failure/retry,
+pending controls, tag-load failure with preserved form edits, keyboard access,
+and the existing creation flow. Temporary delay/error simulations were removed.
+Inline creation in editing and a shared tag-loading hook remain follow-up work.
 
 ## Inline tag creation
 

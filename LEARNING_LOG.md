@@ -1203,3 +1203,29 @@ Learned:
 Next:
 
 - Submit the focused extraction PR before integrating saved-recipe tag editing.
+
+
+## Existing Recipe Tag Editing — 2026-11-05
+
+Built:
+
+- Loaded available tags with local feedback/retry while preserving recipe form edits.
+- Initialized selections from saved names after both loads complete; unmatched names retain safe omission and retry behavior.
+- Submitted selected names, explicitly cleared all tags with [], and omitted tags before safe initialization.
+- Disabled search/chip actions while saving and preserved failed-save selections.
+- Added keyboard avoidance with header height passed from the route.
+- All 465 mobile tests across twenty-nine suites, TypeScript, and whitespace checks pass. Android checks verified editing, clearing, retry, pending controls, keyboard access, and creation behavior.
+
+Discussed:
+
+- Null distinguishes uninitialized selection from an intentionally empty array.
+- Effects run after rendering, so the picker must not receive null selection props.
+- State-updater callbacks require their own null guards.
+- Screen-level pending state controls the sibling picker; finally resets it while save failures reach the form.
+- A shared tag hook is deferred until the editing milestone is complete.
+
+Next:
+
+- Submit the focused existing-tag editing PR.
+- Complete the final review questions about omission versus [] and finally without catch.
+- Keep inline tag creation in editing and shared hook extraction as follow-ups.
