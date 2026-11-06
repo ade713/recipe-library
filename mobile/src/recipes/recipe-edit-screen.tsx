@@ -108,18 +108,14 @@ export function RecipeEditScreen({ recipeId, headerHeight = 0, onSaved }: Recipe
       return;
     }
 
-    const initiliazeSelectedTagIds = () => {
-      const currentSelectedTags = tags.filter((tag) => recipe.tags.includes(tag.name));
-      if (currentSelectedTags.length !== recipe.tags.length) {
-        setTagError(TAGS_MATCH_ERROR_MESSAGE);
-        return;
-      }
+    const currentSelectedTags = tags.filter((tag) => recipe.tags.includes(tag.name));
+    if (currentSelectedTags.length !== recipe.tags.length) {
+      setTagError(TAGS_MATCH_ERROR_MESSAGE);
+      return;
+    }
 
-      const currentSelectedTagIds = currentSelectedTags.map((tag) => tag.id);
-      setSelectedTagIds(currentSelectedTagIds);
-    };
-
-    initiliazeSelectedTagIds();
+    const currentSelectedTagIds = currentSelectedTags.map((tag) => tag.id);
+    setSelectedTagIds(currentSelectedTagIds);
   }, [tags, recipe, isLoadingRecipe, isLoadingTags, tagError, selectedTagIds]);
 
   const handleSaveChanges = async (values: RecipeEditFormValues): Promise<void> => {
@@ -180,10 +176,6 @@ export function RecipeEditScreen({ recipeId, headerHeight = 0, onSaved }: Recipe
     });
   };
 
-  const handleChangeSearchInput = (searchText: string): void => {
-    setTagSearchTerm(searchText);
-  };
-
   const renderTagsSection = () => {
     if (isLoadingTags) {
       return <Text>{TAGS_LOADING_MESSAGE}</Text>;
@@ -212,7 +204,7 @@ export function RecipeEditScreen({ recipeId, headerHeight = 0, onSaved }: Recipe
         selectedTagIds={selectedTagIds}
         searchTerm={tagSearchTerm}
         disabled={isSaving}
-        onSearchChange={handleChangeSearchInput}
+        onSearchChange={setTagSearchTerm}
         onSelectTag={handleSelectTag}
         onRemoveTag={handleRemoveTag}
       />
