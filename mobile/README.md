@@ -801,8 +801,27 @@ Tags persist independently: leaving without saving keeps the new tag available
 but does not attach it to the recipe. All 480 mobile tests across thirty-one
 suites, TypeScript, and whitespace checks pass. Android verified creation and
 selection, saving, failure/retry, conflicting-action locks, and independent tag
-persistence. Temporary delays/debugging code were removed. Reviewing shared
-creation logic for extraction is the agreed separate follow-up.
+persistence. Temporary delays/debugging code were removed. Shared creation logic is now extracted as described below.
+
+## Shared tag-creation logic
+
+Both creation and editing use useTagCreation for trimmed-name eligibility,
+Unicode length validation, duplicate checks, pending state, safe error feedback,
+and the saveTag request. Eligibility is independent of disabled/pending state
+so a valid Create action remains visible while disabled. Screens retain search,
+selection, rendering, and an onCreated callback that appends/selects the returned
+tag. The stable clearTagCreateError callback supports search/reset handling and
+is included in the edit screen's recipe-loading effect dependencies.
+
+All 492 mobile tests across thirty-two suites, TypeScript, and whitespace checks
+pass. Android verified both flows, creation/selection, failure/retry, and preserved
+form edits. Temporary verification delays were removed.
+
+Known follow-up bug: the creation screen still allows tag search/chip actions
+and tag creation while a recipe save is pending. The request uses the selection
+snapshot taken at submission, so later chip changes do not affect that save.
+A separate bug-fix PR will lock these controls during creation-screen saving;
+this refactor preserves existing behavior.
 
 ## Inline tag creation
 

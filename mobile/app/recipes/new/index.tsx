@@ -4,20 +4,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useHeaderHeight } from "expo-router/react-navigation";
 import { useRouter } from "expo-router";
 
-import { ApiError } from "@/api/errors";
-import { saveTag } from "@/tags/tag-service";
 import { RecipeCreateForm } from "@/recipes/recipe-create-form";
 import { saveRecipe } from "@/recipes/recipe-service";
 import { SearchableTagPicker } from "@/tags/searchable-tag-picker";
 import { useAvailableTags } from "@/tags/use-available-tags";
+import { useTagCreation } from "@/tags/use-tag-creation";
 import type { RecipeCreateRequest } from "@/types/recipe";
 
 const CREATING_TAG_MESSAGE = "Creating tag...";
-const MAX_TAG_LENGTH = 50;
 const RETRY_TAGS_BUTTON_LABEL = "Retry tags";
-const TAG_CREATE_ERROR_MESSAGE = "Unable to create tag. Please try again.";
-const TAG_DUPLICATE_ERROR_MESSAGE = "A tag with this name already exists.";
-const TAG_NAME_LENGTH_ERROR_MESSAGE = "Tag names must be 50 characters or fewer.";
 const TAGS_HEADER = "Tags";
 const TAGS_LOADING_MESSAGE = "Loading tags...";
 
@@ -29,42 +24,16 @@ export default function NewRecipeScreen() {
 
   const [tagSearchTerm, setTagSearchTerm] = useState("");
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
-  const [isCreatingTag, setIsCreatingTag] = useState(false);
-  const [tagCreateError, setTagCreateError] = useState<string | null>(null);
 
-  const handleCreateTag = async (): Promise<void> => {
-    if (isCreatingTag) {
-      return;
-    }
-
-    const newTagName = tagSearchTerm.trim();
-    if (newTagName.length === 0) {
-      return;
-    }
-    if (Array.from(newTagName).length > MAX_TAG_LENGTH) {
-      return;
-    }
-    if (tags.some((tag) => tag.name.toLowerCase() === newTagName.toLowerCase())) {
-      return;
-    }
-
-    setIsCreatingTag(true);
-    setTagCreateError(null);
-
-    try {
-      const response = await saveTag(newTagName);
-      addTag(response);
-      handleSelectTag(response.id);
-    } catch (error: unknown) {
-      if (error instanceof ApiError && error.status === 409) {
-        setTagCreateError(TAG_DUPLICATE_ERROR_MESSAGE);
-      } else {
-        setTagCreateError(TAG_CREATE_ERROR_MESSAGE);
-      }
-    } finally {
-      setIsCreatingTag(false);
-    }
-  };
+  const { newTagName, canCreateTag, nameError, isCreatingTag, tagCreateError, createTag, clearTagCreateError } =
+    useTagCreation({
+      tags,
+      searchTerm: tagSearchTerm,
+      onCreated: (tag) => {
+        addTag(tag);
+        handleSelectTag(tag.id);
+      },
+    });
 
   const handleSelectTag = (newTagId: string): void => {
     setSelectedTagIds((currentTagIds) =>
@@ -78,7 +47,7 @@ export default function NewRecipeScreen() {
   };
 
   const handleChangeSearchInput = (searchText: string): void => {
-    setTagCreateError(null);
+    clearTagCreateError();
     setTagSearchTerm(searchText);
   };
 
@@ -90,16 +59,7 @@ export default function NewRecipeScreen() {
   };
 
   const renderCreateTagButton = () => {
-    const newTagName = tagSearchTerm.trim();
-    if (newTagName.length === 0) {
-      return null;
-    }
-
-    if (Array.from(newTagName).length > MAX_TAG_LENGTH) {
-      return null;
-    }
-
-    if (tags.some((tag) => tag.name.toLowerCase() === newTagName.toLowerCase())) {
+    if (!canCreateTag) {
       return null;
     }
 
@@ -109,7 +69,7 @@ export default function NewRecipeScreen() {
         title={`Create ${newTagName}`}
         disabled={isCreatingTag}
         onPress={() => {
-          void handleCreateTag();
+          void createTag();
         }}
       />
     );
@@ -144,7 +104,7 @@ export default function NewRecipeScreen() {
           onRemoveTag={handleRemoveTag}
         />
 
-        {Array.from(tagSearchTerm.trim()).length > MAX_TAG_LENGTH && <Text>{TAG_NAME_LENGTH_ERROR_MESSAGE}</Text>}
+        {nameError !== null && <Text>{nameError}</Text>}
         {renderCreateTagButton()}
         {isCreatingTag && <Text>{CREATING_TAG_MESSAGE}</Text>}
         {tagCreateError !== null && <Text>{tagCreateError}</Text>}
