@@ -761,7 +761,7 @@ All 465 mobile tests across twenty-nine suites, TypeScript, and whitespace check
 pass. Android verified prefilling, adding/removing and clearing tags, failure/retry,
 pending controls, tag-load failure with preserved form edits, keyboard access,
 and the existing creation flow. Temporary delay/error simulations were removed.
-Inline creation in editing remains follow-up work. Shared tag loading is described below.
+Inline creation in editing and shared tag loading are described below.
 
 ## Shared available-tag loading
 
@@ -782,6 +782,27 @@ Hook tests cover empty/populated results, retry, consecutive additions, reloads,
 and stale success/failure handling. Android verified creation, inline tag
 creation, edit prefilling/persistence, and loading failure/retry without losing
 form edits in either flow.
+
+## Inline tag creation while editing
+
+Recipe editing offers Create for trimmed, nonblank names of at most 50 Unicode
+code points without a case-insensitive exact match in available tags. Success
+appends the returned tag through useAvailableTags.addTag, selects its ID, and
+clears search without saving the recipe or losing other edits.
+
+Creation shows local pending feedback, specific duplicate feedback for HTTP 409,
+and a generic message for other failures. Search changes and creation retry
+clear the error; recipe reset clears it too. Failed creation preserves search,
+selections, and recipe fields. Search, chips, and Create are disabled during
+creation or recipe saving. RecipeEditForm's saveDisabled prop prevents submission
+during creation while other form fields remain editable.
+
+Tags persist independently: leaving without saving keeps the new tag available
+but does not attach it to the recipe. All 480 mobile tests across thirty-one
+suites, TypeScript, and whitespace checks pass. Android verified creation and
+selection, saving, failure/retry, conflicting-action locks, and independent tag
+persistence. Temporary delays/debugging code were removed. Reviewing shared
+creation logic for extraction is the agreed separate follow-up.
 
 ## Inline tag creation
 

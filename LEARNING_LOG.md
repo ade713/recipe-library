@@ -1249,3 +1249,25 @@ Learned:
 Next:
 
 - Submit the focused loading-hook refactor before adding inline creation to editing.
+
+
+## Inline Tag Creation While Editing — 2026-11-07
+
+Built:
+
+- Added creation eligibility, trimming, length validation, and automatic selection of the returned tag.
+- Added local duplicate/generic error feedback, correction/retry, and pending feedback.
+- Prevented overlapping creation and recipe saving through disabled controls and the form's saveDisabled guard.
+- Preserved recipe edits and existing selections; created tags persist independently of recipe association.
+- All 480 mobile tests across thirty-one suites, TypeScript, and whitespace checks pass. Android verified success, failure/retry, pending controls, and leaving without saving.
+
+Learned:
+
+- The returned ID identifies the persisted tag to select.
+- Creating a tag does not save recipe edits; association depends on selection when the recipe is saved.
+- A temporary awaited delay allows visual confirmation of pending controls without pausing rendering; remove it before committing.
+
+Next:
+
+- Submit the focused inline-creation PR.
+- Review shared tag-creation extraction across both screens as a separate follow-up.
