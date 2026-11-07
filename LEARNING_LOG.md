@@ -1271,3 +1271,24 @@ Next:
 
 - Submit the focused inline-creation PR.
 - Review shared tag-creation extraction across both screens as a separate follow-up.
+
+
+## Shared Tag-Creation Hook — 2026-11-07
+
+Built:
+
+- Extracted validation, eligibility, pending/error state, creation requests, and error clearing into useTagCreation.
+- Integrated both screens while leaving selection, search, and rendering in their owners.
+- Used a stable clearTagCreateError callback in the edit screen's reset effect.
+- All 492 mobile tests across thirty-two suites, TypeScript, and whitespace checks pass. Android verified both flows; temporary delays were removed.
+
+Learned:
+
+- Eligibility controls whether Create appears; disabled/pending state controls whether it can be used.
+- Success callbacks let screens decide how returned tags affect their available lists and selections.
+- A recipe save uses its submitted selection snapshot; later UI changes do not modify that request.
+
+Next:
+
+- Submit the focused hook-refactor PR.
+- Fix creation-screen tag controls remaining interactive during recipe saving in a separate bug-fix PR.
