@@ -49,6 +49,7 @@ type RecipeEditFormProps = {
   initialBaseServings?: string | null;
   initialServingsUnit?: string | null;
   initialIsFavorite?: boolean;
+  saveDisabled?: boolean;
   onSubmit: (values: RecipeEditFormValues) => Promise<void>;
 };
 
@@ -104,6 +105,7 @@ export function RecipeEditForm({
   initialBaseServings,
   initialServingsUnit,
   initialIsFavorite,
+  saveDisabled = false,
   onSubmit,
 }: RecipeEditFormProps) {
   const [currentTitle, setCurrentTitle] = useState(initialTitle);
@@ -119,7 +121,7 @@ export function RecipeEditForm({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSubmit = async (): Promise<void> => {
-    if (isSubmitting) {
+    if (isSubmitting || saveDisabled) {
       return;
     }
 
@@ -304,7 +306,7 @@ export function RecipeEditForm({
       <Button
         accessibilityLabel={SAVE_LABEL}
         title={SAVE_LABEL}
-        disabled={isSubmitting}
+        disabled={isSubmitting || saveDisabled}
         onPress={() => {
           void handleSubmit();
         }}
