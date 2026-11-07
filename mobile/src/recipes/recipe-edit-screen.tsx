@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Button, KeyboardAvoidingView, ScrollView, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { ApiError } from "@/api/errors";
+import { saveTag } from "@/tags/tag-service";
 import { SearchableTagPicker } from "@/tags/searchable-tag-picker";
 import { useAvailableTags } from "@/tags/use-available-tags";
 import type { RecipeDetailResponse } from "@/types/recipe";
@@ -10,12 +12,17 @@ import { loadRecipe, saveRecipeChanges } from "./recipe-service";
 import { RecipeEditForm } from "./recipe-edit-form";
 import type { RecipeEditFormValues } from "./recipe-edit-form";
 
+const CREATING_TAG_MESSAGE = "Creating tag...";
 const LOAD_RECIPE_ERROR_MESSAGE = "Unable to load recipe.";
 const LOADING_RECIPE_TEXT = "Loading recipe...";
+const MAX_TAG_LENGTH = 50;
 const RETRY_BUTTON = "Retry";
 const RETRY_TAGS_BUTTON_LABEL = "Retry tags";
-const TAGS_MATCH_ERROR_MESSAGE = "Unable to match saved tags. Please retry.";
+const TAG_CREATE_ERROR_MESSAGE = "Unable to create tag. Please try again.";
+const TAG_DUPLICATE_ERROR_MESSAGE = "A tag with this name already exists.";
+const TAG_NAME_LENGTH_ERROR_MESSAGE = "Tag names must be 50 characters or fewer.";
 const TAGS_LOADING_MESSAGE = "Loading tags...";
+const TAGS_MATCH_ERROR_MESSAGE = "Unable to match saved tags. Please retry.";
 
 type RecipeEditScreenProps = {
   recipeId: string;
@@ -24,7 +31,13 @@ type RecipeEditScreenProps = {
 };
 
 export function RecipeEditScreen({ recipeId, headerHeight = 0, onSaved }: RecipeEditScreenProps) {
-  const { tags, isLoadingTags, tagError: tagLoadingError, retryLoadingTags: reloadTags } = useAvailableTags(recipeId);
+  const {
+    tags,
+    isLoadingTags,
+    tagError: tagLoadingError,
+    retryLoadingTags: reloadTags,
+    addTag,
+  } = useAvailableTags(recipeId);
 
   const [recipe, setRecipe] = useState<RecipeDetailResponse | null>(null);
   const [isLoadingRecipe, setIsLoadingRecipe] = useState(true);
@@ -34,6 +47,8 @@ export function RecipeEditScreen({ recipeId, headerHeight = 0, onSaved }: Recipe
   const [tagSearchTerm, setTagSearchTerm] = useState("");
   const [selectedTagIds, setSelectedTagIds] = useState<string[] | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isCreatingTag, setIsCreatingTag] = useState(false);
+  const [tagCreateError, setTagCreateError] = useState<string | null>(null);
 
   const tagError = tagLoadingError ?? tagMatchError;
 
@@ -46,6 +61,7 @@ export function RecipeEditScreen({ recipeId, headerHeight = 0, onSaved }: Recipe
     setTagSearchTerm("");
     setTagMatchError(null);
     setSelectedTagIds(null);
+    setTagCreateError(null);
 
     const getRecipe = async (): Promise<void> => {
       try {
@@ -121,6 +137,7 @@ export function RecipeEditScreen({ recipeId, headerHeight = 0, onSaved }: Recipe
     }
 
     setTagMatchError(null);
+    setTagCreateError(null);
     reloadTags();
   };
 
@@ -141,6 +158,71 @@ export function RecipeEditScreen({ recipeId, headerHeight = 0, onSaved }: Recipe
       }
       return currentTagIds.filter((tagId) => tagId !== removeTagId);
     });
+  };
+
+  const handleCreateTag = async (): Promise<void> => {
+    if (isCreatingTag || isSaving) {
+      return;
+    }
+
+    const newTagName = tagSearchTerm.trim();
+    if (newTagName.length === 0) {
+      return;
+    }
+    if (Array.from(newTagName).length > MAX_TAG_LENGTH) {
+      return;
+    }
+    if (tags.some((tag) => tag.name.toLowerCase() === newTagName.toLowerCase())) {
+      return;
+    }
+
+    setIsCreatingTag(true);
+    setTagCreateError(null);
+
+    try {
+      const response = await saveTag(newTagName);
+      addTag(response);
+      handleSelectTag(response.id);
+    } catch (error: unknown) {
+      if (error instanceof ApiError && error.status === 409) {
+        setTagCreateError(TAG_DUPLICATE_ERROR_MESSAGE);
+      } else {
+        setTagCreateError(TAG_CREATE_ERROR_MESSAGE);
+      }
+    } finally {
+      setIsCreatingTag(false);
+    }
+  };
+
+  const handleChangeSearchInput = (searchText: string): void => {
+    setTagCreateError(null);
+    setTagSearchTerm(searchText);
+  };
+
+  const renderCreateTagButton = () => {
+    const newTagName = tagSearchTerm.trim();
+    if (newTagName.length === 0) {
+      return null;
+    }
+
+    if (Array.from(newTagName).length > MAX_TAG_LENGTH) {
+      return null;
+    }
+
+    if (tags.some((tag) => tag.name.toLowerCase() === newTagName.toLowerCase())) {
+      return null;
+    }
+
+    return (
+      <Button
+        accessibilityLabel={`Create tag ${newTagName}`}
+        title={`Create ${newTagName}`}
+        disabled={isCreatingTag || isSaving}
+        onPress={() => {
+          void handleCreateTag();
+        }}
+      />
+    );
   };
 
   const renderTagsSection = () => {
@@ -166,15 +248,22 @@ export function RecipeEditScreen({ recipeId, headerHeight = 0, onSaved }: Recipe
     }
 
     return (
-      <SearchableTagPicker
-        tags={tags}
-        selectedTagIds={selectedTagIds}
-        searchTerm={tagSearchTerm}
-        disabled={isSaving}
-        onSearchChange={setTagSearchTerm}
-        onSelectTag={handleSelectTag}
-        onRemoveTag={handleRemoveTag}
-      />
+      <>
+        <SearchableTagPicker
+          tags={tags}
+          selectedTagIds={selectedTagIds}
+          searchTerm={tagSearchTerm}
+          disabled={isSaving || isCreatingTag}
+          onSearchChange={handleChangeSearchInput}
+          onSelectTag={handleSelectTag}
+          onRemoveTag={handleRemoveTag}
+        />
+
+        {Array.from(tagSearchTerm.trim()).length > MAX_TAG_LENGTH && <Text>{TAG_NAME_LENGTH_ERROR_MESSAGE}</Text>}
+        {renderCreateTagButton()}
+        {isCreatingTag && <Text>{CREATING_TAG_MESSAGE}</Text>}
+        {tagCreateError !== null && <Text style={styles.errorMessage}>{tagCreateError}</Text>}
+      </>
     );
   };
 
@@ -207,6 +296,7 @@ export function RecipeEditScreen({ recipeId, headerHeight = 0, onSaved }: Recipe
               initialBaseServings={recipe.base_servings}
               initialServingsUnit={recipe.servings_unit}
               initialIsFavorite={recipe.is_favorite}
+              saveDisabled={isCreatingTag}
               onSubmit={handleSaveChanges}
             />
           </ScrollView>
