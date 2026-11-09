@@ -405,7 +405,13 @@ export function RecipeCreateForm({ onSubmit, disabled }: RecipeCreateFormProps) 
         <Switch accessibilityLabel={FAVORITE_LABEL} value={isFavorite} onValueChange={setIsFavorite} />
       </View>
 
-      <Button title={SAVE_BUTTON_LABEL} disabled={disabled || isSubmitting} onPress={handleSubmit} />
+      <Button
+        title={SAVE_BUTTON_LABEL}
+        disabled={disabled || isSubmitting}
+        onPress={() => {
+          void handleSubmit();
+        }}
+      />
     </View>
   );
 }

@@ -22,6 +22,7 @@ export default function NewRecipeScreen() {
 
   const { tags, isLoadingTags, tagError, retryLoadingTags, addTag } = useAvailableTags();
 
+  const [isSaving, setIsSaving] = useState(false);
   const [tagSearchTerm, setTagSearchTerm] = useState("");
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
 
@@ -29,6 +30,7 @@ export default function NewRecipeScreen() {
     useTagCreation({
       tags,
       searchTerm: tagSearchTerm,
+      disabled: isSaving,
       onCreated: (tag) => {
         addTag(tag);
         handleSelectTag(tag.id);
@@ -54,8 +56,14 @@ export default function NewRecipeScreen() {
   const handleSaveRecipe = async (values: RecipeCreateRequest): Promise<void> => {
     const selectedTagNames = tags.filter((tag) => selectedTagIds.includes(tag.id)).map((tag) => tag.name);
     const payload = { ...values, tags: selectedTagNames };
-    const recipe = await saveRecipe(payload);
-    router.replace(`/recipes/${recipe.id}`);
+
+    setIsSaving(true);
+    try {
+      const recipe = await saveRecipe(payload);
+      router.replace(`/recipes/${recipe.id}`);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const renderCreateTagButton = () => {
@@ -67,7 +75,7 @@ export default function NewRecipeScreen() {
       <Button
         accessibilityLabel={`Create tag ${newTagName}`}
         title={`Create ${newTagName}`}
-        disabled={isCreatingTag}
+        disabled={isCreatingTag || isSaving}
         onPress={() => {
           void createTag();
         }}
@@ -99,6 +107,7 @@ export default function NewRecipeScreen() {
           selectedTagIds={selectedTagIds}
           searchTerm={tagSearchTerm}
           searchDisabled={isCreatingTag}
+          disabled={isSaving}
           onSearchChange={handleChangeSearchInput}
           onSelectTag={handleSelectTag}
           onRemoveTag={handleRemoveTag}

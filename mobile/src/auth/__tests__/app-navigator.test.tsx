@@ -950,4 +950,59 @@ describe("AppNavigator", () => {
     expect(await screen.findByText(updated.title)).toBeTruthy();
     expect(navigation.getPathname()).toBe(RECIPE_DETAIL_PATH);
   });
+
+  it("locks creation-screen tag controls during recipe saving and restores them after failure", async () => {
+    let rejectSave!: (error: Error) => void;
+    const pendingSave = new Promise<ReturnType<typeof makeRecipeDetailResponse>>((_, reject) => {
+      rejectSave = reject;
+    });
+    const searchTerm = "Qui";
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(makeUserResponse());
+    jest.spyOn(tagService, "loadTags").mockResolvedValue({
+      items: [
+        { id: TAG_ID, name: TAG_NAME },
+        { id: TAG_ID_2, name: TAG_NAME_2 },
+      ],
+    });
+    const createMock = jest.spyOn(tagService, "saveTag").mockResolvedValue({ id: TAG_ID_3, name: searchTerm });
+    const saveMock = jest
+      .spyOn(recipeService, "saveRecipe")
+      .mockReturnValueOnce(pendingSave)
+      .mockResolvedValueOnce(makeRecipeDetailResponse({ id: RECIPE_ID }));
+
+    await renderRouteNavigation(CREATE_RECIPE_PATH, { createRecipe: NewRecipeScreen });
+
+    const search = await screen.findByLabelText(SEARCH_TAGS_LABEL);
+    await fireEvent.changeText(screen.getByLabelText(RECIPE_TITLE_LABEL), RECIPE_TITLE);
+    await fireEvent.changeText(search, TAG_NAME);
+    await fireEvent.press(screen.getByRole("button", { name: `Select tag ${TAG_NAME}` }));
+    await fireEvent.changeText(search, searchTerm);
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_RECIPE_TEXT }));
+    expect(search).toHaveProp("editable", false);
+    expect(screen.getByRole("button", { name: `Remove tag ${TAG_NAME}` })).toBeDisabled();
+    expect(screen.getByRole("button", { name: `Select tag ${TAG_NAME_2}` })).toBeDisabled();
+    expect(screen.getByRole("button", { name: `Create tag ${searchTerm}` })).toBeDisabled();
+
+    await fireEvent.press(screen.getByRole("button", { name: `Remove tag ${TAG_NAME}` }));
+    await fireEvent.press(screen.getByRole("button", { name: `Select tag ${TAG_NAME_2}` }));
+    await fireEvent.press(screen.getByRole("button", { name: `Create tag ${searchTerm}` }));
+    expect(createMock).not.toHaveBeenCalled();
+    expect(saveMock).toHaveBeenCalledWith(expect.objectContaining({ tags: [TAG_NAME] }));
+
+    await act(async () => {
+      rejectSave(new Error(PRIVATE_ERROR_MESSAGE));
+    });
+    expect(search).toHaveProp("editable", true);
+    expect(search).toHaveDisplayValue(searchTerm);
+    expect(screen.getByLabelText(RECIPE_TITLE_LABEL)).toHaveDisplayValue(RECIPE_TITLE);
+    expect(screen.getByRole("button", { name: `Remove tag ${TAG_NAME}` })).toBeEnabled();
+    expect(screen.getByRole("button", { name: `Select tag ${TAG_NAME_2}` })).toBeEnabled();
+    expect(screen.getByRole("button", { name: `Create tag ${searchTerm}` })).toBeEnabled();
+
+    await fireEvent.press(screen.getByRole("button", { name: `Select tag ${TAG_NAME_2}` }));
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_RECIPE_TEXT }));
+    expect(saveMock).toHaveBeenNthCalledWith(2, expect.objectContaining({ tags: [TAG_NAME, TAG_NAME_2] }));
+    expect(await screen.findByText(RECIPE_DETAIL_TEXT)).toBeTruthy();
+  });
 });
