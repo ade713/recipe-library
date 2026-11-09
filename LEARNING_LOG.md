@@ -1292,3 +1292,22 @@ Next:
 
 - Submit the focused hook-refactor PR.
 - Fix creation-screen tag controls remaining interactive during recipe saving in a separate bug-fix PR.
+
+
+## Creation-Screen Tag Save Lock — 2026-11-09
+
+Built:
+
+- Disabled tag search, selection/removal, and Create while saving a new recipe; passed saving state to the creation hook guard.
+- Reset saving state in finally while preserving selections and search after failure.
+- Added a pending-save regression test that retries with changed selections.
+- All 493 mobile tests across thirty-two suites, TypeScript, and whitespace checks pass. Android verified pending controls and failure/retry. Temporary verification code was removed.
+
+Learned:
+
+- UI disabling communicates and blocks interaction; the hook guard protects the underlying operation.
+- A void press wrapper does not resolve a pending request. It lets the event helper finish so the test can inspect pending UI and then settle that request.
+
+Next:
+
+- Submit the focused save-lock bug-fix PR.
