@@ -817,11 +817,16 @@ All 492 mobile tests across thirty-two suites, TypeScript, and whitespace checks
 pass. Android verified both flows, creation/selection, failure/retry, and preserved
 form edits. Temporary verification delays were removed.
 
-Known follow-up bug: the creation screen still allows tag search/chip actions
-and tag creation while a recipe save is pending. The request uses the selection
-snapshot taken at submission, so later chip changes do not affect that save.
-A separate bug-fix PR will lock these controls during creation-screen saving;
-this refactor preserves existing behavior.
+The creation-screen save-lock follow-up is implemented: tag search, selection,
+removal, and Create disable while saving a recipe. Saving state also guards
+useTagCreation requests. A finally block restores controls after failure without
+losing search text or selections, so changes made before retry are submitted.
+The form's press callback starts submission without returning its promise,
+allowing pending-request tests to inspect controls before settling the request.
+
+All 493 mobile tests across thirty-two suites, TypeScript, and whitespace checks
+pass. Android verified disabled controls during saving, preserved state after
+failure, and saving updated selections on retry. Temporary delays are removed.
 
 ## Inline tag creation
 
