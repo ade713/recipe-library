@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react-native";
 
 import { makeRecipeDetailResponse } from "@/test/fixtures/recipes";
 import type { RecipeDetailResponse } from "@/types/recipe";
+
 import * as recipeService from "../recipe-service";
 import { RecipeEditScreen } from "../recipe-edit-screen";
 
@@ -20,6 +21,30 @@ const renderScreen = async (onSaved = jest.fn()) => {
 };
 
 describe("RecipeEditScreen", () => {
+  it.each([false, true])("loads saved instructions and saves them with clearAll=%p", async (clearAll) => {
+    const removeStepLabel = "Remove step 1";
+    const steps = [{ position: 1, instruction: "Simmer gently", section_title: "Cooking" }];
+    const recipe = makeRecipeDetailResponse({ id: RECIPE_ID, steps });
+    const expectedSteps = clearAll ? [] : steps;
+    const savedRecipe = makeRecipeDetailResponse({ id: RECIPE_ID, steps: expectedSteps });
+
+    const onSaved = jest.fn();
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+    const saveMock = jest.spyOn(recipeService, "saveRecipeChanges").mockResolvedValue(savedRecipe);
+
+    await renderScreen(onSaved);
+
+    expect(await screen.findByLabelText("Step 1")).toHaveDisplayValue(steps[0].instruction);
+
+    if (clearAll) {
+      await fireEvent.press(screen.getByRole("button", { name: removeStepLabel }));
+    }
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_CHANGES_LABEL }));
+
+    expect(saveMock).toHaveBeenCalledWith(RECIPE_ID, expect.objectContaining({ steps: expectedSteps }));
+    expect(onSaved).toHaveBeenCalledWith(savedRecipe);
+  });
+
   it("loads the requested recipe without exposing an empty editable form", async () => {
     const loadMock = jest.spyOn(recipeService, "loadRecipe").mockImplementation(() => new Promise(() => {}));
 
