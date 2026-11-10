@@ -360,13 +360,14 @@ export function RecipeEditForm({
           placeholder={STEP_PLACEHOLDER}
           value={row.text}
           multiline={true}
+          disabled={isSubmitting}
           removeLabel={`${REMOVE_STEP_LABEL} ${idx + 1}`}
           removeTitle={REMOVE_STEP_LABEL}
           onChangeText={(text) => handleChangeStep(row.id, text)}
           onRemove={() => handleRemoveStep(row.id)}
         />
       ))}
-      <Button title={ADD_STEP_LABEL} onPress={handleAddStep} />
+      <Button title={ADD_STEP_LABEL} disabled={isSubmitting} onPress={handleAddStep} />
 
       <Button
         accessibilityLabel={SAVE_LABEL}
