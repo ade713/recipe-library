@@ -1311,3 +1311,25 @@ Learned:
 Next:
 
 - Submit the focused save-lock bug-fix PR.
+
+
+## Recipe Instruction Editing — 2026-11-10
+
+Built:
+
+- Prefilled saved steps with stable row IDs and preserved section titles; added edit/add/remove controls using RecipeFormTextRow.
+- Trimmed submitted instructions, filtered blank rows before renumbering, and supported clearing all steps with an empty array.
+- Connected the edit screen and typed update request, disabled step controls during saving, and preserved edits after failure for retry.
+- All 504 mobile tests across 33 suites and TypeScript pass. Android checks verified saved content, clearing, pending/failure behavior, and keyboard/scrolling access. Temporary verification delays were removed.
+
+Learned:
+
+- Row IDs identify inputs independently of the consecutive positions sent to the API. Filter blank rows before assigning positions.
+- Preserve entered text in state; trim only the submitted payload so failure leaves the draft intact.
+- Omitted steps leave stored instructions unchanged; an empty array clears them. Prefilling is essential even for title-only edits.
+- Optional shared-component props preserve existing callers while supporting the new saving state.
+
+Next:
+
+- Submit this focused instruction-editing PR before beginning another editable field.
+- Keep ingredient parsing/scaling groundwork in a separate milestone.
