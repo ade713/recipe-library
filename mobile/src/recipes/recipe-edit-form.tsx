@@ -1,6 +1,11 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 
+import type { RecipeStep } from "@/types/recipe";
+
+import { RecipeFormTextRow } from "./recipe-form-text-row";
+
+const ADD_STEP_LABEL = "Add step";
 const BASE_SERVINGS_LABEL = "Servings or yield quantity";
 const COOK_TEXT = "Cook";
 const COOK_TIME_LABEL = "Cook time (minutes)";
@@ -13,12 +18,14 @@ const INVALID_SERVINGS_MESSAGE = "Enter a servings or yield quantity of zero or 
 const MAX_TITLE_LENGTH = 255;
 const PREP_TEXT = "Prep";
 const PREP_TIME_LABEL = "Prep time (minutes)";
+const REMOVE_STEP_LABEL = "Remove step";
 const SAVE_LABEL = "Save changes";
 const SAVE_UPDATE_ERROR_MESSAGE = "Unable to save changes. Please try again.";
 const SERVINGS_HEADING = "Servings / yield";
 const SERVINGS_QUANTITY_TEXT = "Quantity";
 const SERVINGS_UNIT_LABEL = "Yield unit (optional)";
 const SERVINGS_UNIT_TEXT = "Unit (optional)";
+const STEP_PLACEHOLDER = "Enter Step Here";
 const TIME_HEADING = "Times (minutes)";
 const TIME_INPUT_ERROR_MESSAGE = "Enter times as whole minutes, zero or greater.";
 const TITLE_BLANK_ERROR_MESSAGE = "Enter a recipe title.";
@@ -36,6 +43,7 @@ export type RecipeEditFormValues = {
   total_time_minutes: number | null;
   base_servings: number | null;
   servings_unit: string | null;
+  steps: RecipeStep[];
   is_favorite: boolean;
 };
 
@@ -48,9 +56,16 @@ type RecipeEditFormProps = {
   initialTotalTimeMinutes?: number | null;
   initialBaseServings?: string | null;
   initialServingsUnit?: string | null;
+  initialSteps?: RecipeStep[];
   initialIsFavorite?: boolean;
   saveDisabled?: boolean;
   onSubmit: (values: RecipeEditFormValues) => Promise<void>;
+};
+
+type FormStepRow = {
+  id: number;
+  text: string;
+  section_title: string | null;
 };
 
 const parseTime = (value: string): number | null => {
@@ -105,9 +120,12 @@ export function RecipeEditForm({
   initialBaseServings,
   initialServingsUnit,
   initialIsFavorite,
+  initialSteps = [],
   saveDisabled = false,
   onSubmit,
 }: RecipeEditFormProps) {
+  const stepRowId = useRef(initialSteps.length - 1);
+
   const [currentTitle, setCurrentTitle] = useState(initialTitle);
   const [currentDescription, setCurrentDescription] = useState(initialDescription ?? "");
   const [currentImageUrl, setCurrentImageUrl] = useState(initialImageUrl ?? "");
@@ -117,8 +135,31 @@ export function RecipeEditForm({
   const [currentBaseServings, setCurrentBaseServings] = useState(initialBaseServings ?? "");
   const [currentServingsUnit, setCurrentServingsUnit] = useState(initialServingsUnit ?? "");
   const [currentIsFavorite, setCurrentIsFavorite] = useState(initialIsFavorite ?? false);
+  const [currentSteps, setCurrentSteps] = useState<FormStepRow[]>(() =>
+    initialSteps.map((step, index) => ({
+      id: index,
+      text: step.instruction,
+      section_title: step.section_title,
+    })),
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const handleAddStep = () => {
+    stepRowId.current++;
+    const newStep = { id: stepRowId.current, text: "", section_title: null };
+    setCurrentSteps((prevSteps) => [...prevSteps, newStep]);
+  };
+
+  const handleRemoveStep = (stepRowId: number): void => {
+    setCurrentSteps((prevSteps) => prevSteps.filter((step) => step.id !== stepRowId));
+  };
+
+  const handleChangeStep = (editedStepId: number, newStepText: string): void => {
+    setCurrentSteps((prevSteps) =>
+      prevSteps.map((step) => (step.id === editedStepId ? { ...step, text: newStepText } : step)),
+    );
+  };
 
   const handleSubmit = async (): Promise<void> => {
     if (isSubmitting || saveDisabled) {
@@ -174,6 +215,14 @@ export function RecipeEditForm({
     setErrorMessage(null);
     setIsSubmitting(true);
 
+    const formattedSteps = currentSteps
+      .filter((step) => step.text.trim().length > 0)
+      .map((step, idx) => ({
+        position: idx + 1,
+        instruction: step.text.trim(),
+        section_title: step.section_title ?? null,
+      }));
+
     try {
       await onSubmit({
         title: trimmedTitle,
@@ -182,6 +231,7 @@ export function RecipeEditForm({
         base_servings: baseServings,
         servings_unit: normalizedServingsUnit,
         is_favorite: currentIsFavorite,
+        steps: formattedSteps,
         ...times,
       });
     } catch {
@@ -302,6 +352,21 @@ export function RecipeEditForm({
           onValueChange={setCurrentIsFavorite}
         />
       </View>
+
+      {currentSteps.map((row, idx) => (
+        <RecipeFormTextRow
+          key={row.id}
+          label={`Step ${idx + 1}`}
+          placeholder={STEP_PLACEHOLDER}
+          value={row.text}
+          multiline={true}
+          removeLabel={`${REMOVE_STEP_LABEL} ${idx + 1}`}
+          removeTitle={REMOVE_STEP_LABEL}
+          onChangeText={(text) => handleChangeStep(row.id, text)}
+          onRemove={() => handleRemoveStep(row.id)}
+        />
+      ))}
+      <Button title={ADD_STEP_LABEL} onPress={handleAddStep} />
 
       <Button
         accessibilityLabel={SAVE_LABEL}

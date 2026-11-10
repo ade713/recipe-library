@@ -144,6 +144,7 @@ describe("RecipeEditScreen", () => {
       base_servings: null,
       servings_unit: null,
       image_url: null,
+      steps: [],
       is_favorite: false,
     });
     expect(onSaved).toHaveBeenCalledWith(savedRecipe);
@@ -183,6 +184,7 @@ describe("RecipeEditScreen", () => {
       base_servings: null,
       servings_unit: null,
       image_url: null,
+      steps: [],
       is_favorite: false,
     });
     expect(onSaved).toHaveBeenCalledWith(savedRecipe);
@@ -220,6 +222,7 @@ describe("RecipeEditScreen", () => {
       base_servings: null,
       servings_unit: null,
       image_url: null,
+      steps: [],
       is_favorite: false,
     });
     expect(onSaved).toHaveBeenCalledWith(savedRecipe);
@@ -261,6 +264,7 @@ describe("RecipeEditScreen", () => {
       base_servings: null,
       servings_unit: null,
       image_url: null,
+      steps: [],
       is_favorite: false,
     });
   });
@@ -347,5 +351,4 @@ describe("RecipeEditScreen", () => {
     expect(saveMock).toHaveBeenCalledWith(RECIPE_ID, expect.objectContaining({ is_favorite: expected }));
     expect(onSaved).toHaveBeenCalledWith(savedRecipe);
   });
-
 });
