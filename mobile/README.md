@@ -908,3 +908,22 @@ app/recipes/[id].tsx          Recipe Detail / Cooking View
 app/recipes/[id]/edit.tsx     Edit Recipe
 app/settings.tsx              Settings / Account
 ```
+
+## Editing recipe instructions
+
+The edit form prefills saved instructions and supports editing, adding, and
+removing individual multiline rows. Stable local row IDs preserve input identity
+across removal; existing section titles are retained and new rows have no section.
+Submission trims text, omits blank rows, then numbers remaining steps from one.
+Removing every row sends `steps: []` to clear instructions. An omitted API field
+leaves them unchanged. Passing saved steps into the form prevents unrelated edits
+from accidentally clearing instructions.
+
+Step inputs and Add/Remove controls disable during saving. Failed saves restore
+controls and preserve entered text for correction and retry. The shared
+RecipeFormTextRow accepts an optional disabled flag, defaulting to false.
+
+All 504 tests across 33 suites and TypeScript pass. Android verification covered
+prefilling, editing/add/remove, clearing and reopening, pending/failure behavior,
+and keyboard/scrolling access with multiline steps. Reordering, section editing,
+and ingredient editing/parsing/scaling remain separate work.
