@@ -118,7 +118,8 @@ Ingredient scaling should be best-effort and conservative.
 
 Rules:
 
-- Preserve `original_text` forever.
+- Preserve saved base ingredient text during parsing and scaling; deliberate user edits may replace `original_text`.
+- Original import snapshots and recipe version history are not required. Retain source attribution so users can revisit the source recipe.
 - Scale only ingredients the app can confidently parse.
 - Leave unclear ingredient lines unchanged.
 - Support `scale_locked` for lines that should not scale.

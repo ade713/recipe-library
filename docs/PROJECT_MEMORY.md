@@ -31,6 +31,8 @@ Users can:
 
 ## Current backend progress
 
+- Ingredient text retention decision (2026-11-11): deliberate user edits may replace `original_text`; it need not retain the originally imported wording forever. Parsing/scaling must preserve the saved base text. Original draft snapshots and recipe version history are not required; the retained source link provides access to the source recipe. This does not guarantee the source page remains available or unchanged.
+
 The nullable recipe `difficulty` column is reserved for future use and intentionally absent from MVP API schemas. Retain it during cleanup; exposing it or removing it requires a separate feature or migration decision.
 
 Structured ingredient parsing is deferred work for before private MVP release, not abandoned functionality. Imported ingredients currently retain original text and default to `unparsed`. The existing scaling utility handles basic leading quantities but is not connected to import normalization. Implementing conservative parsed fields and connecting them to cooking-view portion scaling remains necessary follow-up work; see `ROADMAP.md` and `BACKEND_CLEANUP_PLAN.md`.
