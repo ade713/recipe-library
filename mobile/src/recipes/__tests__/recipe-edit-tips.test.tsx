@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react-native";
+import { act, fireEvent, render, screen } from "@testing-library/react-native";
 
 import type { RecipeTip } from "@/types/recipe";
 
@@ -25,6 +25,65 @@ const save = async () => {
 };
 
 describe("RecipeEditForm tips", () => {
+  it("disables tip controls while saving and preserves the draft after failure for retry", async () => {
+    const editedTip = "  Serve warm.\nAdd herbs.  ";
+    const newTip = "Freeze leftovers";
+    const correctedTip = "Freeze in small portions";
+    const saveErrorMessage = "Unable to save changes. Please try again.";
+    const networkErrorMessage = "Network failure";
+
+    let rejectSave!: (error: Error) => void;
+    const pending = new Promise<void>((_, reject) => {
+      rejectSave = reject;
+    });
+    const onSubmit = jest.fn().mockReturnValueOnce(pending).mockResolvedValueOnce(undefined);
+
+    await render(<RecipeEditForm initialTitle='Soup' initialTips={TIPS} onSubmit={onSubmit} />);
+
+    await fireEvent.press(screen.getByRole("button", { name: REMOVE_TIP_1_LABEL }));
+    await fireEvent.changeText(screen.getByLabelText(TIP_1_LABEL), editedTip);
+    await fireEvent.press(screen.getByRole("button", { name: ADD_TIP_LABEL }));
+    await fireEvent.changeText(screen.getByLabelText(TIP_2_LABEL), newTip);
+
+    await save();
+    try {
+      expect(screen.getByLabelText(TIP_1_LABEL)).toBeDisabled();
+      expect(screen.getByLabelText(TIP_2_LABEL)).toBeDisabled();
+      expect(screen.getByRole("button", { name: REMOVE_TIP_1_LABEL })).toBeDisabled();
+      expect(screen.getByRole("button", { name: REMOVE_TIP_2_LABEL })).toBeDisabled();
+      expect(screen.getByRole("button", { name: ADD_TIP_LABEL })).toBeDisabled();
+      expect(screen.getByRole("button", { name: SAVE_LABEL })).toBeDisabled();
+    } finally {
+      await act(async () => {
+        rejectSave(new Error(networkErrorMessage));
+      });
+    }
+
+    expect(screen.getByText(saveErrorMessage)).toBeTruthy();
+    expect(screen.getByLabelText(TIP_1_LABEL)).toHaveDisplayValue(editedTip);
+    expect(screen.getByLabelText(TIP_2_LABEL)).toHaveDisplayValue(newTip);
+    expect(screen.getByLabelText(TIP_1_LABEL)).toBeEnabled();
+    expect(screen.getByLabelText(TIP_2_LABEL)).toBeEnabled();
+    expect(screen.getByRole("button", { name: REMOVE_TIP_1_LABEL })).toBeEnabled();
+    expect(screen.getByRole("button", { name: REMOVE_TIP_2_LABEL })).toBeEnabled();
+    expect(screen.getByRole("button", { name: ADD_TIP_LABEL })).toBeEnabled();
+    expect(screen.getByRole("button", { name: SAVE_LABEL })).toBeEnabled();
+
+    await fireEvent.changeText(screen.getByLabelText(TIP_2_LABEL), correctedTip);
+    await save();
+    expect(onSubmit).toHaveBeenCalledTimes(2);
+    expect(onSubmit).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        tips: [
+          { position: 1, tip: editedTip.trim() },
+          { position: 2, tip: correctedTip },
+        ],
+      }),
+    );
+    expect(screen.queryByText(saveErrorMessage)).toBeNull();
+  });
+
   it("prefills saved tips and preserves them when untouched", async () => {
     const onSubmit = await renderForm();
 
