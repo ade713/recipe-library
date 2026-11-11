@@ -1,11 +1,12 @@
 import { useRef, useState } from "react";
 import { Button, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 
-import type { RecipeStep } from "@/types/recipe";
+import type { RecipeStep, RecipeTip } from "@/types/recipe";
 
 import { RecipeFormTextRow } from "./recipe-form-text-row";
 
 const ADD_STEP_LABEL = "Add step";
+const ADD_TIP_LABEL = "Add tip";
 const BASE_SERVINGS_LABEL = "Servings or yield quantity";
 const COOK_TEXT = "Cook";
 const COOK_TIME_LABEL = "Cook time (minutes)";
@@ -19,6 +20,7 @@ const MAX_TITLE_LENGTH = 255;
 const PREP_TEXT = "Prep";
 const PREP_TIME_LABEL = "Prep time (minutes)";
 const REMOVE_STEP_LABEL = "Remove step";
+const REMOVE_TIP_LABEL = "Remove tip";
 const SAVE_LABEL = "Save changes";
 const SAVE_UPDATE_ERROR_MESSAGE = "Unable to save changes. Please try again.";
 const SERVINGS_HEADING = "Servings / yield";
@@ -28,6 +30,7 @@ const SERVINGS_UNIT_TEXT = "Unit (optional)";
 const STEP_PLACEHOLDER = "Enter Step Here";
 const TIME_HEADING = "Times (minutes)";
 const TIME_INPUT_ERROR_MESSAGE = "Enter times as whole minutes, zero or greater.";
+const TIP_PLACEHOLDER = "Enter Tip Here";
 const TITLE_BLANK_ERROR_MESSAGE = "Enter a recipe title.";
 const TITLE_LABEL = "Recipe title";
 const TITLE_LENGTH_ERROR_MESSAGE = "Recipe titles must be 255 characters or fewer.";
@@ -44,6 +47,7 @@ export type RecipeEditFormValues = {
   base_servings: number | null;
   servings_unit: string | null;
   steps: RecipeStep[];
+  tips: RecipeTip[];
   is_favorite: boolean;
 };
 
@@ -57,6 +61,7 @@ type RecipeEditFormProps = {
   initialBaseServings?: string | null;
   initialServingsUnit?: string | null;
   initialSteps?: RecipeStep[];
+  initialTips?: RecipeTip[];
   initialIsFavorite?: boolean;
   saveDisabled?: boolean;
   onSubmit: (values: RecipeEditFormValues) => Promise<void>;
@@ -66,6 +71,11 @@ type FormStepRow = {
   id: number;
   text: string;
   section_title: string | null;
+};
+
+type FormTipRow = {
+  id: number;
+  text: string;
 };
 
 const parseTime = (value: string): number | null => {
@@ -121,10 +131,12 @@ export function RecipeEditForm({
   initialServingsUnit,
   initialIsFavorite,
   initialSteps = [],
+  initialTips = [],
   saveDisabled = false,
   onSubmit,
 }: RecipeEditFormProps) {
   const stepRowId = useRef(initialSteps.length - 1);
+  const tipRowId = useRef(initialTips.length - 1);
 
   const [currentTitle, setCurrentTitle] = useState(initialTitle);
   const [currentDescription, setCurrentDescription] = useState(initialDescription ?? "");
@@ -140,6 +152,12 @@ export function RecipeEditForm({
       id: index,
       text: step.instruction,
       section_title: step.section_title,
+    })),
+  );
+  const [currentTips, setCurrentTips] = useState<FormTipRow[]>(() =>
+    initialTips.map((tip, index) => ({
+      id: index,
+      text: tip.tip,
     })),
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -159,6 +177,20 @@ export function RecipeEditForm({
     setCurrentSteps((prevSteps) =>
       prevSteps.map((step) => (step.id === editedStepId ? { ...step, text: newStepText } : step)),
     );
+  };
+
+  const handleAddTip = () => {
+    tipRowId.current++;
+    const newTip = { id: tipRowId.current, text: "" };
+    setCurrentTips((prevTips) => [...prevTips, newTip]);
+  };
+
+  const handleRemoveTip = (tipRowId: number): void => {
+    setCurrentTips((prevTips) => prevTips.filter((tip) => tip.id !== tipRowId));
+  };
+
+  const handleChangeTip = (editedTipId: number, newTipText: string): void => {
+    setCurrentTips((prevTips) => prevTips.map((tip) => (tip.id === editedTipId ? { ...tip, text: newTipText } : tip)));
   };
 
   const handleSubmit = async (): Promise<void> => {
@@ -223,6 +255,13 @@ export function RecipeEditForm({
         section_title: step.section_title ?? null,
       }));
 
+    const formattedTips = currentTips
+      .filter((tip) => tip.text.trim().length > 0)
+      .map((tip, idx) => ({
+        position: idx + 1,
+        tip: tip.text.trim(),
+      }));
+
     try {
       await onSubmit({
         title: trimmedTitle,
@@ -232,6 +271,7 @@ export function RecipeEditForm({
         servings_unit: normalizedServingsUnit,
         is_favorite: currentIsFavorite,
         steps: formattedSteps,
+        tips: formattedTips,
         ...times,
       });
     } catch {
@@ -360,6 +400,7 @@ export function RecipeEditForm({
           placeholder={STEP_PLACEHOLDER}
           value={row.text}
           multiline={true}
+          autoFocus={row.id >= initialSteps.length}
           disabled={isSubmitting}
           removeLabel={`${REMOVE_STEP_LABEL} ${idx + 1}`}
           removeTitle={REMOVE_STEP_LABEL}
@@ -368,6 +409,23 @@ export function RecipeEditForm({
         />
       ))}
       <Button title={ADD_STEP_LABEL} disabled={isSubmitting} onPress={handleAddStep} />
+
+      {currentTips.map((row, idx) => (
+        <RecipeFormTextRow
+          key={row.id}
+          label={`Tip ${idx + 1}`}
+          placeholder={TIP_PLACEHOLDER}
+          value={row.text}
+          multiline={true}
+          autoFocus={row.id >= initialTips.length}
+          disabled={isSubmitting}
+          removeLabel={`${REMOVE_TIP_LABEL} ${idx + 1}`}
+          removeTitle={REMOVE_TIP_LABEL}
+          onChangeText={(text) => handleChangeTip(row.id, text)}
+          onRemove={() => handleRemoveTip(row.id)}
+        />
+      ))}
+      <Button title={ADD_TIP_LABEL} disabled={isSubmitting} onPress={handleAddTip} />
 
       <Button
         accessibilityLabel={SAVE_LABEL}

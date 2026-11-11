@@ -1333,3 +1333,24 @@ Next:
 
 - Submit this focused instruction-editing PR before beginning another editable field.
 - Keep ingredient parsing/scaling groundwork in a separate milestone.
+
+
+## Recipe Tip Editing — 2026-11-11
+
+Built:
+
+- Added prefilled multiline tip rows with stable IDs, add/edit/remove controls, submission trimming, blank filtering, and consecutive positions.
+- Connected saved tips to the edit screen and optional API update field; an empty array explicitly clears all tips.
+- Covered pending controls, preservation after failure, and correction before retry. Added autofocus for newly added tips and steps while leaving saved rows unfocused.
+- All 515 mobile tests across 34 suites, TypeScript, and whitespace checks pass. Android checks verified editing, preservation, clearing, retry, keyboard access, and new-row autofocus.
+
+Learned:
+
+- Independent row counters manage steps and tips; their separately mapped lists scope React keys.
+- Filter blank rows before numbering to avoid gaps in submitted positions.
+- Keep input text unchanged in state and trim the submitted payload. Omitted API fields preserve existing content; empty arrays clear it.
+- Stable IDs distinguish saved from newly added rows without relying on their current displayed positions.
+
+Next:
+
+- Submit the focused tip-editing PR. Keep ingredient editing/parsing/scaling and shared row-state extraction separate.

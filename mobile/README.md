@@ -927,3 +927,23 @@ All 504 tests across 33 suites and TypeScript pass. Android verification covered
 prefilling, editing/add/remove, clearing and reopening, pending/failure behavior,
 and keyboard/scrolling access with multiline steps. Reordering, section editing,
 and ingredient editing/parsing/scaling remain separate work.
+
+## Editing recipe tips
+
+The edit form prefills saved tips in individual multiline rows with add/remove
+controls and stable local IDs. Submission trims text, omits blank rows, and
+assigns consecutive positions. The update request accepts optional tips: omission
+preserves stored tips, while an empty array clears them. Prefilling protects saved
+tips when users edit only another field. Recipe tips remain separate from personal
+notes.
+
+Tip controls disable during saving. Failure preserves the entered text and restores
+controls so users can correct and retry. Newly added tip and instruction rows
+request autofocus; saved rows do not. Stable IDs identify new rows even after
+removing all existing rows.
+
+All 515 mobile tests across 34 suites, TypeScript, and whitespace checks pass.
+Android verification covered prefill, title-only preservation, edit/add/remove,
+clearing and reopening, pending/failure recovery, multiline keyboard access, and
+autofocus for new steps and tips. Native focus and visibility were verified on
+Android rather than inferred from Jest assertions.

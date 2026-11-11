@@ -257,6 +257,7 @@ export function RecipeEditScreen({ recipeId, headerHeight = 0, onSaved }: Recipe
               initialBaseServings={recipe.base_servings}
               initialServingsUnit={recipe.servings_unit}
               initialSteps={recipe.steps}
+              initialTips={recipe.tips}
               initialIsFavorite={recipe.is_favorite}
               saveDisabled={isCreatingTag}
               onSubmit={handleSaveChanges}

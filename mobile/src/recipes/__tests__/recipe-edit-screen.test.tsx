@@ -21,6 +21,35 @@ const renderScreen = async (onSaved = jest.fn()) => {
 };
 
 describe("RecipeEditScreen", () => {
+  it.each([false, true])("loads saved tips and saves them with clearAll=%p", async (clearAll) => {
+    const removeTipLabel = "Remove tip 1";
+    const tipInputLabel = "Tip 1";
+    const tips = [{ position: 1, tip: "Serve warm" }];
+    const recipe = makeRecipeDetailResponse({ id: RECIPE_ID, tips });
+    const expectedTips = clearAll ? [] : tips;
+    const savedRecipe = makeRecipeDetailResponse({ id: RECIPE_ID, title: EDITED_TITLE, tips: expectedTips });
+
+    const onSaved = jest.fn();
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+    const saveMock = jest.spyOn(recipeService, "saveRecipeChanges").mockResolvedValue(savedRecipe);
+
+    await renderScreen(onSaved);
+
+    expect(await screen.findByLabelText(tipInputLabel)).toHaveDisplayValue(tips[0].tip);
+
+    await fireEvent.changeText(screen.getByLabelText(TITLE_LABEL), EDITED_TITLE);
+    if (clearAll) {
+      await fireEvent.press(screen.getByRole("button", { name: removeTipLabel }));
+    }
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_CHANGES_LABEL }));
+
+    expect(saveMock).toHaveBeenCalledWith(
+      RECIPE_ID,
+      expect.objectContaining({ title: EDITED_TITLE, tips: expectedTips }),
+    );
+    expect(onSaved).toHaveBeenCalledWith(savedRecipe);
+  });
+
   it.each([false, true])("loads saved instructions and saves them with clearAll=%p", async (clearAll) => {
     const removeStepLabel = "Remove step 1";
     const steps = [{ position: 1, instruction: "Simmer gently", section_title: "Cooking" }];
@@ -170,6 +199,7 @@ describe("RecipeEditScreen", () => {
       servings_unit: null,
       image_url: null,
       steps: [],
+      tips: [],
       is_favorite: false,
     });
     expect(onSaved).toHaveBeenCalledWith(savedRecipe);
@@ -210,6 +240,7 @@ describe("RecipeEditScreen", () => {
       servings_unit: null,
       image_url: null,
       steps: [],
+      tips: [],
       is_favorite: false,
     });
     expect(onSaved).toHaveBeenCalledWith(savedRecipe);
@@ -248,6 +279,7 @@ describe("RecipeEditScreen", () => {
       servings_unit: null,
       image_url: null,
       steps: [],
+      tips: [],
       is_favorite: false,
     });
     expect(onSaved).toHaveBeenCalledWith(savedRecipe);
@@ -290,6 +322,7 @@ describe("RecipeEditScreen", () => {
       servings_unit: null,
       image_url: null,
       steps: [],
+      tips: [],
       is_favorite: false,
     });
   });
