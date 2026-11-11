@@ -170,6 +170,7 @@ describe("RecipeEditScreen", () => {
       servings_unit: null,
       image_url: null,
       steps: [],
+      tips: [],
       is_favorite: false,
     });
     expect(onSaved).toHaveBeenCalledWith(savedRecipe);
@@ -210,6 +211,7 @@ describe("RecipeEditScreen", () => {
       servings_unit: null,
       image_url: null,
       steps: [],
+      tips: [],
       is_favorite: false,
     });
     expect(onSaved).toHaveBeenCalledWith(savedRecipe);
@@ -248,6 +250,7 @@ describe("RecipeEditScreen", () => {
       servings_unit: null,
       image_url: null,
       steps: [],
+      tips: [],
       is_favorite: false,
     });
     expect(onSaved).toHaveBeenCalledWith(savedRecipe);
@@ -290,6 +293,7 @@ describe("RecipeEditScreen", () => {
       servings_unit: null,
       image_url: null,
       steps: [],
+      tips: [],
       is_favorite: false,
     });
   });

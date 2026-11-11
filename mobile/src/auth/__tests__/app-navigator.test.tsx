@@ -902,6 +902,7 @@ describe("AppNavigator", () => {
       image_url: null,
       is_favorite: false,
       steps: [],
+      tips: [],
       tags: [],
     });
 
