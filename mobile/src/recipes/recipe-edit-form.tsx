@@ -400,6 +400,7 @@ export function RecipeEditForm({
           placeholder={STEP_PLACEHOLDER}
           value={row.text}
           multiline={true}
+          autoFocus={row.id >= initialSteps.length}
           disabled={isSubmitting}
           removeLabel={`${REMOVE_STEP_LABEL} ${idx + 1}`}
           removeTitle={REMOVE_STEP_LABEL}
@@ -416,6 +417,7 @@ export function RecipeEditForm({
           placeholder={TIP_PLACEHOLDER}
           value={row.text}
           multiline={true}
+          autoFocus={row.id >= initialTips.length}
           disabled={isSubmitting}
           removeLabel={`${REMOVE_TIP_LABEL} ${idx + 1}`}
           removeTitle={REMOVE_TIP_LABEL}
