@@ -1354,3 +1354,24 @@ Learned:
 Next:
 
 - Submit the focused tip-editing PR. Keep ingredient editing/parsing/scaling and shared row-state extraction separate.
+
+
+## Recipe Ingredient Editing — 2026-11-11
+
+Built:
+
+- Added a tested formatter that trims/filter rows before numbering, preserves unchanged metadata, and resets stale parsed fields for changed text.
+- Added stable ingredient rows with saved snapshots, add/edit/remove, new-row autofocus, and screen/API integration. Existing flags are preserved; new flags default to false.
+- Covered pending controls and failed-save retry, including reverting text to recover saved metadata.
+- All 536 mobile tests across 36 suites, TypeScript, and whitespace checks pass. Android verified editing, preservation, clearing, keyboard/focus behavior, and failure recovery. Temporary verification delays were removed.
+
+Learned:
+
+- The submitted ingredient and saved form snapshot serve different purposes: formatting must not mutate the snapshot needed for reverting text.
+- Later properties override spread metadata, allowing current positions and trimmed text without losing parsed fields.
+- Imported ingredients currently have default unparsed metadata. Preservation prepares editing for future parsing/scaling rather than migrating existing user data.
+- Deliberate edits may replace original_text; scaling preserves the saved base text. Source attribution remains available without storing original draft versions.
+
+Next:
+
+- Submit the focused ingredient-editing PR. Keep conservative parsing and cooking-view scaling as separate milestones.
