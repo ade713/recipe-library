@@ -31,6 +31,8 @@ Users can:
 
 ## Current backend progress
 
+- Ingredient text retention decision (2026-11-11): deliberate user edits may replace `original_text`; it need not retain the originally imported wording forever. Parsing/scaling must preserve the saved base text. Original draft snapshots and recipe version history are not required; the retained source link provides access to the source recipe. This does not guarantee the source page remains available or unchanged.
+
 The nullable recipe `difficulty` column is reserved for future use and intentionally absent from MVP API schemas. Retain it during cleanup; exposing it or removing it requires a separate feature or migration decision.
 
 Structured ingredient parsing is deferred work for before private MVP release, not abandoned functionality. Imported ingredients currently retain original text and default to `unparsed`. The existing scaling utility handles basic leading quantities but is not connected to import normalization. Implementing conservative parsed fields and connecting them to cooking-view portion scaling remains necessary follow-up work; see `ROADMAP.md` and `BACKEND_CLEANUP_PLAN.md`.
@@ -43,6 +45,8 @@ Structured ingredient parsing is deferred work for before private MVP release, n
 - Missing Schema.org cook-time metadata now produces an optional-field warning rather than an unhandled HTTP 500. The parser handles SchemaOrgException through its existing missing-field handling. A regression test preserves the title and checks null cook time plus the warning; 31 related parser/import-preview tests passed. The user retried the original recipe and confirmed the preview warning.
 
 ## Current mobile progress
+
+- PR #115 (tip editing) is merged. Ingredient editing is complete on `feature/mobile-recipe-ingredient-edit`. Rows retain saved snapshots and stable IDs; the formatter trims/filter blanks before numbering, preserves unchanged parsed metadata, resets parsed fields for changed text, and retains existing optional/scaling-lock flags. New rows default flags to false and status to unparsed. Snapshots survive formatting and failure so reverted text can recover original metadata. The screen prefills saved ingredients and the update request supports omission versus explicit empty-array clearing. Pending controls, retry, and new-row autofocus are covered. All 536 mobile tests across 36 suites, TypeScript, and whitespace checks pass; Android verified editing/preservation/clearing, focus and keyboard access, and failure recovery. Temporary verification delays were removed. Keep parsing/scaling, flag controls, and shared row-state extraction separate.
 
 - PR #114 (instruction editing) is merged. Recipe tip editing is complete on `feature/mobile-recipe-tip-edit`: saved tips prefill stable local rows, add/edit/remove controls support multiline text, and submission trims/filters before numbering. Optional `RecipeUpdateRequest.tips` preserves stored tips when omitted; `[]` clears them. Pending controls disable, and failed saves preserve edits for correction/retry. New tip and step rows request autofocus based on stable IDs; saved rows do not. All 515 mobile tests across 34 suites, TypeScript, and whitespace checks pass. Android verified prefill, title-only preservation, edit/add/remove, clearing/reopening, pending/failure behavior, keyboard access, and new-row focus/visibility. Keep recipe tips separate from personal notes and leave ingredient editing/parsing/scaling and shared row-state extraction to separate milestones.
 

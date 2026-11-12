@@ -947,3 +947,30 @@ Android verification covered prefill, title-only preservation, edit/add/remove,
 clearing and reopening, pending/failure recovery, multiline keyboard access, and
 autofocus for new steps and tips. Native focus and visibility were verified on
 Android rather than inferred from Jest assertions.
+
+## Editing recipe ingredients
+
+Saved ingredients prefill individual rows with stable IDs, add/remove controls,
+and autofocus for newly added inputs. Each row retains a saved ingredient snapshot
+alongside editable text. Submission uses formatEditedIngredients to trim text,
+filter blank rows, and assign consecutive positions without mutating the draft.
+
+Unchanged text preserves parsed metadata, including decimal quantity strings.
+Changed text clears quantity, quantity text, unit, name, and preparation, and sets
+parse_status to unparsed. Existing is_optional and scale_locked flags are retained;
+new ingredients use null parsed fields and false flags. Comparing trimmed text
+avoids discarding metadata for surrounding whitespace alone. Reverting text before
+saving restores the original metadata through the retained snapshot.
+
+The screen passes saved ingredients into the form so unrelated edits preserve
+them. An omitted API ingredients field leaves stored ingredients unchanged; an
+empty array clears them. Controls disable while saving, and failed saves preserve
+entered text and snapshots for correction/retry.
+
+All 536 mobile tests across 36 suites, TypeScript, and whitespace checks pass.
+Android verified prefill, title-only preservation, edit/add/remove, clearing and
+reopening, new-row focus/keyboard access, and pending/failure recovery. Temporary
+verification delays were removed. Parsing, scaling controls, flag controls, and
+shared row-state extraction remain separate work. Deliberate edits replace saved
+base text; parsing/scaling must not overwrite it. Original import snapshots and
+version history are not required.

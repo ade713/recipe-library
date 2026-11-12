@@ -21,6 +21,52 @@ const renderScreen = async (onSaved = jest.fn()) => {
 };
 
 describe("RecipeEditScreen", () => {
+  it.each([false, true])("loads saved ingredients and saves them with clearAll=%p", async (clearAll) => {
+    const ingredientInputLabel = "Ingredient 1";
+    const removeIngredientLabel = "Remove ingredient 1";
+    const ingredients = [
+      {
+        position: 1,
+        original_text: "2 cups chopped carrots",
+        quantity: "2.00",
+        quantity_text: "2",
+        unit: "cups",
+        name: "carrots",
+        preparation_note: "chopped",
+        is_optional: true,
+        scale_locked: true,
+        parse_status: "parsed",
+      },
+    ];
+    const recipe = makeRecipeDetailResponse({ id: RECIPE_ID, ingredients });
+    const expectedIngredients = clearAll ? [] : ingredients;
+    const savedRecipe = makeRecipeDetailResponse({
+      id: RECIPE_ID,
+      title: EDITED_TITLE,
+      ingredients: expectedIngredients,
+    });
+
+    const onSaved = jest.fn();
+    jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
+    const saveMock = jest.spyOn(recipeService, "saveRecipeChanges").mockResolvedValue(savedRecipe);
+
+    await renderScreen(onSaved);
+
+    expect(await screen.findByLabelText(ingredientInputLabel)).toHaveDisplayValue(ingredients[0].original_text);
+
+    await fireEvent.changeText(screen.getByLabelText(TITLE_LABEL), EDITED_TITLE);
+    if (clearAll) {
+      await fireEvent.press(screen.getByRole("button", { name: removeIngredientLabel }));
+    }
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_CHANGES_LABEL }));
+
+    expect(saveMock).toHaveBeenCalledWith(
+      RECIPE_ID,
+      expect.objectContaining({ title: EDITED_TITLE, ingredients: expectedIngredients }),
+    );
+    expect(onSaved).toHaveBeenCalledWith(savedRecipe);
+  });
+
   it.each([false, true])("loads saved tips and saves them with clearAll=%p", async (clearAll) => {
     const removeTipLabel = "Remove tip 1";
     const tipInputLabel = "Tip 1";
@@ -198,6 +244,7 @@ describe("RecipeEditScreen", () => {
       base_servings: null,
       servings_unit: null,
       image_url: null,
+      ingredients: [],
       steps: [],
       tips: [],
       is_favorite: false,
@@ -239,6 +286,7 @@ describe("RecipeEditScreen", () => {
       base_servings: null,
       servings_unit: null,
       image_url: null,
+      ingredients: [],
       steps: [],
       tips: [],
       is_favorite: false,
@@ -278,6 +326,7 @@ describe("RecipeEditScreen", () => {
       base_servings: null,
       servings_unit: null,
       image_url: null,
+      ingredients: [],
       steps: [],
       tips: [],
       is_favorite: false,
@@ -321,6 +370,7 @@ describe("RecipeEditScreen", () => {
       base_servings: null,
       servings_unit: null,
       image_url: null,
+      ingredients: [],
       steps: [],
       tips: [],
       is_favorite: false,

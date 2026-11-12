@@ -1,10 +1,13 @@
 import { useRef, useState } from "react";
 import { Button, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 
-import type { RecipeStep, RecipeTip } from "@/types/recipe";
+import type { RecipeIngredient, RecipeStep, RecipeTip } from "@/types/recipe";
 
+import { formatEditedIngredients } from "./format-edited-ingredients";
 import { RecipeFormTextRow } from "./recipe-form-text-row";
+import type { FormIngredientRow } from "./format-edited-ingredients";
 
+const ADD_INGREDIENT_LABEL = "Add ingredient";
 const ADD_STEP_LABEL = "Add step";
 const ADD_TIP_LABEL = "Add tip";
 const BASE_SERVINGS_LABEL = "Servings or yield quantity";
@@ -13,12 +16,14 @@ const COOK_TIME_LABEL = "Cook time (minutes)";
 const DESCRIPTION_LABEL = "Description (optional)";
 const FAVORITE_LABEL = "Favorite";
 const IMAGE_URL_LABEL = "Image URL (optional)";
+const INGREDIENT_PLACEHOLDER = "Enter Ingredient Here";
 const INVALID_IMAGE_URL_MESSAGE = "Enter a valid HTTP or HTTPS image URL.";
 const INVALID_PROTOCOL_MESSAGE = "Expected an HTTP or HTTPS URL.";
 const INVALID_SERVINGS_MESSAGE = "Enter a servings or yield quantity of zero or greater.";
 const MAX_TITLE_LENGTH = 255;
 const PREP_TEXT = "Prep";
 const PREP_TIME_LABEL = "Prep time (minutes)";
+const REMOVE_INGREDIENT_LABEL = "Remove ingredient";
 const REMOVE_STEP_LABEL = "Remove step";
 const REMOVE_TIP_LABEL = "Remove tip";
 const SAVE_LABEL = "Save changes";
@@ -46,6 +51,7 @@ export type RecipeEditFormValues = {
   total_time_minutes: number | null;
   base_servings: number | null;
   servings_unit: string | null;
+  ingredients: RecipeIngredient[];
   steps: RecipeStep[];
   tips: RecipeTip[];
   is_favorite: boolean;
@@ -60,6 +66,7 @@ type RecipeEditFormProps = {
   initialTotalTimeMinutes?: number | null;
   initialBaseServings?: string | null;
   initialServingsUnit?: string | null;
+  initialIngredients?: RecipeIngredient[];
   initialSteps?: RecipeStep[];
   initialTips?: RecipeTip[];
   initialIsFavorite?: boolean;
@@ -130,6 +137,7 @@ export function RecipeEditForm({
   initialBaseServings,
   initialServingsUnit,
   initialIsFavorite,
+  initialIngredients = [],
   initialSteps = [],
   initialTips = [],
   saveDisabled = false,
@@ -137,6 +145,7 @@ export function RecipeEditForm({
 }: RecipeEditFormProps) {
   const stepRowId = useRef(initialSteps.length - 1);
   const tipRowId = useRef(initialTips.length - 1);
+  const ingredientRowId = useRef(initialIngredients.length - 1);
 
   const [currentTitle, setCurrentTitle] = useState(initialTitle);
   const [currentDescription, setCurrentDescription] = useState(initialDescription ?? "");
@@ -147,6 +156,13 @@ export function RecipeEditForm({
   const [currentBaseServings, setCurrentBaseServings] = useState(initialBaseServings ?? "");
   const [currentServingsUnit, setCurrentServingsUnit] = useState(initialServingsUnit ?? "");
   const [currentIsFavorite, setCurrentIsFavorite] = useState(initialIsFavorite ?? false);
+  const [currentIngredients, setCurrentIngredients] = useState<FormIngredientRow[]>(() =>
+    initialIngredients.map((ingredient, index) => ({
+      id: index,
+      text: ingredient.original_text,
+      savedIngredient: ingredient,
+    })),
+  );
   const [currentSteps, setCurrentSteps] = useState<FormStepRow[]>(() =>
     initialSteps.map((step, index) => ({
       id: index,
@@ -162,6 +178,26 @@ export function RecipeEditForm({
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const handleAddIngredient = () => {
+    ingredientRowId.current++;
+    const newIngredient = { id: ingredientRowId.current, text: "", savedIngredient: null };
+    setCurrentIngredients((prevIngredients) => [...prevIngredients, newIngredient]);
+  };
+
+  const handleRemoveIngredient = (ingredientRowId: number): void => {
+    setCurrentIngredients((prevIngredients) =>
+      prevIngredients.filter((ingredient) => ingredient.id !== ingredientRowId),
+    );
+  };
+
+  const handleChangeIngredient = (editedIngredientId: number, newIngredientText: string): void => {
+    setCurrentIngredients((prevIngredients) =>
+      prevIngredients.map((ingredient) =>
+        ingredient.id === editedIngredientId ? { ...ingredient, text: newIngredientText } : ingredient,
+      ),
+    );
+  };
 
   const handleAddStep = () => {
     stepRowId.current++;
@@ -255,6 +291,8 @@ export function RecipeEditForm({
         section_title: step.section_title ?? null,
       }));
 
+    const formattedIngredients = formatEditedIngredients(currentIngredients);
+
     const formattedTips = currentTips
       .filter((tip) => tip.text.trim().length > 0)
       .map((tip, idx) => ({
@@ -270,6 +308,7 @@ export function RecipeEditForm({
         base_servings: baseServings,
         servings_unit: normalizedServingsUnit,
         is_favorite: currentIsFavorite,
+        ingredients: formattedIngredients,
         steps: formattedSteps,
         tips: formattedTips,
         ...times,
@@ -392,6 +431,23 @@ export function RecipeEditForm({
           onValueChange={setCurrentIsFavorite}
         />
       </View>
+
+      {currentIngredients.map((row, idx) => (
+        <RecipeFormTextRow
+          key={row.id}
+          label={`Ingredient ${idx + 1}`}
+          placeholder={INGREDIENT_PLACEHOLDER}
+          value={row.text}
+          multiline={false}
+          autoFocus={row.id >= initialIngredients.length}
+          disabled={isSubmitting}
+          removeLabel={`${REMOVE_INGREDIENT_LABEL} ${idx + 1}`}
+          removeTitle={REMOVE_INGREDIENT_LABEL}
+          onChangeText={(text) => handleChangeIngredient(row.id, text)}
+          onRemove={() => handleRemoveIngredient(row.id)}
+        />
+      ))}
+      <Button title={ADD_INGREDIENT_LABEL} disabled={isSubmitting} onPress={handleAddIngredient} />
 
       {currentSteps.map((row, idx) => (
         <RecipeFormTextRow
