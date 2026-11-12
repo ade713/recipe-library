@@ -1,17 +1,19 @@
 import { useRef, useState } from "react";
 
-type FormTextRow = {
-  id: number;
-  text: string;
+type FormTextRowsOptions<T extends { text: string }> = {
+  initialRows: T[];
+  createRow: () => T;
 };
 
-export function useFormTextRows() {
-  const [rows, setRows] = useState<FormTextRow[]>([{ id: 0, text: "" }]);
-  const rowId = useRef(0);
+export function useFormTextRows<T extends { text: string }>({ initialRows, createRow }: FormTextRowsOptions<T>) {
+  const [rows, setRows] = useState<(T & { id: number })[]>(() =>
+    initialRows.map((row, index) => ({ ...row, id: index })),
+  );
+  const rowId = useRef(initialRows.length - 1);
 
   const addRow = () => {
     rowId.current++;
-    const newRow = { id: rowId.current, text: "" };
+    const newRow = { ...createRow(), id: rowId.current };
     setRows((currentRows) => [...currentRows, newRow]);
   };
 

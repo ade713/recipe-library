@@ -1,10 +1,11 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Button, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 
 import type { RecipeIngredient, RecipeStep, RecipeTip } from "@/types/recipe";
 
 import { formatEditedIngredients } from "./format-edited-ingredients";
 import { RecipeFormTextRow } from "./recipe-form-text-row";
+import { useFormTextRows } from "./use-form-text-rows";
 import type { FormIngredientRow } from "./format-edited-ingredients";
 
 const ADD_INGREDIENT_LABEL = "Add ingredient";
@@ -74,17 +75,6 @@ type RecipeEditFormProps = {
   onSubmit: (values: RecipeEditFormValues) => Promise<void>;
 };
 
-type FormStepRow = {
-  id: number;
-  text: string;
-  section_title: string | null;
-};
-
-type FormTipRow = {
-  id: number;
-  text: string;
-};
-
 const parseTime = (value: string): number | null => {
   const trimmedValue = value.trim();
   if (trimmedValue.length === 0) {
@@ -143,10 +133,6 @@ export function RecipeEditForm({
   saveDisabled = false,
   onSubmit,
 }: RecipeEditFormProps) {
-  const stepRowId = useRef(initialSteps.length - 1);
-  const tipRowId = useRef(initialTips.length - 1);
-  const ingredientRowId = useRef(initialIngredients.length - 1);
-
   const [currentTitle, setCurrentTitle] = useState(initialTitle);
   const [currentDescription, setCurrentDescription] = useState(initialDescription ?? "");
   const [currentImageUrl, setCurrentImageUrl] = useState(initialImageUrl ?? "");
@@ -156,78 +142,42 @@ export function RecipeEditForm({
   const [currentBaseServings, setCurrentBaseServings] = useState(initialBaseServings ?? "");
   const [currentServingsUnit, setCurrentServingsUnit] = useState(initialServingsUnit ?? "");
   const [currentIsFavorite, setCurrentIsFavorite] = useState(initialIsFavorite ?? false);
-  const [currentIngredients, setCurrentIngredients] = useState<FormIngredientRow[]>(() =>
-    initialIngredients.map((ingredient, index) => ({
-      id: index,
-      text: ingredient.original_text,
-      savedIngredient: ingredient,
-    })),
-  );
-  const [currentSteps, setCurrentSteps] = useState<FormStepRow[]>(() =>
-    initialSteps.map((step, index) => ({
-      id: index,
-      text: step.instruction,
-      section_title: step.section_title,
-    })),
-  );
-  const [currentTips, setCurrentTips] = useState<FormTipRow[]>(() =>
-    initialTips.map((tip, index) => ({
-      id: index,
-      text: tip.tip,
-    })),
-  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleAddIngredient = () => {
-    ingredientRowId.current++;
-    const newIngredient = { id: ingredientRowId.current, text: "", savedIngredient: null };
-    setCurrentIngredients((prevIngredients) => [...prevIngredients, newIngredient]);
-  };
-
-  const handleRemoveIngredient = (ingredientRowId: number): void => {
-    setCurrentIngredients((prevIngredients) =>
-      prevIngredients.filter((ingredient) => ingredient.id !== ingredientRowId),
-    );
-  };
-
-  const handleChangeIngredient = (editedIngredientId: number, newIngredientText: string): void => {
-    setCurrentIngredients((prevIngredients) =>
-      prevIngredients.map((ingredient) =>
-        ingredient.id === editedIngredientId ? { ...ingredient, text: newIngredientText } : ingredient,
-      ),
-    );
-  };
-
-  const handleAddStep = () => {
-    stepRowId.current++;
-    const newStep = { id: stepRowId.current, text: "", section_title: null };
-    setCurrentSteps((prevSteps) => [...prevSteps, newStep]);
-  };
-
-  const handleRemoveStep = (stepRowId: number): void => {
-    setCurrentSteps((prevSteps) => prevSteps.filter((step) => step.id !== stepRowId));
-  };
-
-  const handleChangeStep = (editedStepId: number, newStepText: string): void => {
-    setCurrentSteps((prevSteps) =>
-      prevSteps.map((step) => (step.id === editedStepId ? { ...step, text: newStepText } : step)),
-    );
-  };
-
-  const handleAddTip = () => {
-    tipRowId.current++;
-    const newTip = { id: tipRowId.current, text: "" };
-    setCurrentTips((prevTips) => [...prevTips, newTip]);
-  };
-
-  const handleRemoveTip = (tipRowId: number): void => {
-    setCurrentTips((prevTips) => prevTips.filter((tip) => tip.id !== tipRowId));
-  };
-
-  const handleChangeTip = (editedTipId: number, newTipText: string): void => {
-    setCurrentTips((prevTips) => prevTips.map((tip) => (tip.id === editedTipId ? { ...tip, text: newTipText } : tip)));
-  };
+  const {
+    rows: currentIngredients,
+    addRow: handleAddIngredient,
+    removeRow: handleRemoveIngredient,
+    updateRow: handleChangeIngredient,
+  } = useFormTextRows<Omit<FormIngredientRow, "id">>({
+    initialRows: initialIngredients.map((ingredient) => ({
+      text: ingredient.original_text,
+      savedIngredient: ingredient,
+    })),
+    createRow: () => ({ text: "", savedIngredient: null }),
+  });
+  const {
+    rows: currentSteps,
+    addRow: handleAddStep,
+    removeRow: handleRemoveStep,
+    updateRow: handleChangeStep,
+  } = useFormTextRows({
+    initialRows: initialSteps.map((step) => ({
+      text: step.instruction,
+      section_title: step.section_title,
+    })),
+    createRow: () => ({ text: "", section_title: null }),
+  });
+  const {
+    rows: currentTips,
+    addRow: handleAddTip,
+    removeRow: handleRemoveTip,
+    updateRow: handleChangeTip,
+  } = useFormTextRows({
+    initialRows: initialTips.map((tip) => ({ text: tip.tip })),
+    createRow: () => ({ text: "" }),
+  });
 
   const handleSubmit = async (): Promise<void> => {
     if (isSubmitting || saveDisabled) {

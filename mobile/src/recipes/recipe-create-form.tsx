@@ -132,19 +132,19 @@ export function RecipeCreateForm({ onSubmit, disabled }: RecipeCreateFormProps) 
     addRow: handleAddIngredient,
     removeRow: handleRemoveIngredient,
     updateRow: handleChangeIngredient,
-  } = useFormTextRows();
+  } = useFormTextRows({ initialRows: [{ text: "" }], createRow: () => ({ text: "" }) });
   const {
     rows: steps,
     addRow: handleAddStep,
     removeRow: handleRemoveStep,
     updateRow: handleChangeStep,
-  } = useFormTextRows();
+  } = useFormTextRows({ initialRows: [{ text: "" }], createRow: () => ({ text: "" }) });
   const {
     rows: tips,
     addRow: handleAddTip,
     removeRow: handleRemoveTip,
     updateRow: handleChangeTip,
-  } = useFormTextRows();
+  } = useFormTextRows({ initialRows: [{ text: "" }], createRow: () => ({ text: "" }) });
 
   const handleSubmit = async (): Promise<void> => {
     if (disabled || isSubmitting) {
