@@ -1,5 +1,7 @@
 import type { RecipeIngredient } from "@/types/recipe";
-import { formatEditedIngredients, type FormIngredientRow } from "../format-edited-ingredients";
+
+import { formatEditedIngredients } from "../format-edited-ingredients";
+import type { FormIngredientRow } from "../format-edited-ingredients";
 
 const SAVED: RecipeIngredient = {
   position: 4,
