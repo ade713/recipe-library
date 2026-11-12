@@ -329,6 +329,39 @@ describe("createRecipe", () => {
 describe("updateRecipe", () => {
   it.each([
     {
+      ingredients: [
+        {
+          position: 1,
+          original_text: "2 cups carrots",
+          quantity: "2.00",
+          quantity_text: "2",
+          unit: "cups",
+          name: "carrots",
+          preparation_note: null,
+          is_optional: false,
+          scale_locked: true,
+          parse_status: "parsed",
+        },
+      ],
+      body: '{"ingredients":[{"position":1,"original_text":"2 cups carrots","quantity":"2.00","quantity_text":"2","unit":"cups","name":"carrots","preparation_note":null,"is_optional":false,"scale_locked":true,"parse_status":"parsed"}]}',
+    },
+    { ingredients: [], body: '{"ingredients":[]}' },
+    { ingredients: undefined, body: "{}" },
+  ])("serializes ingredient updates: $body", async ({ ingredients, body }) => {
+    const payload: RecipeUpdateRequest = { ingredients };
+
+    const requestMock = jest.spyOn(client, "apiFetch").mockResolvedValue(makeRecipeDetailResponse());
+
+    await updateRecipe(ACCESS_TOKEN, RECIPE_ID, payload);
+    expect(requestMock).toHaveBeenCalledWith(`${RECIPES_PATH}/${RECIPE_ID}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
+      body,
+    });
+  });
+
+  it.each([
+    {
       tips: [{ position: 1, tip: "Serve warm" }],
       body: '{"tips":[{"position":1,"tip":"Serve warm"}]}',
     },
