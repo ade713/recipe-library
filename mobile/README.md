@@ -989,5 +989,18 @@ mobile tests across 37 suites, TypeScript, and whitespace checks pass. Android
 verified creation and editing, row add/remove, new-row focus, saved values, and
 failed-save preservation.
 
-Follow-up bug fix: disable remaining creation-form inputs and row controls during
-saving. This behavior change is intentionally outside the row-state refactor.
+The separate creation-form saving fix is described below.
+
+
+## Creation-form controls during saving
+
+Recipe creation now disables all text inputs, ingredient/step/tip row inputs and
+Add/Remove buttons, and Favorite while isSubmitting is true. Failure restores
+controls without clearing the draft, allowing correction and retry. Save retains
+its existing disabled-or-submitting guard. The external disabled prop continues
+to block submission during tag creation while recipe fields remain editable.
+
+All 541 mobile tests across 37 suites, TypeScript, and whitespace checks pass.
+The regression test checks pending controls, preserved values, and correction
+before retry. Android verified pending controls, failure recovery, successful
+retry, and editable fields during tag creation. Temporary delays were removed.

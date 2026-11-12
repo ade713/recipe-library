@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import { RecipeCreateForm } from "../recipe-create-form";
 
 const ADD_INGREDIENT_LABEL = "Add ingredient";
@@ -44,6 +44,85 @@ const renderRecipeCreateForm = async (onSubmit: () => Promise<void>) => {
 };
 
 describe("RecipeCreateForm", () => {
+  it("locks all form controls while saving and restores the draft for correction and retry", async () => {
+    const fields: [string, string][] = [
+      [TITLE_INPUT_LABEL, RECIPE_TITLE],
+      [DESCRIPTION_LABEL, DESCRIPTION],
+      [SOURCE_URL_LABEL, SOURCE_URL],
+      [IMAGE_URL_LABEL, IMAGE_URL],
+      [PREP_TIME_LABEL, "10"],
+      [COOK_TIME_LABEL, "20"],
+      [TOTAL_TIME_LABEL, "40"],
+      [SERVINGS_LABEL, "1.5"],
+      [SERVINGS_UNIT_LABEL, "loaves"],
+      [INGREDIENT_INPUT_LABEL_1, INGREDIENT_1],
+      [STEP_LABEL_1, STEP_1],
+      [TIP_LABEL_1, TIP_1],
+    ];
+    const buttons = [
+      ADD_INGREDIENT_LABEL,
+      ADD_STEP_LABEL,
+      ADD_TIP_LABEL,
+      "Remove ingredient 1",
+      "Remove step 1",
+      "Remove tip 1",
+      SAVE_BUTTON_LABEL,
+    ];
+
+    let rejectSave!: (error: Error) => void;
+    const pending = new Promise<void>((_, reject) => {
+      rejectSave = reject;
+    });
+    const onSubmit = jest.fn().mockReturnValueOnce(pending).mockResolvedValueOnce(undefined);
+
+    await renderRecipeCreateForm(onSubmit);
+
+    for (const [label, value] of fields) {
+      await fireEvent.changeText(screen.getByLabelText(label), value);
+    }
+    await fireEvent(screen.getByLabelText(FAVORITE_LABEL), "valueChange", true);
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_BUTTON_LABEL }));
+    try {
+      for (const [label] of fields) {
+        expect(screen.getByLabelText(label)).toBeDisabled();
+      }
+      for (const name of buttons) {
+        expect(screen.getByRole("button", { name })).toBeDisabled();
+      }
+      expect(screen.getByLabelText(FAVORITE_LABEL)).toHaveProp("disabled", true);
+    } finally {
+      await act(async () => {
+        rejectSave(new Error(NETWORK_ERROR_MESSAGE));
+      });
+    }
+
+    expect(screen.getByText(SAVE_RECIPE_ERROR_MESSAGE)).toBeTruthy();
+    for (const [label, value] of fields) {
+      expect(screen.getByLabelText(label)).toBeEnabled();
+      expect(screen.getByLabelText(label)).toHaveDisplayValue(value);
+    }
+    for (const name of buttons) {
+      expect(screen.getByRole("button", { name })).toBeEnabled();
+    }
+    expect(screen.getByLabelText(FAVORITE_LABEL)).toHaveProp("disabled", false);
+    expect(screen.getByLabelText(FAVORITE_LABEL)).toHaveProp("value", true);
+
+    await fireEvent.changeText(screen.getByLabelText(TITLE_INPUT_LABEL), "Corrected soup");
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_BUTTON_LABEL }));
+    expect(onSubmit).toHaveBeenCalledTimes(2);
+    expect(onSubmit).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        title: "Corrected soup",
+        is_favorite: true,
+        ingredients: [{ position: 1, original_text: INGREDIENT_1 }],
+        steps: [{ position: 1, instruction: STEP_1 }],
+        tips: [{ position: 1, tip: TIP_1 }],
+      }),
+    );
+    expect(screen.queryByText(SAVE_RECIPE_ERROR_MESSAGE)).toBeNull();
+  });
+
   it("submits the entered recipe title", async () => {
     const onSubmit = jest.fn();
 

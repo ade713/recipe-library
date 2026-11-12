@@ -1395,3 +1395,21 @@ Learned:
 Next:
 
 - Submit this focused refactor PR. Disable remaining creation-form controls during saving in a separate bug-fix PR.
+
+
+## Creation-Form Save Controls — 2026-11-12
+
+Built:
+
+- Disabled text inputs, repeatable row inputs and Add/Remove buttons, and Favorite during recipe submission using existing isSubmitting state.
+- Added pending-save coverage for control availability, preserved values after failure, and correction before retry.
+- All 541 mobile tests across 37 suites, TypeScript, and whitespace checks pass. Android verified pending/failure/retry behavior and editable fields during tag creation. Temporary verification delays were removed.
+
+Learned:
+
+- Tag creation blocks recipe submission without locking unrelated recipe fields; recipe submission locks the full form.
+- Restoring controls after failure should preserve entered values so users can correct and retry without rebuilding the draft.
+
+Next:
+
+- Submit this focused bug-fix PR; the creation-control follow-up from the row-state refactor is complete.

@@ -243,10 +243,11 @@ export function RecipeCreateForm({ onSubmit, disabled }: RecipeCreateFormProps) 
 
   return (
     <View>
-      {errorMessage !== null && <Text>{errorMessage}</Text>}
+      {errorMessage !== null && <Text style={styles.errorMessage}>{errorMessage}</Text>}
       <TextInput
         accessibilityLabel={TITLE_INPUT_LABEL}
         placeholder={TITLE_PLACEHOLDER}
+        editable={!isSubmitting}
         value={title}
         autoCorrect={false}
         onChangeText={setTitle}
@@ -257,6 +258,7 @@ export function RecipeCreateForm({ onSubmit, disabled }: RecipeCreateFormProps) 
       <TextInput
         accessibilityLabel={DESCRIPTION_LABEL}
         placeholder={DESCRIPTION_PLACEHOLDER}
+        editable={!isSubmitting}
         value={description}
         multiline={true}
         textAlignVertical='top'
@@ -269,6 +271,7 @@ export function RecipeCreateForm({ onSubmit, disabled }: RecipeCreateFormProps) 
       <TextInput
         accessibilityLabel={SOURCE_URL_LABEL}
         placeholder={URL_PLACEHOLDER}
+        editable={!isSubmitting}
         value={sourceUrl}
         autoCapitalize='none'
         autoCorrect={false}
@@ -281,6 +284,7 @@ export function RecipeCreateForm({ onSubmit, disabled }: RecipeCreateFormProps) 
       <TextInput
         accessibilityLabel={IMAGE_URL_LABEL}
         placeholder={URL_PLACEHOLDER}
+        editable={!isSubmitting}
         value={imageUrl}
         autoCapitalize='none'
         autoCorrect={false}
@@ -295,6 +299,7 @@ export function RecipeCreateForm({ onSubmit, disabled }: RecipeCreateFormProps) 
           <Text>{PREP_TEXT}</Text>
           <TextInput
             accessibilityLabel={PREP_TIME_LABEL}
+            editable={!isSubmitting}
             value={prepTime}
             onChangeText={setPrepTime}
             keyboardType='number-pad'
@@ -306,6 +311,7 @@ export function RecipeCreateForm({ onSubmit, disabled }: RecipeCreateFormProps) 
           <Text>{COOK_TEXT}</Text>
           <TextInput
             accessibilityLabel={COOK_TIME_LABEL}
+            editable={!isSubmitting}
             value={cookTime}
             onChangeText={setCookTime}
             keyboardType='number-pad'
@@ -317,6 +323,7 @@ export function RecipeCreateForm({ onSubmit, disabled }: RecipeCreateFormProps) 
           <Text>{TOTAL_TEXT}</Text>
           <TextInput
             accessibilityLabel={TOTAL_TIME_LABEL}
+            editable={!isSubmitting}
             value={totalTime}
             onChangeText={setTotalTime}
             keyboardType='number-pad'
@@ -331,6 +338,7 @@ export function RecipeCreateForm({ onSubmit, disabled }: RecipeCreateFormProps) 
           <Text>{SERVINGS_QUANTITY_TEXT}</Text>
           <TextInput
             accessibilityLabel={SERVINGS_LABEL}
+            editable={!isSubmitting}
             value={servings}
             onChangeText={setServings}
             keyboardType='decimal-pad'
@@ -342,6 +350,7 @@ export function RecipeCreateForm({ onSubmit, disabled }: RecipeCreateFormProps) 
           <Text>{SERVINGS_UNIT_TEXT}</Text>
           <TextInput
             accessibilityLabel={SERVINGS_UNIT_LABEL}
+            editable={!isSubmitting}
             autoCorrect={false}
             autoCapitalize='none'
             placeholder='e.g. servings'
@@ -360,13 +369,14 @@ export function RecipeCreateForm({ onSubmit, disabled }: RecipeCreateFormProps) 
           value={row.text}
           multiline={false}
           autoFocus={row.id !== 0}
+          disabled={isSubmitting}
           removeLabel={`${REMOVE_INGREDIENT_LABEL} ${idx + 1}`}
           removeTitle={REMOVE_INGREDIENT_LABEL}
           onChangeText={(text) => handleChangeIngredient(row.id, text)}
           onRemove={() => handleRemoveIngredient(row.id)}
         />
       ))}
-      <Button title={ADD_INGREDIENT_LABEL} onPress={handleAddIngredient} />
+      <Button title={ADD_INGREDIENT_LABEL} disabled={isSubmitting} onPress={handleAddIngredient} />
 
       {steps.map((row, idx) => (
         <RecipeFormTextRow
@@ -376,13 +386,14 @@ export function RecipeCreateForm({ onSubmit, disabled }: RecipeCreateFormProps) 
           value={row.text}
           multiline={true}
           autoFocus={row.id !== 0}
+          disabled={isSubmitting}
           removeLabel={`${REMOVE_STEP_LABEL} ${idx + 1}`}
           removeTitle={REMOVE_STEP_LABEL}
           onChangeText={(text) => handleChangeStep(row.id, text)}
           onRemove={() => handleRemoveStep(row.id)}
         />
       ))}
-      <Button title={ADD_STEP_LABEL} onPress={handleAddStep} />
+      <Button title={ADD_STEP_LABEL} disabled={isSubmitting} onPress={handleAddStep} />
 
       {tips.map((row, idx) => (
         <RecipeFormTextRow
@@ -392,17 +403,23 @@ export function RecipeCreateForm({ onSubmit, disabled }: RecipeCreateFormProps) 
           value={row.text}
           multiline={true}
           autoFocus={row.id !== 0}
+          disabled={isSubmitting}
           removeLabel={`${REMOVE_TIP_LABEL} ${idx + 1}`}
           removeTitle={REMOVE_TIP_LABEL}
           onChangeText={(text) => handleChangeTip(row.id, text)}
           onRemove={() => handleRemoveTip(row.id)}
         />
       ))}
-      <Button title={ADD_TIP_LABEL} onPress={handleAddTip} />
+      <Button title={ADD_TIP_LABEL} disabled={isSubmitting} onPress={handleAddTip} />
 
       <View style={styles.favoriteRow}>
         <Text>{FAVORITE_LABEL}</Text>
-        <Switch accessibilityLabel={FAVORITE_LABEL} value={isFavorite} onValueChange={setIsFavorite} />
+        <Switch
+          accessibilityLabel={FAVORITE_LABEL}
+          disabled={isSubmitting}
+          value={isFavorite}
+          onValueChange={setIsFavorite}
+        />
       </View>
 
       <Button
@@ -448,5 +465,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 8,
     marginVertical: 8,
+  },
+  errorMessage: {
+    color: "#f32121",
   },
 });
