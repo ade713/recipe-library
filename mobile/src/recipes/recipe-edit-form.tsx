@@ -4,8 +4,8 @@ import { Button, StyleSheet, Switch, Text, TextInput, View } from "react-native"
 import type { RecipeIngredient, RecipeStep, RecipeTip } from "@/types/recipe";
 
 import { formatEditedIngredients } from "./format-edited-ingredients";
-import type { FormIngredientRow } from "./format-edited-ingredients";
 import { RecipeFormTextRow } from "./recipe-form-text-row";
+import type { FormIngredientRow } from "./format-edited-ingredients";
 
 const ADD_INGREDIENT_LABEL = "Add ingredient";
 const ADD_STEP_LABEL = "Add step";

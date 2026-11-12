@@ -1,9 +1,11 @@
-import { fireEvent, render, screen } from "@testing-library/react-native";
+import { act, fireEvent, render, screen } from "@testing-library/react-native";
+
 import type { RecipeIngredient } from "@/types/recipe";
+
 import { RecipeEditForm } from "../recipe-edit-form";
 
-const INGREDIENT_LABEL_1 = "Ingredient 1";
 const ADD_INGREDIENT_LABEL = "Add ingredient";
+const INGREDIENT_LABEL_1 = "Ingredient 1";
 const REMOVE_INGREDIENT_LABEL_1 = "Remove ingredient 1";
 
 const SAVED: RecipeIngredient = {
@@ -39,6 +41,76 @@ const save = async () => {
 };
 
 describe("RecipeEditForm ingredients", () => {
+  it("locks ingredient controls while saving and preserves the draft and snapshot for retry", async () => {
+    const editedText = "  3 cups carrots  ";
+    const newText = "  Salt to taste  ";
+    const secondLabel = "Ingredient 2";
+    const removeSecondLabel = "Remove ingredient 2";
+    const saveLabel = "Save changes";
+    const saveErrorMessage = "Unable to save changes. Please try again.";
+
+    let rejectSave!: (error: Error) => void;
+    const pending = new Promise<void>((_, reject) => {
+      rejectSave = reject;
+    });
+    const onSubmit = jest.fn().mockReturnValueOnce(pending).mockResolvedValueOnce(undefined);
+
+    await render(<RecipeEditForm initialTitle='Soup' initialIngredients={[SAVED]} onSubmit={onSubmit} />);
+
+    await fireEvent.changeText(screen.getByLabelText(INGREDIENT_LABEL_1), editedText);
+    await fireEvent.press(screen.getByRole("button", { name: ADD_INGREDIENT_LABEL }));
+    await fireEvent.changeText(screen.getByLabelText(secondLabel), newText);
+
+    await save();
+    try {
+      expect(screen.getByLabelText(INGREDIENT_LABEL_1)).toBeDisabled();
+      expect(screen.getByLabelText(secondLabel)).toBeDisabled();
+      expect(screen.getByRole("button", { name: REMOVE_INGREDIENT_LABEL_1 })).toBeDisabled();
+      expect(screen.getByRole("button", { name: removeSecondLabel })).toBeDisabled();
+      expect(screen.getByRole("button", { name: ADD_INGREDIENT_LABEL })).toBeDisabled();
+      expect(screen.getByRole("button", { name: saveLabel })).toBeDisabled();
+    } finally {
+      await act(async () => {
+        rejectSave(new Error("Network failure"));
+      });
+    }
+
+    expect(screen.getByText(saveErrorMessage)).toBeTruthy();
+    expect(screen.getByLabelText(INGREDIENT_LABEL_1)).toHaveDisplayValue(editedText);
+    expect(screen.getByLabelText(secondLabel)).toHaveDisplayValue(newText);
+    expect(screen.getByLabelText(INGREDIENT_LABEL_1)).toBeEnabled();
+    expect(screen.getByLabelText(secondLabel)).toBeEnabled();
+    expect(screen.getByRole("button", { name: REMOVE_INGREDIENT_LABEL_1 })).toBeEnabled();
+    expect(screen.getByRole("button", { name: removeSecondLabel })).toBeEnabled();
+    expect(screen.getByRole("button", { name: ADD_INGREDIENT_LABEL })).toBeEnabled();
+    expect(screen.getByRole("button", { name: saveLabel })).toBeEnabled();
+
+    await fireEvent.changeText(screen.getByLabelText(INGREDIENT_LABEL_1), SAVED.original_text);
+    await save();
+    expect(onSubmit).toHaveBeenCalledTimes(2);
+    expect(onSubmit).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        ingredients: [
+          SAVED,
+          {
+            position: 2,
+            original_text: newText.trim(),
+            quantity: null,
+            quantity_text: null,
+            unit: null,
+            name: null,
+            preparation_note: null,
+            is_optional: false,
+            scale_locked: false,
+            parse_status: "unparsed",
+          },
+        ],
+      }),
+    );
+    expect(screen.queryByText(saveErrorMessage)).toBeNull();
+  });
+
   it("prefills saved text and preserves metadata during a title-only edit", async () => {
     const title = "Carrot soup";
     const titleLabel = "Recipe title";

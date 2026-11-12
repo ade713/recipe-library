@@ -22,18 +22,20 @@ export function formatEditedIngredients(rows: FormIngredientRow[]): RecipeIngred
     .filter((row) => row.text.trim().length > 0)
     .map((row, index) => {
       const position = index + 1;
+      const text = row.text.trim();
+
       if (row.savedIngredient === null) {
-        return { ...ingredientDefaults, position, original_text: row.text.trim() };
+        return { ...ingredientDefaults, position, original_text: text };
       }
 
-      if (row.text.trim() === row.savedIngredient.original_text.trim()) {
-        return { ...row.savedIngredient, position, original_text: row.text.trim() };
+      if (text === row.savedIngredient.original_text.trim()) {
+        return { ...row.savedIngredient, position, original_text: text };
       }
 
       return {
         ...ingredientDefaults,
         position,
-        original_text: row.text.trim(),
+        original_text: text,
         is_optional: row.savedIngredient.is_optional,
         scale_locked: row.savedIngredient.scale_locked,
       };
