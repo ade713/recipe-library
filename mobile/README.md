@@ -974,3 +974,20 @@ verification delays were removed. Parsing, scaling controls, flag controls, and
 shared row-state extraction remain separate work. Deliberate edits replace saved
 base text; parsing/scaling must not overwrite it. Original import snapshots and
 version history are not required.
+
+## Shared creation/editing row state
+
+useFormTextRows now accepts typed initialRows and a createRow factory. It owns
+lazy initialization, stable IDs, and add/remove/text-update operations while
+preserving caller-specific metadata. Creation explicitly starts each section
+with one blank row; editing starts with saved ingredients, steps, or tips.
+Ingredient snapshots and step section titles remain intact when text changes.
+Initial rows seed state only on mount; new prop arrays do not overwrite drafts.
+
+Forms retain formatting, validation, saving, and autofocus decisions. All 540
+mobile tests across 37 suites, TypeScript, and whitespace checks pass. Android
+verified creation and editing, row add/remove, new-row focus, saved values, and
+failed-save preservation.
+
+Follow-up bug fix: disable remaining creation-form inputs and row controls during
+saving. This behavior change is intentionally outside the row-state refactor.
