@@ -1375,3 +1375,23 @@ Learned:
 Next:
 
 - Submit the focused ingredient-editing PR. Keep conservative parsing and cooking-view scaling as separate milestones.
+
+
+## Shared Creation/Edit Row State — 2026-11-12
+
+Built:
+
+- Generalized useFormTextRows with typed initial rows and a new-row factory; migrated creation and all three edit sections.
+- Removed duplicate local state, counters, and row handlers while keeping formatting and saving in the forms.
+- Added hook tests for metadata preservation, non-reused IDs, independent sections, and draft preservation across prop changes.
+- All 540 mobile tests across 37 suites, TypeScript, and whitespace checks pass. Android creation/editing checks verified rows, autofocus, saved values, and failure recovery.
+
+Learned:
+
+- Lazy state initialization avoids repeating ID assignment on rerenders; initial props do not control the current draft.
+- Assigning id after the factory spread ensures the hook owns IDs; the ref prevents reuse after removal.
+- Explicit Omit<FormIngredientRow, "id"> allows both saved ingredient snapshots and null while leaving ID assignment to the hook.
+
+Next:
+
+- Submit this focused refactor PR. Disable remaining creation-form controls during saving in a separate bug-fix PR.
