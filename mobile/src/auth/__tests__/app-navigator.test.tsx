@@ -7,6 +7,7 @@ import type { ReactElement } from "react";
 import { ApiError } from "@/api/errors";
 import { makeRecipeDetailResponse, makeRecipeSummary } from "@/test/fixtures/recipes";
 import { makeUserResponse } from "@/test/fixtures/users";
+import * as importService from "@/imports/import-service";
 import * as recipeService from "@/recipes/recipe-service";
 import * as tagService from "@/tags/tag-service";
 import type { TagResponse } from "@/types/tag";
@@ -15,8 +16,9 @@ import { LoginScreen } from "../login-screen";
 import { RegisterScreen } from "../register-screen";
 import * as auth from "../../api/auth";
 import * as session from "../session";
-import NewRecipeScreen from "../../../app/recipes/new";
 import EditRecipeRoute from "../../../app/recipes/[id]/edit";
+import ImportRecipeRoute from "../../../app/import";
+import NewRecipeScreen from "../../../app/recipes/new";
 import RecipeDetailRoute from "../../../app/recipes/[id]";
 import RecipeLibraryScreen from "../../../app/index";
 import RootLayout from "../../../app/_layout";
@@ -36,8 +38,10 @@ const PRIVATE_ERROR_MESSAGE = "Private failure";
 const RECIPE_DETAIL_PATH = "/recipes/recipe-1";
 const RECIPE_DETAIL_TEXT = "Recipe detail route";
 const RECIPE_ID = "recipe-1";
+const RECIPE_LIBRARY_TEXT = "Your recipe library.";
 const RECIPE_TITLE = "Chicken Soup";
 const RECIPE_TITLE_LABEL = "Recipe title";
+const RECIPE_URL_LABEL = "Recipe URL";
 const REGISTER_PATH = "/register";
 const REGISTER_TEXT = "Registration route";
 const SAVE_CHANGES_LABEL = "Save changes";
@@ -58,6 +62,7 @@ type RouteOptions = {
   createRecipe?: () => ReactElement;
   detail?: () => ReactElement | null;
   editRecipe?: () => ReactElement | null;
+  importRecipe?: () => ReactElement | null;
   index?: () => ReactElement;
   login?: () => ReactElement;
   register?: () => ReactElement;
@@ -69,6 +74,7 @@ const renderRouteNavigation = async (
     createRecipe = () => <Text>{CREATE_RECIPE_TEXT}</Text>,
     detail = () => <Text>{RECIPE_DETAIL_TEXT}</Text>,
     editRecipe = EditRecipeRoute,
+    importRecipe = ImportRecipeRoute,
     index = () => <Text>{LIBRARY_TEXT}</Text>,
     login = () => <Text>{LOGIN_TEXT}</Text>,
     register = () => <Text>{REGISTER_TEXT}</Text>,
@@ -78,6 +84,7 @@ const renderRouteNavigation = async (
     {
       _layout: RootLayout,
       "recipes/new/index": createRecipe,
+      import: importRecipe,
       index,
       login,
       register,
@@ -93,6 +100,54 @@ const renderRouteNavigation = async (
 };
 
 describe("AppNavigator", () => {
+  it("opens import from the library, requests a preview, and returns with Back", async () => {
+    const url = "https://example.com/soup";
+    const warning = "Recipe data could not be parsed.";
+    const importRecipeLabel = "Import recipe";
+    const previewRecipeLabel = "Preview recipe";
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(makeUserResponse());
+    jest.spyOn(recipeService, "loadRecipes").mockResolvedValue({ items: [] });
+    const previewMock = jest.spyOn(importService, "loadImportPreview").mockResolvedValue({
+      import_id: "import-one",
+      status: "failed",
+      parser_used: null,
+      draft: null,
+      warnings: [warning],
+      existing_recipe_id: null,
+      next_actions: ["enter_manually", "open_source_url"],
+    });
+
+    await renderRouteNavigation(INDEX_PATH, { index: RecipeLibraryScreen });
+
+    await fireEvent.press(await screen.findByRole("button", { name: importRecipeLabel }));
+    expect(previewMock).not.toHaveBeenCalled();
+
+    await fireEvent.changeText(await screen.findByLabelText(RECIPE_URL_LABEL), url);
+    await fireEvent.press(screen.getByRole("button", { name: previewRecipeLabel }));
+    expect(await screen.findByText(warning)).toBeTruthy();
+    expect(previewMock).toHaveBeenCalledWith({ url });
+
+    await act(async () => {
+      router.back();
+    });
+    expect(await screen.findByText(RECIPE_LIBRARY_TEXT)).toBeTruthy();
+    expect(screen.queryByLabelText(RECIPE_URL_LABEL)).toBeNull();
+  });
+
+  it("redirects signed-out users from import to login without requesting a preview", async () => {
+    const importPath = "/import";
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(null);
+    const previewMock = jest.spyOn(importService, "loadImportPreview");
+
+    await renderRouteNavigation(importPath);
+
+    expect(await screen.findByText(LOGIN_TEXT)).toBeTruthy();
+    expect(screen.queryByLabelText(RECIPE_URL_LABEL)).toBeNull();
+    expect(previewMock).not.toHaveBeenCalled();
+  });
+
   beforeEach(() => {
     jest.spyOn(tagService, "loadTags").mockResolvedValue({ items: [] });
   });
@@ -150,7 +205,7 @@ describe("AppNavigator", () => {
 
     await fireEvent.press(await screen.findByRole("button", { name: "Sign out" }));
     expect(await screen.findByText(LOGIN_TEXT)).toBeTruthy();
-    expect(screen.queryByText("Your recipe library.")).toBeNull();
+    expect(screen.queryByText(RECIPE_LIBRARY_TEXT)).toBeNull();
     expect(signOutMock).toHaveBeenCalledTimes(1);
   });
 

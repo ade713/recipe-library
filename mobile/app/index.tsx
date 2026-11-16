@@ -17,6 +17,9 @@ type HealthResponse = {
 
 const ALL_BUTTON_TEXT = "All";
 const CREATE_RECIPE_BUTTON_TITLE = "Create recipe";
+const CREATE_RECIPE_PATH = "/recipes/new";
+const IMPORT_RECIPE_BUTTON_TITLE = "Import recipe";
+const IMPORT_RECIPE_PATH = "/import";
 const FAVORITES_BUTTON_TEXT = "Favorites";
 const FILTER_ANY_TIME_TITLE = "Any time";
 const FILTER_MAX_TOTAL_TIME_TITLE = "30 min or less";
@@ -161,7 +164,9 @@ export default function RecipeLibraryScreen() {
     <SafeAreaView edges={["bottom"]} style={styles.container}>
       <Text>Your recipe library.</Text>
 
-      <Button title={CREATE_RECIPE_BUTTON_TITLE} onPress={() => router.push("/recipes/new")} />
+      <Button title={IMPORT_RECIPE_BUTTON_TITLE} onPress={() => router.push(IMPORT_RECIPE_PATH)} />
+
+      <Button title={CREATE_RECIPE_BUTTON_TITLE} onPress={() => router.push(CREATE_RECIPE_PATH)} />
 
       <View style={styles.buttonsContainer}>
         <RecipeOptionButton label={ALL_BUTTON_TEXT} selected={!favoritesOnly} onPress={() => setFavoritesOnly(false)} />

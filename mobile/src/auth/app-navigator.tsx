@@ -13,6 +13,7 @@ export function AppNavigator() {
         <Stack.Screen name='recipes/[id]/edit' options={{ title: "Edit recipe" }} />
         <Stack.Screen name='recipes/[id]' options={{ title: "Recipe detail" }} />
         <Stack.Screen name='recipes/new/index' options={{ title: "Create recipe" }} />
+        <Stack.Screen name='import' options={{ title: "Import recipe" }} />
       </Stack.Protected>
       <Stack.Protected guard={state.status === "signedOut"}>
         <Stack.Screen name='login' options={{ title: "Sign in" }} />

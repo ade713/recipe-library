@@ -1,5 +1,9 @@
-// Planned screen: Import Recipe
-// Create the real Expo app before using this file.
-export default function ImportRecipeScreen() {
-  return null;
+import { useHeaderHeight } from "expo-router/react-navigation";
+
+import { ImportRecipeScreen } from "@/imports/import-recipe-screen";
+
+export default function ImportRecipeRoute() {
+  const headerHeight = useHeaderHeight();
+
+  return <ImportRecipeScreen headerHeight={headerHeight} />;
 }
