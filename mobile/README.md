@@ -1004,3 +1004,23 @@ All 541 mobile tests across 37 suites, TypeScript, and whitespace checks pass.
 The regression test checks pending controls, preserved values, and correction
 before retry. Android verified pending controls, failure recovery, successful
 retry, and editable fields during tag creation. Temporary delays were removed.
+
+## Import-preview API foundation
+
+Typed import requests accept a URL and optional import_as_copy choice. Preview
+responses retain the backend's snake_case fields, nullable draft/parser/existing
+recipe ID, warnings, and next actions. RecipeImportDraft reuses recipe detail
+fields without an ID, preserving decimal strings and structured ingredient data.
+These types describe the JSON contract; they do not validate JSON at runtime.
+
+previewRecipeImport posts to /imports/preview with a supplied bearer token and
+rejects missing responses. loadImportPreview retrieves the stored token and
+rejects a missing token before making the request. Storage and API errors
+propagate unchanged. Success and partial outcomes provide drafts; blocked, failed,
+and duplicate outcomes remain responses for the UI to interpret. A duplicate is
+not automatically retried as a copy: that choice belongs to the user.
+
+All 563 mobile tests across 39 suites, TypeScript, and whitespace checks pass.
+This milestone adds API/service groundwork only; URL entry, preview editing,
+fallback actions, and import saving remain separate UI/API milestones. No new
+Android UI or live import flow was verified in this PR.
