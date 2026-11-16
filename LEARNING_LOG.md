@@ -1434,3 +1434,24 @@ Learned:
 Next:
 
 - Submit this focused API/service PR, then build URL entry and preview UI in separate milestones.
+
+
+## Mobile Import URL Entry and Preview — 2026-11-16
+
+Built:
+
+- Added URL entry with submission-time HTTP/HTTPS validation, pending controls, safe errors, and retry preservation.
+- Displayed preview statuses/warnings and actual ingredient text and numbered instructions for usable drafts. Old results clear before the next request.
+- Connected a protected import route and library entry point with header-aware keyboard avoidance, safe area handling, and scrolling.
+- All 583 mobile tests across 41 suites, TypeScript, and whitespace checks pass. Android verified navigation, validation, preview content, keyboard/scrolling access, stale-result clearing, and failure/retry.
+
+Learned:
+
+- Complete validation before setting pending state so early returns cannot leave controls locked.
+- Keep entered text in form state and trim only the submitted value.
+- The screen owns preview results; the form owns submission-error feedback. Clearing a result does not reset the component or URL input.
+- Actual ingredients and numbered steps help users assess import quality more than counts alone.
+
+Next:
+
+- Submit this focused URL-entry/read-only-preview PR. Keep draft editing/saving and fallback-action buttons in follow-up PRs.

@@ -1024,3 +1024,24 @@ All 563 mobile tests across 39 suites, TypeScript, and whitespace checks pass.
 This milestone adds API/service groundwork only; URL entry, preview editing,
 fallback actions, and import saving remain separate UI/API milestones. No new
 Android UI or live import flow was verified in this PR.
+
+## URL entry and read-only import previews
+
+Authenticated users can open Import recipe from the library. The URL form keeps
+entered text intact, validates HTTP/HTTPS on submission, and sends the trimmed
+original string. Pending requests disable the controls; request failures show
+safe feedback and preserve the URL for correction/retry.
+
+The screen clears the previous result before each request. It displays status
+feedback and warnings, plus the draft title, ingredient text, and numbered steps
+for success/partial results. Blocked, failed, and duplicate outcomes display
+feedback without a draft. These outcomes are distinct from HTTP/network errors.
+
+The protected import route supplies header height for keyboard avoidance. Safe
+area handling and a scrollable preview keep longer results accessible. All 583
+mobile tests across 41 suites, TypeScript, and whitespace checks pass. Android
+verified navigation/Back, URL validation and correction, preview content/warnings,
+keyboard scrolling, clearing prior results, and request failure/retry.
+
+Draft editing/saving, duplicate-copy and other fallback-action buttons remain
+follow-up milestones. This screen does not save imported recipes yet.
