@@ -1413,3 +1413,24 @@ Learned:
 Next:
 
 - Submit this focused bug-fix PR; the creation-control follow-up from the row-state refactor is complete.
+
+
+## Mobile Import-Preview API — 2026-11-15
+
+Built:
+
+- Added request, status/action, draft, and response types matching the backend JSON contract.
+- Added authenticated preview POST handling and a stored-token service wrapper.
+- Covered copy-choice serialization, all preview outcomes, warnings/drafts, missing responses/tokens, and storage/API error propagation.
+- All 563 mobile tests across 39 suites, TypeScript, and whitespace checks pass. This API-only milestone has no new Android UI or live import verification.
+
+Learned:
+
+- Generic response types provide compile-time information, not runtime JSON validation.
+- Blocked imports have no editable draft; their warnings/actions support manual entry or opening the source URL.
+- Token retrieval belongs to the service; the API helper accepts a supplied token.
+- Duplicate responses require an explicit user copy choice; they do not compare current website contents or update saved recipes automatically.
+
+Next:
+
+- Submit this focused API/service PR, then build URL entry and preview UI in separate milestones.
