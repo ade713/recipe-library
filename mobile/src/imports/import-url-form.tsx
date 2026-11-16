@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { TextInput, View, StyleSheet, Button, Text } from "react-native";
 
-const PREVIEW_LABEL = "Preview recipe";
-const URL_PLACEHOLDER = "Enter Recipe URL Here";
 const IMPORT_URL_ERROR_MESSAGE = "Unable to preview recipe. Please try again.";
+const PREVIEW_LABEL = "Preview recipe";
 const URL_LABEL = "Recipe URL";
+const URL_PLACEHOLDER = "Enter Recipe URL Here";
 const URL_VALIDATION_ERROR_MESSAGE = "Enter a valid HTTP or HTTPS recipe URL.";
 
 const parseHttpUrl = (value: string): string => {
@@ -56,7 +56,7 @@ export function ImportUrlForm({ onSubmit }: ImportUrlFormProps) {
   };
 
   return (
-    <View>
+    <View style={styles.form}>
       {errorMessage !== null && <Text style={styles.errorMessage}>{errorMessage}</Text>}
 
       <TextInput
@@ -83,6 +83,9 @@ export function ImportUrlForm({ onSubmit }: ImportUrlFormProps) {
 }
 
 const styles = StyleSheet.create({
+  form: {
+    marginBottom: 8,
+  },
   formInput: {
     minWidth: 0,
     borderRadius: 2,
