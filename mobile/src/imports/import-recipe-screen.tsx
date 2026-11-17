@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button, KeyboardAvoidingView, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Button, KeyboardAvoidingView, Linking, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { RecipeImportPreviewResponse } from "@/types/import";
@@ -7,20 +7,23 @@ import type { RecipeImportPreviewResponse } from "@/types/import";
 import { ImportUrlForm } from "./import-url-form";
 import { loadImportPreview } from "./import-service";
 
+const ACTION_ENTER_MANUALLY = "enter_manually";
+const ACTION_OPEN_EXISTING = "open_existing";
+const ACTION_OPEN_SOURCE_URL = "open_source_url";
+const ENTER_MANUALLY_LABEL = "Enter manually";
+const OPEN_EXISTING_RECIPE_LABEL = "Open existing recipe";
+const OPEN_SOURCE_URL_LABEL = "Open source URL";
 const PREVIEW_BLOCKED_MESSAGE = "This website blocked the import or could not be accessed safely.";
 const PREVIEW_DUPLICATE_MESSAGE = "This recipe is already in your library.";
 const PREVIEW_FAILED_MESSAGE = "No recipe preview could be created.";
 const PREVIEW_PARTIAL_MESSAGE = "Preview ready with missing information.";
 const PREVIEW_SUCCESS_MESSAGE = "Preview ready.";
+const SOURCE_URL_ERROR_MESSAGE = "Unable to open source URL. Please try again.";
 const STATUS_BLOCKED = "blocked";
 const STATUS_DUPLICATE = "duplicate";
 const STATUS_FAILED = "failed";
 const STATUS_PARTIAL = "partial";
 const STATUS_SUCCESS = "success";
-const ACTION_OPEN_EXISTING = "open_existing";
-const ACTION_ENTER_MANUALLY = "enter_manually";
-const ENTER_MANUALLY_LABEL = "Enter manually";
-const OPEN_EXISTING_RECIPE_LABEL = "Open existing recipe";
 
 type ImportRecipeScreenProps = {
   headerHeight?: number;
@@ -30,9 +33,27 @@ type ImportRecipeScreenProps = {
 
 export function ImportRecipeScreen({ headerHeight = 0, onEnterManually, onOpenExisting }: ImportRecipeScreenProps) {
   const [importPreview, setImportPreview] = useState<RecipeImportPreviewResponse | null>(null);
+  const [sourceUrl, setSourceUrl] = useState("");
+  const [sourceUrlErrorMessage, setSourceUrlErrorMessage] = useState<string | null>(null);
+
+  const handleOpenSourceUrl = async (): Promise<void> => {
+    if (sourceUrl.trim() === "") {
+      return;
+    }
+
+    setSourceUrlErrorMessage(null);
+
+    try {
+      await Linking.openURL(sourceUrl);
+    } catch {
+      setSourceUrlErrorMessage(SOURCE_URL_ERROR_MESSAGE);
+    }
+  };
 
   const handlePreview = async (url: string): Promise<void> => {
     setImportPreview(null);
+    setSourceUrlErrorMessage(null);
+    setSourceUrl(url);
 
     const response = await loadImportPreview({ url });
     setImportPreview(response);
@@ -74,11 +95,14 @@ export function ImportRecipeScreen({ headerHeight = 0, onEnterManually, onOpenEx
       }
     };
 
+    const statusMessage = statusFeedback();
+    const visibleWarnings = importPreview.warnings.filter((warning) => warning.trim() !== statusMessage.trim());
+
     return (
       <View>
         <View style={styles.section}>
-          <Text>{statusFeedback()}</Text>
-          {importPreview.warnings.map((warning, index) => (
+          <Text>{statusMessage}</Text>
+          {visibleWarnings.map((warning, index) => (
             <Text key={index} style={styles.errorMessage}>
               {warning}
             </Text>
@@ -115,6 +139,17 @@ export function ImportRecipeScreen({ headerHeight = 0, onEnterManually, onOpenEx
               ))}
             </View>
           </View>
+        )}
+
+        {importPreview.next_actions.includes(ACTION_OPEN_SOURCE_URL) && (
+          <>
+            {sourceUrlErrorMessage !== null && <Text style={styles.errorMessage}>{sourceUrlErrorMessage}</Text>}
+            <Button
+              accessibilityLabel={OPEN_SOURCE_URL_LABEL}
+              title={OPEN_SOURCE_URL_LABEL}
+              onPress={handleOpenSourceUrl}
+            />
+          </>
         )}
       </View>
     );

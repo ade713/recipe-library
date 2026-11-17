@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
+import { Linking } from "react-native";
 
 import { makeRecipeDetailResponse } from "@/test/fixtures/recipes";
 import type { RecipeImportPreviewResponse } from "@/types/import";
@@ -7,17 +8,19 @@ import { ImportRecipeScreen } from "../import-recipe-screen";
 import * as importService from "../import-service";
 
 const DRAFT_TITLE = "Imported soup";
-const RECIPE_DUPLICATE_MESSAGE = "This recipe is already in your library.";
 const ENTER_MANUALLY_LABEL = "Enter manually";
 const FIRST_STEP = "Simmer gently";
 const INGREDIENT_TEXT = "2 cups chopped carrots";
 const OPEN_EXISTING_RECIPE_LABEL = "Open existing recipe";
+const OPEN_SOURCE_URL_LABEL = "Open source URL";
 const PREVIEW_ERROR_MESSAGE = "Unable to preview recipe. Please try again.";
 const PREVIEW_LABEL = "Preview recipe";
 const PREVIEW_READY_MESSAGE = "Preview ready.";
-const RECIPE_URL = "https://example.com/soup";
+const RECIPE_DUPLICATE_MESSAGE = "This recipe is already in your library.";
 const RECIPE_ID = "recipe-one";
+const RECIPE_URL = "https://example.com/soup";
 const SECOND_STEP = "Serve warm";
+const SOURCE_URL_ERROR_MESSAGE = "Unable to open source URL. Please try again.";
 const URL_LABEL = "Recipe URL";
 const WARNING = "Prep time was missing.";
 
@@ -69,6 +72,107 @@ const submit = async () => {
 };
 
 describe("ImportRecipeScreen", () => {
+  it("opens the submitted source URL even after the input changes", async () => {
+    const anotherUrl = "https://example.com/another";
+    const response = makePreview("failed");
+    response.next_actions = ["open_source_url"];
+
+    const openMock = jest.spyOn(Linking, "openURL").mockResolvedValue(undefined);
+    jest.spyOn(importService, "loadImportPreview").mockResolvedValue(response);
+
+    await renderImportRecipeScreen();
+
+    await fireEvent.changeText(screen.getByLabelText(URL_LABEL), `  ${RECIPE_URL}  `);
+    await submit();
+    expect(openMock).not.toHaveBeenCalled();
+
+    await fireEvent.changeText(screen.getByLabelText(URL_LABEL), anotherUrl);
+    await fireEvent.press(await screen.findByRole("button", { name: OPEN_SOURCE_URL_LABEL }));
+    expect(openMock).toHaveBeenCalledTimes(1);
+    expect(openMock).toHaveBeenCalledWith(RECIPE_URL);
+  });
+
+  it("hides the source action when it is not offered", async () => {
+    jest.spyOn(importService, "loadImportPreview").mockResolvedValue(makePreview("failed"));
+
+    await renderImportRecipeScreen();
+
+    expect(screen.queryByRole("button", { name: OPEN_SOURCE_URL_LABEL })).toBeNull();
+
+    await fireEvent.changeText(screen.getByLabelText(URL_LABEL), RECIPE_URL);
+    await submit();
+    expect(await screen.findByText(WARNING)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: OPEN_SOURCE_URL_LABEL })).toBeNull();
+  });
+
+  it("shows safe link failure feedback and clears it after retry", async () => {
+    const privateErrorMessage = "Private platform failure";
+    const response = makePreview("blocked");
+    response.next_actions = ["open_source_url"];
+
+    const openMock = jest
+      .spyOn(Linking, "openURL")
+      .mockRejectedValueOnce(new Error(privateErrorMessage))
+      .mockResolvedValueOnce(undefined);
+    jest.spyOn(importService, "loadImportPreview").mockResolvedValue(response);
+
+    await renderImportRecipeScreen();
+
+    await fireEvent.changeText(screen.getByLabelText(URL_LABEL), RECIPE_URL);
+    await submit();
+    await fireEvent.press(await screen.findByRole("button", { name: OPEN_SOURCE_URL_LABEL }));
+    expect(await screen.findByText(SOURCE_URL_ERROR_MESSAGE)).toBeTruthy();
+    expect(screen.queryByText(privateErrorMessage)).toBeNull();
+    expect(screen.queryByText(PREVIEW_ERROR_MESSAGE)).toBeNull();
+    expect(screen.getByText(WARNING)).toBeTruthy();
+
+    await fireEvent.press(screen.getByRole("button", { name: OPEN_SOURCE_URL_LABEL }));
+    expect(openMock).toHaveBeenCalledTimes(2);
+    expect(screen.queryByText(SOURCE_URL_ERROR_MESSAGE)).toBeNull();
+  });
+
+  it("clears previous link feedback and uses the next submitted URL", async () => {
+    const linkErrorMessage = "Link failure";
+    const response = makePreview("failed");
+    response.next_actions = ["open_source_url"];
+    const nextUrl = "https://example.com/stew";
+
+    const openMock = jest
+      .spyOn(Linking, "openURL")
+      .mockRejectedValueOnce(new Error(linkErrorMessage))
+      .mockResolvedValueOnce(undefined);
+    jest.spyOn(importService, "loadImportPreview").mockResolvedValue(response);
+
+    await renderImportRecipeScreen();
+
+    await fireEvent.changeText(screen.getByLabelText(URL_LABEL), RECIPE_URL);
+    await submit();
+    await fireEvent.press(await screen.findByRole("button", { name: OPEN_SOURCE_URL_LABEL }));
+    expect(await screen.findByText(SOURCE_URL_ERROR_MESSAGE)).toBeTruthy();
+
+    await fireEvent.changeText(screen.getByLabelText(URL_LABEL), nextUrl);
+    await submit();
+    expect(screen.queryByText(SOURCE_URL_ERROR_MESSAGE)).toBeNull();
+
+    await fireEvent.press(await screen.findByRole("button", { name: OPEN_SOURCE_URL_LABEL }));
+    expect(openMock).toHaveBeenLastCalledWith(nextUrl);
+  });
+
+  it("shows duplicate status feedback once while preserving other warnings", async () => {
+    const response = makePreview("duplicate");
+
+    response.warnings = [`  ${RECIPE_DUPLICATE_MESSAGE}  `, WARNING];
+    jest.spyOn(importService, "loadImportPreview").mockResolvedValue(response);
+
+    await renderImportRecipeScreen();
+
+    await fireEvent.changeText(screen.getByLabelText(URL_LABEL), RECIPE_URL);
+    await submit();
+
+    expect(await screen.findAllByText(RECIPE_DUPLICATE_MESSAGE)).toHaveLength(1);
+    expect(screen.getByText(WARNING)).toBeTruthy();
+  });
+
   it("opens the existing recipe only after the user selects the offered action", async () => {
     const response = makePreview("duplicate");
     response.next_actions = ["open_existing", "import_as_copy"];
