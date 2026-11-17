@@ -1455,3 +1455,25 @@ Learned:
 Next:
 
 - Submit this focused URL-entry/read-only-preview PR. Keep draft editing/saving and fallback-action buttons in follow-up PRs.
+
+## Mobile Import Fallback Actions — 2026-11-17
+
+Built:
+
+- Added explicitly offered actions to open an existing recipe, enter a recipe manually, or open the source URL.
+- Kept navigation in route callbacks and preserved the import URL/preview when returning with Back.
+- Captured the submitted source URL and separated link-opening failure/retry feedback from preview request errors.
+- Filtered warnings that repeat status feedback while preserving other warnings.
+- All 598 mobile tests across 41 suites, TypeScript, and whitespace checks pass. Android fallback navigation, source links, preview preservation, and duplicate-message cleanup were verified.
+
+Learned:
+
+- An existing recipe ID does not replace explicit action eligibility from the response.
+- Route callbacks keep navigation concerns out of the screen and simplify testing.
+- Submitted URLs belong to their preview results; later input edits must not redirect the source action.
+- Separate operations need separate error feedback, and duplicate status text does not justify hiding all warnings.
+- Push navigation retains the import screen so Back preserves its state.
+
+Next:
+
+- Submit this focused fallback-action PR. Keep importing as a copy and draft editing/saving in separate milestones.
