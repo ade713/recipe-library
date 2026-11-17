@@ -7,31 +7,37 @@ import { ImportRecipeScreen } from "../import-recipe-screen";
 import * as importService from "../import-service";
 
 const DRAFT_TITLE = "Imported soup";
-const INGREDIENT_TEXT = "2 cups chopped carrots";
+const RECIPE_DUPLICATE_MESSAGE = "This recipe is already in your library.";
+const ENTER_MANUALLY_LABEL = "Enter manually";
 const FIRST_STEP = "Simmer gently";
-const SECOND_STEP = "Serve warm";
+const INGREDIENT_TEXT = "2 cups chopped carrots";
+const OPEN_EXISTING_RECIPE_LABEL = "Open existing recipe";
+const PREVIEW_ERROR_MESSAGE = "Unable to preview recipe. Please try again.";
 const PREVIEW_LABEL = "Preview recipe";
 const PREVIEW_READY_MESSAGE = "Preview ready.";
-const PREVIEW_ERROR_MESSAGE = "Unable to preview recipe. Please try again.";
 const RECIPE_URL = "https://example.com/soup";
+const RECIPE_ID = "recipe-one";
+const SECOND_STEP = "Serve warm";
 const URL_LABEL = "Recipe URL";
 const WARNING = "Prep time was missing.";
 
 const makePreview = (status: RecipeImportPreviewResponse["status"]): RecipeImportPreviewResponse => {
   const { id, ...draft } = makeRecipeDetailResponse({
     title: DRAFT_TITLE,
-    ingredients: [{
-      position: 1,
-      original_text: INGREDIENT_TEXT,
-      quantity: null,
-      quantity_text: null,
-      unit: null,
-      name: null,
-      preparation_note: null,
-      is_optional: false,
-      scale_locked: false,
-      parse_status: "unparsed",
-    }],
+    ingredients: [
+      {
+        position: 1,
+        original_text: INGREDIENT_TEXT,
+        quantity: null,
+        quantity_text: null,
+        unit: null,
+        name: null,
+        preparation_note: null,
+        is_optional: false,
+        scale_locked: false,
+        parse_status: "unparsed",
+      },
+    ],
     steps: [
       { position: 1, instruction: FIRST_STEP, section_title: null },
       { position: 2, instruction: SECOND_STEP, section_title: null },
@@ -44,9 +50,18 @@ const makePreview = (status: RecipeImportPreviewResponse["status"]): RecipeImpor
     parser_used: null,
     draft: status === "success" || status === "partial" ? draft : null,
     warnings: [WARNING],
-    existing_recipe_id: status === "duplicate" ? "recipe-one" : null,
+    existing_recipe_id: status === "duplicate" ? RECIPE_ID : null,
     next_actions: [],
   };
+};
+
+type ImportRecipeScreenOptions = {
+  onEnterManually?: () => void;
+  onOpenExisting?: (recipeId: string) => void;
+};
+
+const renderImportRecipeScreen = async ({ onOpenExisting, onEnterManually }: ImportRecipeScreenOptions = {}) => {
+  await render(<ImportRecipeScreen onEnterManually={onEnterManually} onOpenExisting={onOpenExisting} />);
 };
 
 const submit = async () => {
@@ -54,10 +69,88 @@ const submit = async () => {
 };
 
 describe("ImportRecipeScreen", () => {
+  it("opens the existing recipe only after the user selects the offered action", async () => {
+    const response = makePreview("duplicate");
+    response.next_actions = ["open_existing", "import_as_copy"];
+
+    const onOpenExisting = jest.fn();
+    const requestMock = jest.spyOn(importService, "loadImportPreview").mockResolvedValue(response);
+
+    await renderImportRecipeScreen({ onOpenExisting });
+
+    await fireEvent.changeText(screen.getByLabelText(URL_LABEL), RECIPE_URL);
+    await submit();
+    expect(onOpenExisting).not.toHaveBeenCalled();
+
+    await fireEvent.press(await screen.findByRole("button", { name: OPEN_EXISTING_RECIPE_LABEL }));
+    expect(onOpenExisting).toHaveBeenCalledTimes(1);
+    expect(onOpenExisting).toHaveBeenCalledWith(RECIPE_ID);
+    expect(requestMock).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["blocked", "failed"] as const)("offers manual entry for a %s response", async (status) => {
+    const response = makePreview(status);
+    response.next_actions = ["enter_manually", "open_source_url"];
+
+    const onEnterManually = jest.fn();
+    jest.spyOn(importService, "loadImportPreview").mockResolvedValue(response);
+
+    await renderImportRecipeScreen({ onEnterManually });
+
+    await fireEvent.changeText(screen.getByLabelText(URL_LABEL), RECIPE_URL);
+    await submit();
+    expect(onEnterManually).not.toHaveBeenCalled();
+
+    await fireEvent.press(await screen.findByRole("button", { name: ENTER_MANUALLY_LABEL }));
+    expect(onEnterManually).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not infer actions from status alone", async () => {
+    jest.spyOn(importService, "loadImportPreview").mockResolvedValue(makePreview("duplicate"));
+
+    await renderImportRecipeScreen({ onOpenExisting: jest.fn(), onEnterManually: jest.fn() });
+
+    await fireEvent.changeText(screen.getByLabelText(URL_LABEL), RECIPE_URL);
+    await submit();
+    expect(await screen.findByText(RECIPE_DUPLICATE_MESSAGE)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: OPEN_EXISTING_RECIPE_LABEL })).toBeNull();
+    expect(screen.queryByRole("button", { name: ENTER_MANUALLY_LABEL })).toBeNull();
+  });
+
+  it.each([null, "", "   "])("hides open-existing when the recipe ID is unusable: %p", async (id) => {
+    const response = makePreview("duplicate");
+    response.next_actions = ["open_existing"];
+    response.existing_recipe_id = id;
+
+    jest.spyOn(importService, "loadImportPreview").mockResolvedValue(response);
+
+    await renderImportRecipeScreen({ onOpenExisting: jest.fn() });
+
+    await fireEvent.changeText(screen.getByLabelText(URL_LABEL), RECIPE_URL);
+    await submit();
+    expect(await screen.findByText(RECIPE_DUPLICATE_MESSAGE)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: OPEN_EXISTING_RECIPE_LABEL })).toBeNull();
+  });
+
+  it("hides navigation actions when callbacks are absent", async () => {
+    const response = makePreview("duplicate");
+    response.next_actions = ["open_existing", "enter_manually"];
+
+    jest.spyOn(importService, "loadImportPreview").mockResolvedValue(response);
+
+    await renderImportRecipeScreen();
+
+    await fireEvent.changeText(screen.getByLabelText(URL_LABEL), RECIPE_URL);
+    await submit();
+    expect(await screen.findByText(RECIPE_DUPLICATE_MESSAGE)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: OPEN_EXISTING_RECIPE_LABEL })).toBeNull();
+    expect(screen.queryByRole("button", { name: ENTER_MANUALLY_LABEL })).toBeNull();
+  });
+
   it("waits for a submitted URL before requesting a preview", async () => {
     const requestMock = jest.spyOn(importService, "loadImportPreview");
 
-    await render(<ImportRecipeScreen />);
+    await renderImportRecipeScreen();
 
     expect(screen.getByLabelText(URL_LABEL)).toBeTruthy();
     expect(requestMock).not.toHaveBeenCalled();
@@ -74,7 +167,7 @@ describe("ImportRecipeScreen", () => {
 
     const requestMock = jest.spyOn(importService, "loadImportPreview").mockResolvedValue(response);
 
-    await render(<ImportRecipeScreen />);
+    await renderImportRecipeScreen();
 
     await fireEvent.changeText(screen.getByLabelText(URL_LABEL), `  ${RECIPE_URL}  `);
     await submit();
@@ -91,11 +184,11 @@ describe("ImportRecipeScreen", () => {
   it.each([
     { status: "blocked", message: "This website blocked the import or could not be accessed safely." },
     { status: "failed", message: "No recipe preview could be created." },
-    { status: "duplicate", message: "This recipe is already in your library." },
+    { status: "duplicate", message: RECIPE_DUPLICATE_MESSAGE },
   ] as const)("shows $status feedback without a draft or request error", async ({ status, message }) => {
     jest.spyOn(importService, "loadImportPreview").mockResolvedValue(makePreview(status));
 
-    await render(<ImportRecipeScreen />);
+    await renderImportRecipeScreen();
 
     await fireEvent.changeText(screen.getByLabelText(URL_LABEL), RECIPE_URL);
     await submit();
@@ -121,7 +214,7 @@ describe("ImportRecipeScreen", () => {
       .mockReturnValueOnce(pending)
       .mockResolvedValueOnce(makePreview("success"));
 
-    await render(<ImportRecipeScreen />);
+    await renderImportRecipeScreen();
 
     await fireEvent.changeText(screen.getByLabelText(URL_LABEL), RECIPE_URL);
     await submit();

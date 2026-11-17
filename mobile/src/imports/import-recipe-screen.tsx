@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { KeyboardAvoidingView, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Button, KeyboardAvoidingView, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { RecipeImportPreviewResponse } from "@/types/import";
@@ -17,12 +17,18 @@ const STATUS_DUPLICATE = "duplicate";
 const STATUS_FAILED = "failed";
 const STATUS_PARTIAL = "partial";
 const STATUS_SUCCESS = "success";
+const ACTION_OPEN_EXISTING = "open_existing";
+const ACTION_ENTER_MANUALLY = "enter_manually";
+const ENTER_MANUALLY_LABEL = "Enter manually";
+const OPEN_EXISTING_RECIPE_LABEL = "Open existing recipe";
 
 type ImportRecipeScreenProps = {
   headerHeight?: number;
+  onEnterManually?: () => void;
+  onOpenExisting?: (recipeId: string) => void;
 };
 
-export function ImportRecipeScreen({ headerHeight = 0 }: ImportRecipeScreenProps) {
+export function ImportRecipeScreen({ headerHeight = 0, onEnterManually, onOpenExisting }: ImportRecipeScreenProps) {
   const [importPreview, setImportPreview] = useState<RecipeImportPreviewResponse | null>(null);
 
   const handlePreview = async (url: string): Promise<void> => {
@@ -36,6 +42,20 @@ export function ImportRecipeScreen({ headerHeight = 0 }: ImportRecipeScreenProps
     if (importPreview === null) {
       return null;
     }
+
+    const existingRecipeId = importPreview.existing_recipe_id;
+    const shouldDisplayOpenExistingRecipeButton =
+      existingRecipeId !== null &&
+      existingRecipeId.trim().length > 0 &&
+      onOpenExisting !== undefined &&
+      importPreview.next_actions.includes(ACTION_OPEN_EXISTING);
+
+    const shouldDisplayEnterManuallyButton =
+      onEnterManually !== undefined && importPreview.next_actions.includes(ACTION_ENTER_MANUALLY);
+
+    const previewDraft = importPreview.draft;
+    const shouldDisplayPreview =
+      (importPreview.status === STATUS_SUCCESS || importPreview.status === STATUS_PARTIAL) && previewDraft !== null;
 
     const statusFeedback = (): string => {
       switch (importPreview.status) {
@@ -65,26 +85,37 @@ export function ImportRecipeScreen({ headerHeight = 0 }: ImportRecipeScreenProps
           ))}
         </View>
 
-        {(importPreview.status === STATUS_SUCCESS || importPreview.status === STATUS_PARTIAL) &&
-          importPreview.draft !== null && (
-            <View>
-              <Text style={styles.section}>{importPreview.draft.title}</Text>
+        {shouldDisplayOpenExistingRecipeButton && (
+          <Button
+            accessibilityLabel={OPEN_EXISTING_RECIPE_LABEL}
+            title={OPEN_EXISTING_RECIPE_LABEL}
+            onPress={() => onOpenExisting(existingRecipeId)}
+          />
+        )}
 
-              <View style={styles.section}>
-                {importPreview.draft.ingredients.map((ingredient) => (
-                  <Text key={ingredient.position}>{ingredient.original_text}</Text>
-                ))}
-              </View>
+        {shouldDisplayEnterManuallyButton && (
+          <Button accessibilityLabel={ENTER_MANUALLY_LABEL} title={ENTER_MANUALLY_LABEL} onPress={onEnterManually} />
+        )}
 
-              <View style={styles.section}>
-                {importPreview.draft.steps.map((step) => (
-                  <Text key={step.position}>
-                    {step.position}. {step.instruction}
-                  </Text>
-                ))}
-              </View>
+        {shouldDisplayPreview && (
+          <View>
+            <Text style={styles.section}>{previewDraft.title}</Text>
+
+            <View style={styles.section}>
+              {previewDraft.ingredients.map((ingredient) => (
+                <Text key={ingredient.position}>{ingredient.original_text}</Text>
+              ))}
             </View>
-          )}
+
+            <View style={styles.section}>
+              {previewDraft.steps.map((step) => (
+                <Text key={step.position}>
+                  {step.position}. {step.instruction}
+                </Text>
+              ))}
+            </View>
+          </View>
+        )}
       </View>
     );
   };
