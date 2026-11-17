@@ -1043,5 +1043,22 @@ mobile tests across 41 suites, TypeScript, and whitespace checks pass. Android
 verified navigation/Back, URL validation and correction, preview content/warnings,
 keyboard scrolling, clearing prior results, and request failure/retry.
 
-Draft editing/saving, duplicate-copy and other fallback-action buttons remain
-follow-up milestones. This screen does not save imported recipes yet.
+Draft editing/saving and importing as a copy remain follow-up milestones. This
+screen does not save imported recipes yet.
+
+## Import fallback actions
+
+The import screen offers actions explicitly returned in `next_actions`. Duplicate
+results can open an existing recipe when a usable ID and navigation callback are
+available. Failed/blocked results can open a blank manual creation form. The route
+uses push navigation so Back preserves the submitted URL and preview.
+
+Open source URL opens the submitted URL associated with the preview, even if the
+input has since changed. Link-opening errors have separate safe feedback, cleared
+on retry or a new preview request. Warnings repeating the status message are
+filtered after trimming; other warnings remain visible.
+
+All 598 mobile tests across 41 suites, TypeScript, and whitespace checks pass.
+Android verified fallback navigation/Back, source links and retained previews,
+and a single duplicate notice. Import-as-copy and draft editing/saving remain
+separate milestones.
