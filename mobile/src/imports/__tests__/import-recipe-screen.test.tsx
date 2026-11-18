@@ -7,9 +7,12 @@ import type { RecipeImportPreviewResponse } from "@/types/import";
 import { ImportRecipeScreen } from "../import-recipe-screen";
 import * as importService from "../import-service";
 
+const ANOTHER_RECIPE_URL = "https://example.com/another";
+const COPY_ERROR_MESSAGE = "Unable to preview recipe as a copy. Please try again.";
 const DRAFT_TITLE = "Imported soup";
 const ENTER_MANUALLY_LABEL = "Enter manually";
 const FIRST_STEP = "Simmer gently";
+const IMPORT_AS_COPY_LABEL = "Import as copy";
 const INGREDIENT_TEXT = "2 cups chopped carrots";
 const OPEN_EXISTING_RECIPE_LABEL = "Open existing recipe";
 const OPEN_SOURCE_URL_LABEL = "Open source URL";
@@ -72,8 +75,129 @@ const submit = async () => {
 };
 
 describe("ImportRecipeScreen", () => {
+  it("blocks competing actions during a copy request and restores controls after success", async () => {
+    const duplicate = makePreview("duplicate");
+    duplicate.next_actions = ["open_existing", "import_as_copy"];
+
+    let resolveCopy!: (response: RecipeImportPreviewResponse) => void;
+    const pendingCopy = new Promise<RecipeImportPreviewResponse>((resolve) => {
+      resolveCopy = resolve;
+    });
+    const requestMock = jest
+      .spyOn(importService, "loadImportPreview")
+      .mockResolvedValueOnce(duplicate)
+      .mockReturnValueOnce(pendingCopy);
+    const onOpenExisting = jest.fn();
+
+    await renderImportRecipeScreen({ onOpenExisting });
+
+    await fireEvent.changeText(screen.getByLabelText(URL_LABEL), RECIPE_URL);
+    await submit();
+    await fireEvent.press(await screen.findByRole("button", { name: IMPORT_AS_COPY_LABEL }));
+
+    expect(screen.getByRole("button", { name: IMPORT_AS_COPY_LABEL })).toBeDisabled();
+    expect(screen.getByRole("button", { name: PREVIEW_LABEL })).toBeDisabled();
+    expect(screen.getByRole("button", { name: OPEN_EXISTING_RECIPE_LABEL })).toBeDisabled();
+    expect(screen.getByLabelText(URL_LABEL)).toBeDisabled();
+    expect(screen.getByText(RECIPE_DUPLICATE_MESSAGE)).toBeTruthy();
+
+    await fireEvent.press(screen.getByRole("button", { name: IMPORT_AS_COPY_LABEL }));
+    await submit();
+    await fireEvent.press(screen.getByRole("button", { name: OPEN_EXISTING_RECIPE_LABEL }));
+    expect(requestMock).toHaveBeenCalledTimes(2);
+    expect(onOpenExisting).not.toHaveBeenCalled();
+
+    await act(async () => {
+      resolveCopy(makePreview("success"));
+    });
+    expect(await screen.findByText(DRAFT_TITLE)).toBeTruthy();
+    expect(screen.getByRole("button", { name: PREVIEW_LABEL })).toBeEnabled();
+    expect(screen.getByLabelText(URL_LABEL)).toBeEnabled();
+  });
+
+  it("preserves the duplicate result after copy failure and clears safe feedback on retry", async () => {
+    const duplicate = makePreview("duplicate");
+    duplicate.next_actions = ["open_existing", "import_as_copy"];
+    const privateErrorMessage = "Private copy request failure";
+
+    let rejectCopy!: (error: Error) => void;
+    const pendingCopy = new Promise<RecipeImportPreviewResponse>((_, reject) => {
+      rejectCopy = reject;
+    });
+    const requestMock = jest
+      .spyOn(importService, "loadImportPreview")
+      .mockResolvedValueOnce(duplicate)
+      .mockReturnValueOnce(pendingCopy)
+      .mockResolvedValueOnce(makePreview("partial"));
+
+    await renderImportRecipeScreen({ onOpenExisting: jest.fn() });
+    await fireEvent.changeText(screen.getByLabelText(URL_LABEL), RECIPE_URL);
+    await submit();
+    await fireEvent.press(await screen.findByRole("button", { name: IMPORT_AS_COPY_LABEL }));
+    expect(screen.getByRole("button", { name: IMPORT_AS_COPY_LABEL })).toBeDisabled();
+
+    await act(async () => {
+      rejectCopy(new Error(privateErrorMessage));
+    });
+    expect(await screen.findByText(COPY_ERROR_MESSAGE)).toBeTruthy();
+    expect(screen.queryByText(privateErrorMessage)).toBeNull();
+    expect(screen.queryByText(PREVIEW_ERROR_MESSAGE)).toBeNull();
+    expect(screen.getByText(RECIPE_DUPLICATE_MESSAGE)).toBeTruthy();
+    expect(screen.getByText(WARNING)).toBeTruthy();
+    expect(screen.getByLabelText(URL_LABEL)).toHaveDisplayValue(RECIPE_URL);
+    expect(screen.getByLabelText(URL_LABEL)).toBeEnabled();
+    expect(screen.getByRole("button", { name: OPEN_EXISTING_RECIPE_LABEL })).toBeEnabled();
+    expect(screen.getByRole("button", { name: PREVIEW_LABEL })).toBeEnabled();
+    expect(screen.getByRole("button", { name: IMPORT_AS_COPY_LABEL })).toBeEnabled();
+
+    await fireEvent.press(screen.getByRole("button", { name: IMPORT_AS_COPY_LABEL }));
+    expect(await screen.findByText(DRAFT_TITLE)).toBeTruthy();
+    expect(screen.queryByText(COPY_ERROR_MESSAGE)).toBeNull();
+    expect(requestMock).toHaveBeenNthCalledWith(3, { url: RECIPE_URL, import_as_copy: true });
+  });
+
+  it("requests a copy preview only after explicit selection using the submitted URL", async () => {
+    const duplicate = makePreview("duplicate");
+    duplicate.next_actions = ["open_existing", "import_as_copy"];
+
+    const requestMock = jest
+      .spyOn(importService, "loadImportPreview")
+      .mockResolvedValueOnce(duplicate)
+      .mockResolvedValueOnce(makePreview("success"));
+
+    await renderImportRecipeScreen();
+
+    expect(screen.queryByRole("button", { name: IMPORT_AS_COPY_LABEL })).toBeNull();
+
+    await fireEvent.changeText(screen.getByLabelText(URL_LABEL), `  ${RECIPE_URL}  `);
+    await submit();
+    const copyButton = await screen.findByRole("button", { name: IMPORT_AS_COPY_LABEL });
+    expect(requestMock).toHaveBeenCalledTimes(1);
+    expect(requestMock).toHaveBeenNthCalledWith(1, { url: RECIPE_URL });
+
+    await fireEvent.changeText(screen.getByLabelText(URL_LABEL), ANOTHER_RECIPE_URL);
+    await fireEvent.press(copyButton);
+
+    expect(await screen.findByText(DRAFT_TITLE)).toBeTruthy();
+    expect(requestMock).toHaveBeenCalledTimes(2);
+    expect(requestMock).toHaveBeenNthCalledWith(2, { url: RECIPE_URL, import_as_copy: true });
+    expect(screen.queryByText(RECIPE_DUPLICATE_MESSAGE)).toBeNull();
+    expect(screen.queryByRole("button", { name: IMPORT_AS_COPY_LABEL })).toBeNull();
+  });
+
+  it("hides import as copy when a duplicate response does not offer it", async () => {
+    jest.spyOn(importService, "loadImportPreview").mockResolvedValue(makePreview("duplicate"));
+
+    await renderImportRecipeScreen();
+
+    await fireEvent.changeText(screen.getByLabelText(URL_LABEL), RECIPE_URL);
+    await submit();
+
+    expect(await screen.findByText(RECIPE_DUPLICATE_MESSAGE)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: IMPORT_AS_COPY_LABEL })).toBeNull();
+  });
+
   it("opens the submitted source URL even after the input changes", async () => {
-    const anotherUrl = "https://example.com/another";
     const response = makePreview("failed");
     response.next_actions = ["open_source_url"];
 
@@ -86,7 +210,7 @@ describe("ImportRecipeScreen", () => {
     await submit();
     expect(openMock).not.toHaveBeenCalled();
 
-    await fireEvent.changeText(screen.getByLabelText(URL_LABEL), anotherUrl);
+    await fireEvent.changeText(screen.getByLabelText(URL_LABEL), ANOTHER_RECIPE_URL);
     await fireEvent.press(await screen.findByRole("button", { name: OPEN_SOURCE_URL_LABEL }));
     expect(openMock).toHaveBeenCalledTimes(1);
     expect(openMock).toHaveBeenCalledWith(RECIPE_URL);

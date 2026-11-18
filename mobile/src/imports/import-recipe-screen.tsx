@@ -8,9 +8,12 @@ import { ImportUrlForm } from "./import-url-form";
 import { loadImportPreview } from "./import-service";
 
 const ACTION_ENTER_MANUALLY = "enter_manually";
+const ACTION_IMPORT_AS_COPY = "import_as_copy";
 const ACTION_OPEN_EXISTING = "open_existing";
 const ACTION_OPEN_SOURCE_URL = "open_source_url";
+const COPY_ERROR_MESSAGE = "Unable to preview recipe as a copy. Please try again.";
 const ENTER_MANUALLY_LABEL = "Enter manually";
+const IMPORT_AS_COPY_LABEL = "Import as copy";
 const OPEN_EXISTING_RECIPE_LABEL = "Open existing recipe";
 const OPEN_SOURCE_URL_LABEL = "Open source URL";
 const PREVIEW_BLOCKED_MESSAGE = "This website blocked the import or could not be accessed safely.";
@@ -33,6 +36,8 @@ type ImportRecipeScreenProps = {
 
 export function ImportRecipeScreen({ headerHeight = 0, onEnterManually, onOpenExisting }: ImportRecipeScreenProps) {
   const [importPreview, setImportPreview] = useState<RecipeImportPreviewResponse | null>(null);
+  const [isImportingAsCopy, setIsImportingAsCopy] = useState(false);
+  const [copyErrorMessage, setCopyErrorMessage] = useState<string | null>(null);
   const [sourceUrl, setSourceUrl] = useState("");
   const [sourceUrlErrorMessage, setSourceUrlErrorMessage] = useState<string | null>(null);
 
@@ -50,8 +55,31 @@ export function ImportRecipeScreen({ headerHeight = 0, onEnterManually, onOpenEx
     }
   };
 
+  const handleImportAsCopy = async (): Promise<void> => {
+    if (isImportingAsCopy) {
+      return;
+    }
+
+    setIsImportingAsCopy(true);
+    setCopyErrorMessage(null);
+
+    try {
+      const response = await loadImportPreview({ url: sourceUrl, import_as_copy: true });
+      setImportPreview(response);
+    } catch {
+      setCopyErrorMessage(COPY_ERROR_MESSAGE);
+    } finally {
+      setIsImportingAsCopy(false);
+    }
+  };
+
   const handlePreview = async (url: string): Promise<void> => {
+    if (isImportingAsCopy) {
+      return;
+    }
+
     setImportPreview(null);
+    setCopyErrorMessage(null);
     setSourceUrlErrorMessage(null);
     setSourceUrl(url);
 
@@ -109,16 +137,36 @@ export function ImportRecipeScreen({ headerHeight = 0, onEnterManually, onOpenEx
           ))}
         </View>
 
+        {importPreview.next_actions.includes(ACTION_IMPORT_AS_COPY) && (
+          <>
+            {copyErrorMessage !== null && <Text style={styles.errorMessage}>{copyErrorMessage}</Text>}
+            <Button
+              accessibilityLabel={IMPORT_AS_COPY_LABEL}
+              title={IMPORT_AS_COPY_LABEL}
+              disabled={isImportingAsCopy}
+              onPress={() => {
+                void handleImportAsCopy();
+              }}
+            />
+          </>
+        )}
+
         {shouldDisplayOpenExistingRecipeButton && (
           <Button
             accessibilityLabel={OPEN_EXISTING_RECIPE_LABEL}
             title={OPEN_EXISTING_RECIPE_LABEL}
+            disabled={isImportingAsCopy}
             onPress={() => onOpenExisting(existingRecipeId)}
           />
         )}
 
         {shouldDisplayEnterManuallyButton && (
-          <Button accessibilityLabel={ENTER_MANUALLY_LABEL} title={ENTER_MANUALLY_LABEL} onPress={onEnterManually} />
+          <Button
+            accessibilityLabel={ENTER_MANUALLY_LABEL}
+            title={ENTER_MANUALLY_LABEL}
+            disabled={isImportingAsCopy}
+            onPress={onEnterManually}
+          />
         )}
 
         {shouldDisplayPreview && (
@@ -147,6 +195,7 @@ export function ImportRecipeScreen({ headerHeight = 0, onEnterManually, onOpenEx
             <Button
               accessibilityLabel={OPEN_SOURCE_URL_LABEL}
               title={OPEN_SOURCE_URL_LABEL}
+              disabled={isImportingAsCopy}
               onPress={handleOpenSourceUrl}
             />
           </>
@@ -159,7 +208,7 @@ export function ImportRecipeScreen({ headerHeight = 0, onEnterManually, onOpenEx
     <SafeAreaView edges={["bottom"]} style={styles.container}>
       <KeyboardAvoidingView behavior='padding' keyboardVerticalOffset={headerHeight} style={styles.container}>
         <ScrollView keyboardShouldPersistTaps='handled' contentContainerStyle={styles.contentContainer}>
-          <ImportUrlForm onSubmit={handlePreview} />
+          <ImportUrlForm disabled={isImportingAsCopy} onSubmit={handlePreview} />
 
           {renderImportPreview()}
         </ScrollView>
