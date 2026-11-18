@@ -1043,7 +1043,7 @@ mobile tests across 41 suites, TypeScript, and whitespace checks pass. Android
 verified navigation/Back, URL validation and correction, preview content/warnings,
 keyboard scrolling, clearing prior results, and request failure/retry.
 
-Draft editing/saving and importing as a copy remain follow-up milestones. This
+Draft editing/saving remains a follow-up milestone. This
 screen does not save imported recipes yet.
 
 ## Import fallback actions
@@ -1060,5 +1060,22 @@ filtered after trimming; other warnings remain visible.
 
 All 598 mobile tests across 41 suites, TypeScript, and whitespace checks pass.
 Android verified fallback navigation/Back, source links and retained previews,
-and a single duplicate notice. Import-as-copy and draft editing/saving remain
-separate milestones.
+and a single duplicate notice.
+
+## Import as copy
+
+When `next_actions` offers `import_as_copy`, users can explicitly request a fresh
+preview with `import_as_copy: true`. The request uses the submitted URL associated
+with the duplicate result, even if the URL input has since changed. This bypasses
+duplicate detection; it does not save a recipe or clone the stored recipe.
+
+While the copy request is pending, the URL form and fallback actions are disabled.
+The form combines its own submission state with an optional external disabled
+prop. Request errors preserve the duplicate preview and display safe copy-specific
+feedback. Retrying clears that feedback; submitting a normal preview clears it
+as well. Returned results replace the preview, and controls re-enable on completion.
+
+All 602 mobile tests across 41 suites, TypeScript, and whitespace checks pass.
+Android verified copy previews, submitted-URL preservation, pending controls,
+failure/retry, and clearing copy feedback for a new preview. Draft editing and
+saving remain separate milestones.
