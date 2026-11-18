@@ -1477,3 +1477,24 @@ Learned:
 Next:
 
 - Submit this focused fallback-action PR. Keep importing as a copy and draft editing/saving in separate milestones.
+
+## Mobile Import as Copy — 2026-11-18
+
+Built:
+
+- Added the explicitly offered Import as copy action using the URL associated with the current preview.
+- Requested a fresh preview with duplicate detection bypassed; no recipe is saved by this action.
+- Disabled competing controls while pending and added optional external disabling to the URL form.
+- Preserved duplicate results after request failures, with safe copy-specific feedback and retry.
+- All 602 mobile tests across 41 suites, TypeScript, and whitespace checks pass. Android verified success, submitted-URL preservation, pending controls, failure/retry, and clearing feedback on a new preview.
+
+Learned:
+
+- Editing URL input does not change the URL associated with an existing preview.
+- A returned preview replaces the current result; a thrown request error preserves it for recovery.
+- Either pending condition disables a button, while editing requires both conditions to be false.
+- Handler guards complement disabled controls, and finally restores controls after success or failure.
+
+Next:
+
+- Submit this focused copy-preview PR, then address draft editing and saving in separate milestones.
