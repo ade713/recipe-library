@@ -22,16 +22,17 @@ const parseHttpUrl = (value: string): string => {
 };
 
 type ImportUrlFormProps = {
+  disabled?: boolean;
   onSubmit: (url: string) => Promise<void>;
 };
 
-export function ImportUrlForm({ onSubmit }: ImportUrlFormProps) {
+export function ImportUrlForm({ disabled = false, onSubmit }: ImportUrlFormProps) {
   const [recipeUrl, setRecipeUrl] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (): Promise<void> => {
-    if (isSubmitting) {
+    if (isSubmitting || disabled) {
       return;
     }
 
@@ -62,7 +63,7 @@ export function ImportUrlForm({ onSubmit }: ImportUrlFormProps) {
       <TextInput
         accessibilityLabel={URL_LABEL}
         placeholder={URL_PLACEHOLDER}
-        editable={!isSubmitting}
+        editable={!isSubmitting && !disabled}
         keyboardType='url'
         value={recipeUrl}
         autoCapitalize='none'
@@ -73,7 +74,7 @@ export function ImportUrlForm({ onSubmit }: ImportUrlFormProps) {
       <Button
         accessibilityLabel={PREVIEW_LABEL}
         title={PREVIEW_LABEL}
-        disabled={isSubmitting}
+        disabled={isSubmitting || disabled}
         onPress={() => {
           void handleSubmit();
         }}
