@@ -1079,3 +1079,22 @@ All 602 mobile tests across 41 suites, TypeScript, and whitespace checks pass.
 Android verified copy previews, submitted-URL preservation, pending controls,
 failure/retry, and clearing copy feedback for a new preview. Draft editing and
 saving remain separate milestones.
+
+## Import-save API foundation
+
+`saveRecipeImport` posts a reviewed `RecipeCreateRequest` to
+`/imports/{importId}/save` with a supplied bearer token. It returns the saved
+`RecipeDetailResponse`, rejects a missing response, and propagates API errors.
+`saveImportDraft` retrieves the stored token, rejects missing credentials before
+requesting, and forwards the import ID and payload unchanged. Storage errors
+also propagate to the caller.
+
+Import saving uses the same backend payload schema as manual creation, but its
+endpoint checks import ownership/status, preserves trusted source attribution,
+and links the saved recipe to the import log. The returned recipe supplies its
+server-assigned ID and saved values for later UI integration.
+
+All 618 mobile tests across 41 suites, TypeScript, and whitespace checks pass.
+This milestone adds API/service support only; draft editing, save controls, and
+post-save navigation remain follow-ups. No new Android verification is required
+for these helpers.
