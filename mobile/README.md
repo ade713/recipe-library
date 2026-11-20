@@ -1,9 +1,11 @@
 # Mobile App
 
-React Native / Expo SDK 57 app using TypeScript and Expo Router. The initial
-Recipe Library screen and stack navigation run on a physical Android phone.
-The temporary Check API button verifies FastAPI health connectivity. Other
-recipe screens remain placeholders; login and protected navigation are connected.
+React Native / Expo app using TypeScript and Expo Router. Authentication,
+recipe library search/filtering, manual creation/editing, detail views, and import
+previews are connected. Imported-draft editing and save UI remain follow-up work.
+
+See the [mobile overview](../docs/MOBILE_OVERVIEW.md) for architecture, navigation,
+state ownership, and end-to-end user flows.
 
 ## Local setup
 

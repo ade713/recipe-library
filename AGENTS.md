@@ -69,6 +69,7 @@ A task is done when:
 - The code was typed or reviewed line-by-line by the user.
 - The implementation is small, readable, and tested.
 - Codex has reviewed the diff.
+- After completing a frontend or backend feature, refactor, or bug fix, review `docs/MOBILE_OVERVIEW.md` and/or `docs/BACKEND_OVERVIEW.md` and update them as necessary to reflect changes to architecture, responsibilities, data/request flows, data lifetime, limitations, and implementation status. Keep these contributor-facing overviews aligned with the code; do not add milestone history when the documented behavior is unchanged.
 
 ## Planning checklist
 

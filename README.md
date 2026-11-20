@@ -38,6 +38,8 @@ recipe-library-starter/
 ```
 
 See `docs/APP_CONSIDERATIONS.md` for the full product, security, data, scraping, and UX checklist.
+See [Backend overview](docs/BACKEND_OVERVIEW.md) for backend architecture, request flows, and design decisions.
+See [Mobile overview](docs/MOBILE_OVERVIEW.md) for frontend architecture, navigation, state ownership, and user flows.
 See `docs/MVP_SCHEDULE.md` for the estimated 14-week, five-days-per-week MVP plan.
 See `docs/BACKEND_CLEANUP_PLAN.md` for the focused cleanup and hardening PR sequence before and alongside mobile development.
 

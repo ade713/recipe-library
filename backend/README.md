@@ -2,6 +2,10 @@
 
 FastAPI backend for Recipe Library.
 
+Returning to backend work? Start with the [backend overview](../docs/BACKEND_OVERVIEW.md)
+for the architecture, request lifecycle, import pipeline, and transaction boundaries.
+See the [API reference](../docs/API.md) for endpoint behavior.
+
 ## Setup
 
 Install `uv`, then run:
