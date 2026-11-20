@@ -1498,3 +1498,23 @@ Learned:
 Next:
 
 - Submit this focused copy-preview PR, then address draft editing and saving in separate milestones.
+
+## Mobile Import-Save API and Service — 2026-11-19
+
+Built:
+
+- Added an authenticated import-save API helper that serializes the reviewed recipe payload and returns the saved recipe.
+- Added a stored-token service wrapper with missing-token protection and unchanged storage/API error propagation.
+- Covered request shape, omitted fields, false/zero values, missing responses, missing credentials, and request failures including 404/409.
+- All 618 mobile tests across 41 suites, TypeScript, and whitespace checks pass. No UI changes or new Android verification are part of this milestone.
+
+Learned:
+
+- Import saving and manual creation accept the same backend payload schema; import saving additionally checks the import and links it to the recipe with trusted attribution.
+- The service owns token retrieval while the API helper accepts a supplied token and performs the HTTP request.
+- Propagating errors preserves distinctions needed for caller feedback.
+- Returning the saved recipe provides the server-assigned ID and authoritative values for subsequent navigation/display.
+
+Next:
+
+- Submit this focused API/service PR. Draft editing, save controls, and post-save navigation remain follow-up milestones.
