@@ -1100,3 +1100,19 @@ All 618 mobile tests across 41 suites, TypeScript, and whitespace checks pass.
 This milestone adds API/service support only; draft editing, save controls, and
 post-save navigation remain follow-ups. No new Android verification is required
 for these helpers.
+
+## Reviewed import payload adapter
+
+`formatImportDraft` maps reviewed RecipeEditFormValues into RecipeCreateRequest.
+It preserves reviewed ingredients, steps, tips, and favorite state, converts null
+scalar values to undefined for creation, and retains source metadata and tags from
+the draft. Cleared fields never fall back to their original draft values.
+
+RecipeCreateIngredient and RecipeCreateStep require core position/text fields and
+allow optional metadata. Manual creation can continue sending minimal rows while
+import saving retains parsing fields, flags, and step sections. API coverage checks
+that this metadata survives JSON serialization. The adapter does not revalidate,
+reparse, mutate inputs, or save a recipe; editor integration remains follow-up work.
+
+All 622 mobile tests across 42 suites and TypeScript pass. No new Android check
+is needed for this payload-only milestone.

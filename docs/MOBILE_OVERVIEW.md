@@ -234,6 +234,15 @@ URL associated with the displayed duplicate result. While pending, the form and
 fallback controls disable. A thrown request error preserves the duplicate result;
 a returned result replaces it. This operation does not save a recipe.
 
+[formatImportDraft](../mobile/src/imports/format-import-draft.ts) prepares a save
+payload from reviewed form values and the original draft. Editable fields come
+from the reviewed values, including intentional clearing; source metadata and
+tags are retained from the draft. Nullable scalar values become omitted create
+fields rather than restoring old draft values. Reviewed ingredient/step metadata
+passes through unchanged. Named creation-row types require core text/position
+fields while allowing optional metadata, supporting both manual and imported rows.
+This adapter is groundwork and is not yet connected to a draft-editing screen.
+
 [saveRecipeImport](../mobile/src/api/imports.ts) and
 [saveImportDraft](../mobile/src/imports/import-service.ts) now provide the API and
 stored-token service for saving reviewed imports. Draft editing, save controls,
