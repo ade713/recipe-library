@@ -241,14 +241,25 @@ tags are retained from the draft. Nullable scalar values become omitted create
 fields rather than restoring old draft values. Reviewed ingredient/step metadata
 passes through unchanged. Named creation-row types require core text/position
 fields while allowing optional metadata, supporting both manual and imported rows.
-This adapter is groundwork and is not yet connected to a draft-editing screen.
+Success and partial previews now render RecipeEditForm on the import screen,
+prefilled with the draft. The adapter prepares its reviewed values for saving.
 
 [saveRecipeImport](../mobile/src/api/imports.ts) and
 [saveImportDraft](../mobile/src/imports/import-service.ts) now provide the API and
-stored-token service for saving reviewed imports. Draft editing, save controls,
-and post-save navigation are not integrated yet. The
-[import-preview route file](../mobile/app/import-preview.tsx) remains a placeholder;
-its existence does not mean a draft editor is implemented.
+stored-token service for saving reviewed imports. The screen saves against the
+current preview's import ID and passes only the saved recipe ID to its onSaved
+callback. The route replaces the import editor with recipe detail, so Back returns
+to the library rather than a completed editor. Library focus reloads saved data.
+
+The form retains its local inputs and displays import-specific feedback after a
+save failure. Screen-level saving state disables the URL form and fallback actions;
+form submission state disables recipe inputs and row controls. A finally block
+restores screen controls while errors propagate to the form. RecipeEditForm accepts
+optional save-label/error-message props, retaining defaults for existing recipe edits.
+Tags are retained from the preview without tag editing in this flow.
+
+The separate [import-preview route file](../mobile/app/import-preview.tsx) remains
+a placeholder; the working editor lives on the existing import screen.
 
 ## Data lifetime and persistence
 
@@ -327,8 +338,8 @@ within each group. The alias maps `@/*` to `src/*` in
 - There is no automatic token refresh or general request replay after token
   expiry. Session restoration handles 401 explicitly; other request failures
   follow their operation's existing error path.
-- Imported-draft editing, save controls, and post-save navigation are still pending,
-  even though preview actions and import-save API/service helpers exist.
+- Imported drafts can be edited and saved, but tag editing is not exposed in
+  that flow. Existing draft tags are retained.
 - Unsaved drafts and fetched lists are not persisted for offline use. Network
   errors can preserve currently mounted inputs, but that is not durable recovery.
 - Response types are compile-time contracts, not runtime JSON validation. The
