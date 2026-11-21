@@ -1518,3 +1518,23 @@ Learned:
 Next:
 
 - Submit this focused API/service PR. Draft editing, save controls, and post-save navigation remain follow-up milestones.
+
+## Reviewed Import Payload Adapter — 2026-11-20
+
+Built:
+
+- Added explicit mapping from reviewed form values to an import-save creation payload, retaining source attribution and tags.
+- Preserved intentional clearing, zero/false values, and reviewed ingredient/step metadata without mutating inputs.
+- Expanded creation types with source metadata and named row types supporting minimal manual rows and richer imported rows.
+- Added adapter tests and an API serialization regression test. All 622 mobile tests across 42 suites, TypeScript, and whitespace checks pass. UI integration and Android verification remain outside this milestone.
+
+Learned:
+
+- Object.keys returns string keys; a dynamic mutation loop does not change an object's inferred schema. Explicit mapping makes conversions and field ownership clear.
+- Null reviewed values must not fall back to the original draft, which would undo deliberate clearing.
+- Reviewed ingredient metadata may already have been reset by the form formatter; the adapter preserves that result.
+- Pick selects required core fields, Omit selects the remaining fields, Partial makes metadata optional, and an intersection combines the shapes.
+
+Next:
+
+- Submit this focused payload-adapter PR, then integrate imported-draft editing and saving.

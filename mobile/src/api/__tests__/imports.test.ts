@@ -51,6 +51,40 @@ describe("saveRecipeImport", () => {
     });
   });
 
+  it("preserves source attribution, ingredient metadata, and step sections in the save body", async () => {
+    const payload: RecipeCreateRequest = {
+      title: REVIEWED_TITLE,
+      source_url: URL,
+      source_domain: "example.com",
+      source_site_name: "Example Kitchen",
+      source_author: "Recipe author",
+      ingredients: [
+        {
+          position: 1,
+          original_text: "2 cups chopped carrots",
+          quantity: "2.00",
+          quantity_text: "2",
+          unit: "cups",
+          name: "carrots",
+          preparation_note: "chopped",
+          is_optional: false,
+          scale_locked: true,
+          parse_status: "parsed",
+        },
+      ],
+      steps: [{ position: 1, instruction: "Simmer gently", section_title: "Soup" }],
+    };
+
+    const requestMock = jest.spyOn(client, "apiFetch").mockResolvedValue(makeRecipeDetailResponse());
+
+    await saveRecipeImport(TOKEN, IMPORT_ID, payload);
+
+    expect(requestMock).toHaveBeenCalledWith(
+      `/imports/${IMPORT_ID}/save`,
+      expect.objectContaining({ body: JSON.stringify(payload) }),
+    );
+  });
+
   it("sends a minimal draft without adding defaults", async () => {
     const requestMock = jest.spyOn(client, "apiFetch").mockResolvedValue(makeRecipeDetailResponse());
 
