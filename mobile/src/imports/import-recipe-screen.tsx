@@ -2,10 +2,13 @@ import { useState } from "react";
 import { Button, KeyboardAvoidingView, Linking, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { RecipeEditForm } from "@/recipes/recipe-edit-form";
+import type { RecipeEditFormValues } from "@/recipes/recipe-edit-form";
 import type { RecipeImportPreviewResponse } from "@/types/import";
 
+import { formatImportDraft } from "./format-import-draft";
 import { ImportUrlForm } from "./import-url-form";
-import { loadImportPreview } from "./import-service";
+import { loadImportPreview, saveImportDraft } from "./import-service";
 
 const ACTION_ENTER_MANUALLY = "enter_manually";
 const ACTION_IMPORT_AS_COPY = "import_as_copy";
@@ -21,6 +24,8 @@ const PREVIEW_DUPLICATE_MESSAGE = "This recipe is already in your library.";
 const PREVIEW_FAILED_MESSAGE = "No recipe preview could be created.";
 const PREVIEW_PARTIAL_MESSAGE = "Preview ready with missing information.";
 const PREVIEW_SUCCESS_MESSAGE = "Preview ready.";
+const SAVE_RECIPE_ERROR_MESSAGE = "Unable to save recipe. Please try again.";
+const SAVE_RECIPE_LABEL = "Save recipe";
 const SOURCE_URL_ERROR_MESSAGE = "Unable to open source URL. Please try again.";
 const STATUS_BLOCKED = "blocked";
 const STATUS_DUPLICATE = "duplicate";
@@ -32,14 +37,44 @@ type ImportRecipeScreenProps = {
   headerHeight?: number;
   onEnterManually?: () => void;
   onOpenExisting?: (recipeId: string) => void;
+  onSaved?: (recipeId: string) => void;
 };
 
-export function ImportRecipeScreen({ headerHeight = 0, onEnterManually, onOpenExisting }: ImportRecipeScreenProps) {
+export function ImportRecipeScreen({
+  headerHeight = 0,
+  onEnterManually,
+  onOpenExisting,
+  onSaved,
+}: ImportRecipeScreenProps) {
   const [importPreview, setImportPreview] = useState<RecipeImportPreviewResponse | null>(null);
   const [isImportingAsCopy, setIsImportingAsCopy] = useState(false);
   const [copyErrorMessage, setCopyErrorMessage] = useState<string | null>(null);
   const [sourceUrl, setSourceUrl] = useState("");
   const [sourceUrlErrorMessage, setSourceUrlErrorMessage] = useState<string | null>(null);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+
+  const isImportActionPending = isImportingAsCopy || isSavingDraft;
+
+  const handleSaveDraft = async (values: RecipeEditFormValues): Promise<void> => {
+    if (
+      isSavingDraft ||
+      importPreview === null ||
+      importPreview.draft === null ||
+      (importPreview.status !== STATUS_SUCCESS && importPreview.status !== STATUS_PARTIAL)
+    ) {
+      return;
+    }
+
+    setIsSavingDraft(true);
+
+    try {
+      const formattedDraft = formatImportDraft(importPreview.draft, values);
+      const savedRecipe = await saveImportDraft(importPreview.import_id, formattedDraft);
+      onSaved?.(savedRecipe.id);
+    } finally {
+      setIsSavingDraft(false);
+    }
+  };
 
   const handleOpenSourceUrl = async (): Promise<void> => {
     if (sourceUrl.trim() === "") {
@@ -56,7 +91,7 @@ export function ImportRecipeScreen({ headerHeight = 0, onEnterManually, onOpenEx
   };
 
   const handleImportAsCopy = async (): Promise<void> => {
-    if (isImportingAsCopy) {
+    if (isImportActionPending) {
       return;
     }
 
@@ -74,7 +109,7 @@ export function ImportRecipeScreen({ headerHeight = 0, onEnterManually, onOpenEx
   };
 
   const handlePreview = async (url: string): Promise<void> => {
-    if (isImportingAsCopy) {
+    if (isImportActionPending) {
       return;
     }
 
@@ -143,7 +178,7 @@ export function ImportRecipeScreen({ headerHeight = 0, onEnterManually, onOpenEx
             <Button
               accessibilityLabel={IMPORT_AS_COPY_LABEL}
               title={IMPORT_AS_COPY_LABEL}
-              disabled={isImportingAsCopy}
+              disabled={isImportActionPending}
               onPress={() => {
                 void handleImportAsCopy();
               }}
@@ -155,7 +190,7 @@ export function ImportRecipeScreen({ headerHeight = 0, onEnterManually, onOpenEx
           <Button
             accessibilityLabel={OPEN_EXISTING_RECIPE_LABEL}
             title={OPEN_EXISTING_RECIPE_LABEL}
-            disabled={isImportingAsCopy}
+            disabled={isImportActionPending}
             onPress={() => onOpenExisting(existingRecipeId)}
           />
         )}
@@ -164,29 +199,29 @@ export function ImportRecipeScreen({ headerHeight = 0, onEnterManually, onOpenEx
           <Button
             accessibilityLabel={ENTER_MANUALLY_LABEL}
             title={ENTER_MANUALLY_LABEL}
-            disabled={isImportingAsCopy}
+            disabled={isImportActionPending}
             onPress={onEnterManually}
           />
         )}
 
         {shouldDisplayPreview && (
-          <View>
-            <Text style={styles.section}>{previewDraft.title}</Text>
-
-            <View style={styles.section}>
-              {previewDraft.ingredients.map((ingredient) => (
-                <Text key={ingredient.position}>{ingredient.original_text}</Text>
-              ))}
-            </View>
-
-            <View style={styles.section}>
-              {previewDraft.steps.map((step) => (
-                <Text key={step.position}>
-                  {step.position}. {step.instruction}
-                </Text>
-              ))}
-            </View>
-          </View>
+          <RecipeEditForm
+            initialTitle={previewDraft.title}
+            initialDescription={previewDraft.description}
+            initialImageUrl={previewDraft.image_url}
+            initialPrepTimeMinutes={previewDraft.prep_time_minutes}
+            initialCookTimeMinutes={previewDraft.cook_time_minutes}
+            initialTotalTimeMinutes={previewDraft.total_time_minutes}
+            initialBaseServings={previewDraft.base_servings}
+            initialServingsUnit={previewDraft.servings_unit}
+            initialIngredients={previewDraft.ingredients}
+            initialSteps={previewDraft.steps}
+            initialTips={previewDraft.tips}
+            initialIsFavorite={previewDraft.is_favorite}
+            saveLabel={SAVE_RECIPE_LABEL}
+            saveErrorMessage={SAVE_RECIPE_ERROR_MESSAGE}
+            onSubmit={handleSaveDraft}
+          />
         )}
 
         {importPreview.next_actions.includes(ACTION_OPEN_SOURCE_URL) && (
@@ -195,7 +230,7 @@ export function ImportRecipeScreen({ headerHeight = 0, onEnterManually, onOpenEx
             <Button
               accessibilityLabel={OPEN_SOURCE_URL_LABEL}
               title={OPEN_SOURCE_URL_LABEL}
-              disabled={isImportingAsCopy}
+              disabled={isImportActionPending}
               onPress={handleOpenSourceUrl}
             />
           </>
@@ -208,7 +243,7 @@ export function ImportRecipeScreen({ headerHeight = 0, onEnterManually, onOpenEx
     <SafeAreaView edges={["bottom"]} style={styles.container}>
       <KeyboardAvoidingView behavior='padding' keyboardVerticalOffset={headerHeight} style={styles.container}>
         <ScrollView keyboardShouldPersistTaps='handled' contentContainerStyle={styles.contentContainer}>
-          <ImportUrlForm disabled={isImportingAsCopy} onSubmit={handlePreview} />
+          <ImportUrlForm disabled={isImportActionPending} onSubmit={handlePreview} />
 
           {renderImportPreview()}
         </ScrollView>
