@@ -10,8 +10,9 @@ export default function ImportRecipeRoute() {
   return (
     <ImportRecipeScreen
       headerHeight={headerHeight}
-      onOpenExisting={(recipeId) => router.push(`/recipes/${recipeId}`)}
       onEnterManually={() => router.push("/recipes/new")}
+      onOpenExisting={(recipeId) => router.push(`/recipes/${recipeId}`)}
+      onSaved={(recipeId) => router.replace(`/recipes/${recipeId}`)}
     />
   );
 }

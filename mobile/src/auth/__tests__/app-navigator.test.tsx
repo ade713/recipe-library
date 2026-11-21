@@ -30,6 +30,7 @@ const EMAIL = "test@example.com";
 const EMPTY_TEXT = "";
 const FAVORITE_TEXT = "Favorite";
 const IMPORT_PATH = "/import";
+const IMPORT_RECIPE_LABEL = "Import recipe";
 const INDEX_PATH = "/";
 const LIBRARY_TEXT = "Library route";
 const LOADING_RECIPE_TEXT = "Loading recipe...";
@@ -104,6 +105,53 @@ const renderRouteNavigation = async (
 };
 
 describe("AppNavigator", () => {
+  it("replaces the saved import editor with detail and returns directly to the library", async () => {
+    const importId = "reviewed-import";
+    const importedTitle = "Imported soup";
+    const saved = makeRecipeDetailResponse({ id: RECIPE_ID, title: RECIPE_TITLE });
+    const { id, ...draft } = makeRecipeDetailResponse({ title: importedTitle, source_url: RECIPE_URL });
+
+    jest.spyOn(session, "restoreSession").mockResolvedValue(makeUserResponse());
+    const listMock = jest
+      .spyOn(recipeService, "loadRecipes")
+      .mockResolvedValueOnce({ items: [] })
+      .mockResolvedValue({ items: [makeRecipeSummary({ id: RECIPE_ID, title: RECIPE_TITLE })] });
+    const detailMock = jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(saved);
+    jest.spyOn(importService, "loadImportPreview").mockResolvedValue({
+      import_id: importId,
+      status: "success",
+      parser_used: "recipe-scrapers",
+      draft,
+      warnings: [],
+      existing_recipe_id: null,
+      next_actions: [],
+    });
+    const saveMock = jest.spyOn(importService, "saveImportDraft").mockResolvedValue(saved);
+
+    await renderRouteNavigation(INDEX_PATH, { index: RecipeLibraryScreen, detail: RecipeDetailRoute });
+
+    await fireEvent.press(await screen.findByRole("button", { name: IMPORT_RECIPE_LABEL }));
+    await fireEvent.changeText(await screen.findByLabelText(RECIPE_URL_LABEL), RECIPE_URL);
+    await fireEvent.press(screen.getByRole("button", { name: PREVIEW_RECIPE_LABEL }));
+    await screen.findByDisplayValue(importedTitle);
+    await fireEvent.changeText(screen.getByLabelText(RECIPE_TITLE_LABEL), RECIPE_TITLE);
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_RECIPE_TEXT }));
+
+    expect(await screen.findByText(RECIPE_TITLE)).toBeTruthy();
+    expect(detailMock).toHaveBeenCalledWith(RECIPE_ID);
+    expect(saveMock).toHaveBeenCalledTimes(1);
+    expect(saveMock).toHaveBeenCalledWith(importId, expect.objectContaining({ title: RECIPE_TITLE }));
+
+    await act(async () => {
+      router.back();
+    });
+    expect(await screen.findByText(RECIPE_LIBRARY_TEXT)).toBeTruthy();
+    expect(await screen.findByText(RECIPE_TITLE)).toBeTruthy();
+    expect(screen.queryByLabelText(RECIPE_URL_LABEL)).toBeNull();
+    expect(screen.queryByRole("button", { name: SAVE_RECIPE_TEXT })).toBeNull();
+    expect(listMock).toHaveBeenCalledTimes(2);
+  });
+
   it("opens the duplicate recipe from import and preserves the preview on Back", async () => {
     const openExistingRecipeLabel = "Open existing recipe";
 
@@ -169,7 +217,6 @@ describe("AppNavigator", () => {
 
   it("opens import from the library, requests a preview, and returns with Back", async () => {
     const warning = "Recipe data could not be parsed.";
-    const importRecipeLabel = "Import recipe";
 
     jest.spyOn(session, "restoreSession").mockResolvedValue(makeUserResponse());
     jest.spyOn(recipeService, "loadRecipes").mockResolvedValue({ items: [] });
@@ -185,7 +232,7 @@ describe("AppNavigator", () => {
 
     await renderRouteNavigation(INDEX_PATH, { index: RecipeLibraryScreen });
 
-    await fireEvent.press(await screen.findByRole("button", { name: importRecipeLabel }));
+    await fireEvent.press(await screen.findByRole("button", { name: IMPORT_RECIPE_LABEL }));
     expect(previewMock).not.toHaveBeenCalled();
 
     await fireEvent.changeText(await screen.findByLabelText(RECIPE_URL_LABEL), RECIPE_URL);
