@@ -84,10 +84,19 @@ export type RecipeTip = {
   tip: string;
 };
 
+export type RecipeCreateIngredient = Pick<RecipeIngredient, "position" | "original_text"> &
+  Partial<Omit<RecipeIngredient, "position" | "original_text">>;
+
+export type RecipeCreateStep = Pick<RecipeStep, "position" | "instruction"> &
+  Partial<Pick<RecipeStep, "section_title">>;
+
 export type RecipeCreateRequest = {
   title: string;
   description?: string;
   source_url?: string;
+  source_domain?: string;
+  source_site_name?: string;
+  source_author?: string;
   image_url?: string;
   prep_time_minutes?: number;
   cook_time_minutes?: number;
@@ -95,14 +104,8 @@ export type RecipeCreateRequest = {
   base_servings?: number;
   servings_unit?: string;
   is_favorite?: boolean;
-  ingredients?: {
-    position: number;
-    original_text: string;
-  }[];
-  steps?: {
-    position: number;
-    instruction: string;
-  }[];
+  ingredients?: RecipeCreateIngredient[];
+  steps?: RecipeCreateStep[];
   tips?: {
     position: number;
     tip: string;
