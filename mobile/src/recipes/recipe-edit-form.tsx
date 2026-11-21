@@ -72,6 +72,8 @@ type RecipeEditFormProps = {
   initialTips?: RecipeTip[];
   initialIsFavorite?: boolean;
   saveDisabled?: boolean;
+  saveErrorMessage?: string;
+  saveLabel?: string;
   onSubmit: (values: RecipeEditFormValues) => Promise<void>;
 };
 
@@ -131,6 +133,8 @@ export function RecipeEditForm({
   initialSteps = [],
   initialTips = [],
   saveDisabled = false,
+  saveErrorMessage = SAVE_UPDATE_ERROR_MESSAGE,
+  saveLabel = SAVE_LABEL,
   onSubmit,
 }: RecipeEditFormProps) {
   const [currentTitle, setCurrentTitle] = useState(initialTitle);
@@ -264,7 +268,7 @@ export function RecipeEditForm({
         ...times,
       });
     } catch {
-      setErrorMessage(SAVE_UPDATE_ERROR_MESSAGE);
+      setErrorMessage(saveErrorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -434,8 +438,8 @@ export function RecipeEditForm({
       <Button title={ADD_TIP_LABEL} disabled={isSubmitting} onPress={handleAddTip} />
 
       <Button
-        accessibilityLabel={SAVE_LABEL}
-        title={SAVE_LABEL}
+        accessibilityLabel={saveLabel}
+        title={saveLabel}
         disabled={isSubmitting || saveDisabled}
         onPress={() => {
           void handleSubmit();

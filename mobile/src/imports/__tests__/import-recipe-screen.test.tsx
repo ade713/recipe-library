@@ -3,6 +3,7 @@ import { Linking } from "react-native";
 
 import { makeRecipeDetailResponse } from "@/test/fixtures/recipes";
 import type { RecipeImportPreviewResponse } from "@/types/import";
+import type { RecipeDetailResponse } from "@/types/recipe";
 
 import { ImportRecipeScreen } from "../import-recipe-screen";
 import * as importService from "../import-service";
@@ -22,8 +23,10 @@ const PREVIEW_READY_MESSAGE = "Preview ready.";
 const RECIPE_DUPLICATE_MESSAGE = "This recipe is already in your library.";
 const RECIPE_ID = "recipe-one";
 const RECIPE_URL = "https://example.com/soup";
+const SAVE_RECIPE_LABEL = "Save recipe";
 const SECOND_STEP = "Serve warm";
 const SOURCE_URL_ERROR_MESSAGE = "Unable to open source URL. Please try again.";
+const TITLE_INPUT_LABEL = "Recipe title";
 const URL_LABEL = "Recipe URL";
 const WARNING = "Prep time was missing.";
 
@@ -64,10 +67,17 @@ const makePreview = (status: RecipeImportPreviewResponse["status"]): RecipeImpor
 type ImportRecipeScreenOptions = {
   onEnterManually?: () => void;
   onOpenExisting?: (recipeId: string) => void;
+  onSaved?: (savedRecipeId: string) => void;
 };
 
-const renderImportRecipeScreen = async ({ onOpenExisting, onEnterManually }: ImportRecipeScreenOptions = {}) => {
-  await render(<ImportRecipeScreen onEnterManually={onEnterManually} onOpenExisting={onOpenExisting} />);
+const renderImportRecipeScreen = async ({
+  onEnterManually,
+  onOpenExisting,
+  onSaved,
+}: ImportRecipeScreenOptions = {}) => {
+  await render(
+    <ImportRecipeScreen onEnterManually={onEnterManually} onOpenExisting={onOpenExisting} onSaved={onSaved} />,
+  );
 };
 
 const submit = async () => {
@@ -75,6 +85,166 @@ const submit = async () => {
 };
 
 describe("ImportRecipeScreen", () => {
+  it("disables preview controls while saving and submits only once", async () => {
+    const addIngredientLabel = "Add ingredient";
+    const preview = makePreview("success");
+    const saved = makeRecipeDetailResponse();
+
+    let resolveSave!: (recipe: RecipeDetailResponse) => void;
+    const pendingSave = new Promise<RecipeDetailResponse>((resolve) => {
+      resolveSave = resolve;
+    });
+    const previewMock = jest.spyOn(importService, "loadImportPreview").mockResolvedValue(preview);
+    const saveMock = jest.spyOn(importService, "saveImportDraft").mockReturnValue(pendingSave);
+    const onSaved = jest.fn();
+
+    await renderImportRecipeScreen({ onSaved });
+    await fireEvent.changeText(screen.getByLabelText(URL_LABEL), RECIPE_URL);
+    await submit();
+    await fireEvent.press(await screen.findByRole("button", { name: SAVE_RECIPE_LABEL }));
+
+    expect(screen.getByRole("button", { name: SAVE_RECIPE_LABEL })).toBeDisabled();
+    expect(screen.getByLabelText(TITLE_INPUT_LABEL)).toBeDisabled();
+    expect(screen.getByLabelText(URL_LABEL)).toBeDisabled();
+    expect(screen.getByRole("button", { name: PREVIEW_LABEL })).toBeDisabled();
+    expect(screen.getByRole("button", { name: addIngredientLabel })).toBeDisabled();
+    expect(screen.getByText(WARNING)).toBeTruthy();
+    expect(onSaved).not.toHaveBeenCalled();
+
+    await submit();
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_RECIPE_LABEL }));
+    expect(previewMock).toHaveBeenCalledTimes(1);
+    expect(saveMock).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolveSave(saved);
+    });
+    expect(onSaved).toHaveBeenCalledWith(saved.id);
+  });
+
+  it("preserves reviewed edits after save failure and retries the same import", async () => {
+    const preview = makePreview("partial");
+    const saveErrorMessage = "Unable to save recipe. Please try again.";
+    const privateErrorMessage = "Private save failure";
+    const reviewedTitle = "Reviewed soup";
+    const reviewedIngredient = "3 cups carrots";
+    const ingredientLabel1 = "Ingredient 1";
+    const saved = makeRecipeDetailResponse({ title: reviewedTitle });
+
+    const onSaved = jest.fn();
+    jest.spyOn(importService, "loadImportPreview").mockResolvedValue(preview);
+    const saveMock = jest
+      .spyOn(importService, "saveImportDraft")
+      .mockRejectedValueOnce(new Error(privateErrorMessage))
+      .mockResolvedValueOnce(saved);
+
+    await renderImportRecipeScreen({ onSaved });
+    await fireEvent.changeText(screen.getByLabelText(URL_LABEL), RECIPE_URL);
+    await submit();
+    await screen.findByDisplayValue(DRAFT_TITLE);
+    await fireEvent.changeText(screen.getByLabelText(TITLE_INPUT_LABEL), reviewedTitle);
+    await fireEvent.changeText(screen.getByLabelText(ingredientLabel1), reviewedIngredient);
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_RECIPE_LABEL }));
+
+    expect(await screen.findByText(saveErrorMessage)).toBeTruthy();
+    expect(screen.queryByText(privateErrorMessage)).toBeNull();
+    expect(screen.queryByText(PREVIEW_ERROR_MESSAGE)).toBeNull();
+    expect(screen.getByLabelText(TITLE_INPUT_LABEL)).toHaveDisplayValue(reviewedTitle);
+    expect(screen.getByLabelText(ingredientLabel1)).toHaveDisplayValue(reviewedIngredient);
+    expect(screen.getByLabelText(TITLE_INPUT_LABEL)).toBeEnabled();
+    expect(screen.getByLabelText(URL_LABEL)).toBeEnabled();
+    expect(screen.getByRole("button", { name: PREVIEW_LABEL })).toBeEnabled();
+    expect(screen.getByRole("button", { name: SAVE_RECIPE_LABEL })).toBeEnabled();
+    expect(screen.getByText(WARNING)).toBeTruthy();
+    expect(onSaved).not.toHaveBeenCalled();
+
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_RECIPE_LABEL }));
+    expect(saveMock).toHaveBeenCalledTimes(2);
+    expect(saveMock).toHaveBeenNthCalledWith(
+      2,
+      preview.import_id,
+      expect.objectContaining({
+        title: reviewedTitle,
+        ingredients: [expect.objectContaining({ original_text: reviewedIngredient })],
+      }),
+    );
+    expect(screen.queryByText(saveErrorMessage)).toBeNull();
+    expect(onSaved).toHaveBeenCalledTimes(1);
+    expect(onSaved).toHaveBeenCalledWith(saved.id);
+  });
+
+  it("prefills the draft editor and saves reviewed values with the current import ID", async () => {
+    const favoriteLabel = "Favorite";
+    const reviewedTitle = "Reviewed spup";
+    const importedDescription = "Imported description";
+    const imageUrl = "https://example.com/image.jpg";
+    const pepperTip = "Add pepper";
+    const servingUnit = "bowls";
+    const preview = makePreview("success");
+    if (preview.draft === null) {
+      throw new Error("Expected draft fixture");
+    }
+    preview.draft = {
+      ...preview.draft,
+      description: importedDescription,
+      image_url: imageUrl,
+      source_url: RECIPE_URL,
+      source_domain: "example.com",
+      source_site_name: "Example Kitchen",
+      source_author: "Recipe author",
+      prep_time_minutes: 0,
+      cook_time_minutes: 20,
+      total_time_minutes: 25,
+      base_servings: "4.00",
+      servings_unit: servingUnit,
+      is_favorite: true,
+      tips: [{ position: 1, tip: "Add pepper" }],
+      tags: ["Dinner"],
+    };
+    const saved = makeRecipeDetailResponse({ title: reviewedTitle });
+
+    const onSaved = jest.fn();
+    jest.spyOn(importService, "loadImportPreview").mockResolvedValue(preview);
+    const saveMock = jest.spyOn(importService, "saveImportDraft").mockResolvedValue(saved);
+
+    await renderImportRecipeScreen({ onSaved });
+
+    await fireEvent.changeText(screen.getByLabelText(URL_LABEL), RECIPE_URL);
+    await submit();
+
+    expect(await screen.findByDisplayValue(DRAFT_TITLE)).toBeTruthy();
+    for (const value of [
+      importedDescription,
+      imageUrl,
+      "0",
+      "20",
+      "25",
+      "4.00",
+      servingUnit,
+      INGREDIENT_TEXT,
+      FIRST_STEP,
+      SECOND_STEP,
+      pepperTip,
+    ]) {
+      expect(screen.getByDisplayValue(value)).toBeTruthy();
+    }
+    expect(screen.getByRole("switch", { name: favoriteLabel }).props.value).toBe(true);
+    expect(screen.getByText(WARNING)).toBeTruthy();
+    expect(saveMock).not.toHaveBeenCalled();
+
+    await fireEvent.changeText(screen.getByLabelText(TITLE_INPUT_LABEL), `  ${reviewedTitle}  `);
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_RECIPE_LABEL }));
+
+    expect(saveMock).toHaveBeenCalledTimes(1);
+    expect(saveMock).toHaveBeenCalledWith(preview.import_id, {
+      ...preview.draft,
+      title: reviewedTitle,
+      base_servings: 4,
+    });
+    expect(onSaved).toHaveBeenCalledTimes(1);
+    expect(onSaved).toHaveBeenCalledWith(saved.id);
+  });
+
   it("blocks competing actions during a copy request and restores controls after success", async () => {
     const duplicate = makePreview("duplicate");
     duplicate.next_actions = ["open_existing", "import_as_copy"];
@@ -110,7 +280,7 @@ describe("ImportRecipeScreen", () => {
     await act(async () => {
       resolveCopy(makePreview("success"));
     });
-    expect(await screen.findByText(DRAFT_TITLE)).toBeTruthy();
+    expect(await screen.findByDisplayValue(DRAFT_TITLE)).toBeTruthy();
     expect(screen.getByRole("button", { name: PREVIEW_LABEL })).toBeEnabled();
     expect(screen.getByLabelText(URL_LABEL)).toBeEnabled();
   });
@@ -151,7 +321,7 @@ describe("ImportRecipeScreen", () => {
     expect(screen.getByRole("button", { name: IMPORT_AS_COPY_LABEL })).toBeEnabled();
 
     await fireEvent.press(screen.getByRole("button", { name: IMPORT_AS_COPY_LABEL }));
-    expect(await screen.findByText(DRAFT_TITLE)).toBeTruthy();
+    expect(await screen.findByDisplayValue(DRAFT_TITLE)).toBeTruthy();
     expect(screen.queryByText(COPY_ERROR_MESSAGE)).toBeNull();
     expect(requestMock).toHaveBeenNthCalledWith(3, { url: RECIPE_URL, import_as_copy: true });
   });
@@ -178,7 +348,7 @@ describe("ImportRecipeScreen", () => {
     await fireEvent.changeText(screen.getByLabelText(URL_LABEL), ANOTHER_RECIPE_URL);
     await fireEvent.press(copyButton);
 
-    expect(await screen.findByText(DRAFT_TITLE)).toBeTruthy();
+    expect(await screen.findByDisplayValue(DRAFT_TITLE)).toBeTruthy();
     expect(requestMock).toHaveBeenCalledTimes(2);
     expect(requestMock).toHaveBeenNthCalledWith(2, { url: RECIPE_URL, import_as_copy: true });
     expect(screen.queryByText(RECIPE_DUPLICATE_MESSAGE)).toBeNull();
@@ -382,13 +552,13 @@ describe("ImportRecipeScreen", () => {
 
     expect(screen.getByLabelText(URL_LABEL)).toBeTruthy();
     expect(requestMock).not.toHaveBeenCalled();
-    expect(screen.queryByText(DRAFT_TITLE)).toBeNull();
+    expect(screen.queryByDisplayValue(DRAFT_TITLE)).toBeNull();
   });
 
   it.each([
     { status: "success", message: PREVIEW_READY_MESSAGE },
     { status: "partial", message: "Preview ready with missing information." },
-  ] as const)("shows $status ingredient text, numbered steps, and warnings", async ({ status, message }) => {
+  ] as const)("prefills a $status editor and preserves warnings", async ({ status, message }) => {
     const missingUrlWarning = "Image URL was missing.";
     const response = makePreview(status);
     response.warnings.push(missingUrlWarning);
@@ -401,10 +571,10 @@ describe("ImportRecipeScreen", () => {
     await submit();
     expect(requestMock).toHaveBeenCalledWith({ url: RECIPE_URL });
     expect(await screen.findByText(message)).toBeTruthy();
-    expect(screen.getByText(DRAFT_TITLE)).toBeTruthy();
-    expect(screen.getByText(INGREDIENT_TEXT)).toBeTruthy();
-    expect(screen.getByText(`1. ${FIRST_STEP}`)).toBeTruthy();
-    expect(screen.getByText(`2. ${SECOND_STEP}`)).toBeTruthy();
+    expect(screen.getByDisplayValue(DRAFT_TITLE)).toBeTruthy();
+    expect(screen.getByDisplayValue(INGREDIENT_TEXT)).toBeTruthy();
+    expect(screen.getByLabelText("Step 1")).toHaveDisplayValue(FIRST_STEP);
+    expect(screen.getByLabelText("Step 2")).toHaveDisplayValue(SECOND_STEP);
     expect(screen.getByText(WARNING)).toBeTruthy();
     expect(screen.getByText(missingUrlWarning)).toBeTruthy();
   });
@@ -422,8 +592,8 @@ describe("ImportRecipeScreen", () => {
     await submit();
     expect(await screen.findByText(message)).toBeTruthy();
     expect(screen.getByText(WARNING)).toBeTruthy();
-    expect(screen.queryByText(DRAFT_TITLE)).toBeNull();
-    expect(screen.queryByText(INGREDIENT_TEXT)).toBeNull();
+    expect(screen.queryByDisplayValue(DRAFT_TITLE)).toBeNull();
+    expect(screen.queryByDisplayValue(INGREDIENT_TEXT)).toBeNull();
     expect(screen.queryByText(`1. ${FIRST_STEP}`)).toBeNull();
     expect(screen.queryByText(PREVIEW_ERROR_MESSAGE)).toBeNull();
   });
@@ -446,13 +616,13 @@ describe("ImportRecipeScreen", () => {
 
     await fireEvent.changeText(screen.getByLabelText(URL_LABEL), RECIPE_URL);
     await submit();
-    expect(await screen.findByText(DRAFT_TITLE)).toBeTruthy();
+    expect(await screen.findByDisplayValue(DRAFT_TITLE)).toBeTruthy();
 
     await fireEvent.changeText(screen.getByLabelText(URL_LABEL), nextUrl);
     await submit();
     try {
-      expect(screen.queryByText(DRAFT_TITLE)).toBeNull();
-      expect(screen.queryByText(INGREDIENT_TEXT)).toBeNull();
+      expect(screen.queryByDisplayValue(DRAFT_TITLE)).toBeNull();
+      expect(screen.queryByDisplayValue(INGREDIENT_TEXT)).toBeNull();
       expect(screen.queryByText(`1. ${FIRST_STEP}`)).toBeNull();
       expect(screen.queryByText(WARNING)).toBeNull();
     } finally {

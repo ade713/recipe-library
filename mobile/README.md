@@ -2,7 +2,7 @@
 
 React Native / Expo app using TypeScript and Expo Router. Authentication,
 recipe library search/filtering, manual creation/editing, detail views, and import
-previews are connected. Imported-draft editing and save UI remain follow-up work.
+previews with draft editing and saving are connected.
 
 See the [mobile overview](../docs/MOBILE_OVERVIEW.md) for architecture, navigation,
 state ownership, and end-to-end user flows.
@@ -1045,8 +1045,7 @@ mobile tests across 41 suites, TypeScript, and whitespace checks pass. Android
 verified navigation/Back, URL validation and correction, preview content/warnings,
 keyboard scrolling, clearing prior results, and request failure/retry.
 
-Draft editing/saving remains a follow-up milestone. This
-screen does not save imported recipes yet.
+Draft editing and saving are now integrated as described below.
 
 ## Import fallback actions
 
@@ -1079,8 +1078,8 @@ as well. Returned results replace the preview, and controls re-enable on complet
 
 All 602 mobile tests across 41 suites, TypeScript, and whitespace checks pass.
 Android verified copy previews, submitted-URL preservation, pending controls,
-failure/retry, and clearing copy feedback for a new preview. Draft editing and
-saving remain separate milestones.
+failure/retry, and clearing copy feedback for a new preview. Copy requests produce
+a fresh preview that can then be reviewed and saved.
 
 ## Import-save API foundation
 
@@ -1098,7 +1097,7 @@ server-assigned ID and saved values for later UI integration.
 
 All 618 mobile tests across 41 suites, TypeScript, and whitespace checks pass.
 This milestone adds API/service support only; draft editing, save controls, and
-post-save navigation remain follow-ups. No new Android verification is required
+post-save navigation are integrated in the editor milestone below. No new Android verification is required
 for these helpers.
 
 ## Reviewed import payload adapter
@@ -1112,7 +1111,23 @@ RecipeCreateIngredient and RecipeCreateStep require core position/text fields an
 allow optional metadata. Manual creation can continue sending minimal rows while
 import saving retains parsing fields, flags, and step sections. API coverage checks
 that this metadata survives JSON serialization. The adapter does not revalidate,
-reparse, mutate inputs, or save a recipe; editor integration remains follow-up work.
+reparse, mutate inputs, or save a recipe; the import editor uses it before saving.
 
 All 622 mobile tests across 42 suites and TypeScript pass. No new Android check
 is needed for this payload-only milestone.
+
+## Imported-draft editing and saving
+
+Success/partial previews prefill RecipeEditForm on the import screen. Reviewed
+values pass through formatImportDraft and saveImportDraft with the current import
+ID. The form uses Save recipe wording and import-specific failure feedback while
+existing recipe edits retain their defaults. Tags are preserved without new tag controls.
+
+Saving disables competing preview/fallback actions and form controls. Failures
+preserve edits and warnings, restore controls, and allow retry. Successful saves
+pass the recipe ID to the route, which replaces the editor with detail; Back returns
+to the library, whose focus reload shows the saved recipe.
+
+All 626 mobile tests across 42 suites, TypeScript, and whitespace checks pass.
+Android verified prefilled editing, saved content/source attribution, Back/library
+refresh, pending controls, failure/retry preservation, and keyboard access.

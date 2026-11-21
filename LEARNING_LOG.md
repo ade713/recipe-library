@@ -1538,3 +1538,25 @@ Learned:
 Next:
 
 - Submit this focused payload-adapter PR, then integrate imported-draft editing and saving.
+
+## Imported-Draft Editor and Saving — 2026-11-20
+
+Built:
+
+- Reused RecipeEditForm for success/partial import drafts with all initial values and configurable save wording/error feedback.
+- Connected reviewed payload formatting and saving through the current import ID, preserving tags and source metadata.
+- Disabled competing screen actions while saving and retained edits/warnings on failure for retry.
+- Passed the saved recipe ID to route navigation, replacing the editor with detail and returning directly to the refreshed library with Back.
+- All 626 mobile tests across 42 suites, TypeScript, and whitespace checks pass. Android verified editing/saving, attribution, navigation, pending/failure behavior, and keyboard access.
+
+Learned:
+
+- Screen-level saving state coordinates controls outside the form; the form owns editable values and save feedback.
+- Finally restores screen state without catching errors that the form needs to display.
+- The import ID identifies the log/workflow, while the returned recipe ID identifies the navigation destination.
+- Navigation callbacks can expose only the ID they need even though the service returns the full saved recipe.
+- Normal preview requests clear the current preview and unmount its form, resetting initial state for a replacement draft.
+
+Next:
+
+- Submit this focused editor/save integration PR; keep additional import tag controls and draft persistence separate.
