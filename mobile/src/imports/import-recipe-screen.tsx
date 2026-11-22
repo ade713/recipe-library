@@ -26,6 +26,7 @@ const PREVIEW_DUPLICATE_MESSAGE = "This recipe is already in your library.";
 const PREVIEW_FAILED_MESSAGE = "No recipe preview could be created.";
 const PREVIEW_PARTIAL_MESSAGE = "Preview ready with missing information.";
 const PREVIEW_SUCCESS_MESSAGE = "Preview ready.";
+const RETRY_TAGS_BUTTON_LABEL = "Retry tags";
 const SAVE_RECIPE_ERROR_MESSAGE = "Unable to save recipe. Please try again.";
 const SAVE_RECIPE_LABEL = "Save recipe";
 const SOURCE_URL_ERROR_MESSAGE = "Unable to open source URL. Please try again.";
@@ -35,6 +36,7 @@ const STATUS_FAILED = "failed";
 const STATUS_PARTIAL = "partial";
 const STATUS_SUCCESS = "success";
 const TAGS_LOADING_MESSAGE = "Loading tags...";
+const TAGS_MATCH_ERROR_MESSAGE = "Unable to match draft tags. Please retry.";
 
 type ImportRecipeScreenProps = {
   headerHeight?: number;
@@ -57,21 +59,39 @@ export function ImportRecipeScreen({
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [tagSearchTerm, setTagSearchTerm] = useState("");
   const [selectedTagIds, setSelectedTagIds] = useState<string[] | null>(null);
+  const [tagMatchError, setTagMatchError] = useState<string | null>(null);
 
-  const { tags, isLoadingTags } = useAvailableTags(importPreview?.import_id);
+  const {
+    tags,
+    isLoadingTags,
+    tagError: tagLoadingError,
+    retryLoadingTags: reloadTags,
+  } = useAvailableTags(importPreview?.import_id);
 
   const isImportActionPending = isImportingAsCopy || isSavingDraft;
+  const tagError = tagLoadingError ?? tagMatchError;
 
   useEffect(() => {
-    if (importPreview === null || importPreview.draft === null || isLoadingTags || selectedTagIds !== null) {
+    if (
+      importPreview === null ||
+      importPreview.draft === null ||
+      isLoadingTags ||
+      tagError !== null ||
+      selectedTagIds !== null
+    ) {
       return;
     }
 
     const previewDraft = importPreview.draft;
     const currentSelectedTags = tags.filter((tag) => previewDraft.tags.includes(tag.name));
+    if (currentSelectedTags.length !== previewDraft.tags.length) {
+      setTagMatchError(TAGS_MATCH_ERROR_MESSAGE);
+      return;
+    }
+
     const currentSelectedTagIds = currentSelectedTags.map((tag) => tag.id);
     setSelectedTagIds(currentSelectedTagIds);
-  }, [importPreview, tags, isLoadingTags, selectedTagIds]);
+  }, [importPreview, tags, isLoadingTags, selectedTagIds, tagError]);
 
   const handleSaveDraft = async (values: RecipeEditFormValues): Promise<void> => {
     if (
@@ -87,7 +107,7 @@ export function ImportRecipeScreen({
 
     try {
       const formattedDraft = formatImportDraft(importPreview.draft, values);
-      if (!isLoadingTags && selectedTagIds !== null) {
+      if (!isLoadingTags && selectedTagIds !== null && tagError === null) {
         const selectedTagNames = tags.filter((tag) => selectedTagIds.includes(tag.id)).map((tag) => tag.name);
         formattedDraft.tags = selectedTagNames;
       }
@@ -124,6 +144,7 @@ export function ImportRecipeScreen({
     try {
       const response = await loadImportPreview({ url: sourceUrl, import_as_copy: true });
       setImportPreview(response);
+      setTagMatchError(null);
       setSelectedTagIds(null);
       setTagSearchTerm("");
     } catch {
@@ -144,9 +165,19 @@ export function ImportRecipeScreen({
     setSourceUrl(url);
     setSelectedTagIds(null);
     setTagSearchTerm("");
+    setTagMatchError(null);
 
     const response = await loadImportPreview({ url });
     setImportPreview(response);
+  };
+
+  const retryLoadingTags = () => {
+    if (isLoadingTags || isImportActionPending) {
+      return;
+    }
+
+    setTagMatchError(null);
+    reloadTags();
   };
 
   const handleSelectTag = (newTagId: string): void => {
@@ -300,6 +331,20 @@ export function ImportRecipeScreen({
 
     if (isLoadingTags) {
       return <Text>{TAGS_LOADING_MESSAGE}</Text>;
+    }
+
+    if (tagError !== null) {
+      return (
+        <>
+          <Text style={styles.errorMessage}>{tagError}</Text>
+          <Button
+            accessibilityLabel={RETRY_TAGS_BUTTON_LABEL}
+            title={RETRY_TAGS_BUTTON_LABEL}
+            disabled={isImportActionPending}
+            onPress={retryLoadingTags}
+          />
+        </>
+      );
     }
 
     if (selectedTagIds === null) {
