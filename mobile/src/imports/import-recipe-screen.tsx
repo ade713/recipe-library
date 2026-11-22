@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, KeyboardAvoidingView, Linking, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -9,6 +9,8 @@ import type { RecipeImportPreviewResponse } from "@/types/import";
 import { formatImportDraft } from "./format-import-draft";
 import { ImportUrlForm } from "./import-url-form";
 import { loadImportPreview, saveImportDraft } from "./import-service";
+import { useAvailableTags } from "@/tags/use-available-tags";
+import { SearchableTagPicker } from "@/tags/searchable-tag-picker";
 
 const ACTION_ENTER_MANUALLY = "enter_manually";
 const ACTION_IMPORT_AS_COPY = "import_as_copy";
@@ -32,6 +34,7 @@ const STATUS_DUPLICATE = "duplicate";
 const STATUS_FAILED = "failed";
 const STATUS_PARTIAL = "partial";
 const STATUS_SUCCESS = "success";
+const TAGS_LOADING_MESSAGE = "Loading tags...";
 
 type ImportRecipeScreenProps = {
   headerHeight?: number;
@@ -52,8 +55,23 @@ export function ImportRecipeScreen({
   const [sourceUrl, setSourceUrl] = useState("");
   const [sourceUrlErrorMessage, setSourceUrlErrorMessage] = useState<string | null>(null);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [tagSearchTerm, setTagSearchTerm] = useState("");
+  const [selectedTagIds, setSelectedTagIds] = useState<string[] | null>(null);
+
+  const { tags, isLoadingTags } = useAvailableTags(importPreview?.import_id);
 
   const isImportActionPending = isImportingAsCopy || isSavingDraft;
+
+  useEffect(() => {
+    if (importPreview === null || importPreview.draft === null || isLoadingTags || selectedTagIds !== null) {
+      return;
+    }
+
+    const previewDraft = importPreview.draft;
+    const currentSelectedTags = tags.filter((tag) => previewDraft.tags.includes(tag.name));
+    const currentSelectedTagIds = currentSelectedTags.map((tag) => tag.id);
+    setSelectedTagIds(currentSelectedTagIds);
+  }, [importPreview, tags, isLoadingTags, selectedTagIds]);
 
   const handleSaveDraft = async (values: RecipeEditFormValues): Promise<void> => {
     if (
@@ -69,6 +87,11 @@ export function ImportRecipeScreen({
 
     try {
       const formattedDraft = formatImportDraft(importPreview.draft, values);
+      if (!isLoadingTags && selectedTagIds !== null) {
+        const selectedTagNames = tags.filter((tag) => selectedTagIds.includes(tag.id)).map((tag) => tag.name);
+        formattedDraft.tags = selectedTagNames;
+      }
+
       const savedRecipe = await saveImportDraft(importPreview.import_id, formattedDraft);
       onSaved?.(savedRecipe.id);
     } finally {
@@ -101,6 +124,8 @@ export function ImportRecipeScreen({
     try {
       const response = await loadImportPreview({ url: sourceUrl, import_as_copy: true });
       setImportPreview(response);
+      setSelectedTagIds(null);
+      setTagSearchTerm("");
     } catch {
       setCopyErrorMessage(COPY_ERROR_MESSAGE);
     } finally {
@@ -117,9 +142,34 @@ export function ImportRecipeScreen({
     setCopyErrorMessage(null);
     setSourceUrlErrorMessage(null);
     setSourceUrl(url);
+    setSelectedTagIds(null);
+    setTagSearchTerm("");
 
     const response = await loadImportPreview({ url });
     setImportPreview(response);
+  };
+
+  const handleSelectTag = (newTagId: string): void => {
+    setSelectedTagIds((currentTagIds) => {
+      if (currentTagIds === null) {
+        return null;
+      }
+      return currentTagIds.includes(newTagId) ? currentTagIds : [...currentTagIds, newTagId];
+    });
+    setTagSearchTerm("");
+  };
+
+  const handleRemoveTag = (removeTagId: string): void => {
+    setSelectedTagIds((currentTagIds) => {
+      if (currentTagIds === null) {
+        return null;
+      }
+      return currentTagIds.filter((tagId) => tagId !== removeTagId);
+    });
+  };
+
+  const handleChangeSearchInput = (searchText: string): void => {
+    setTagSearchTerm(searchText);
   };
 
   const renderImportPreview = () => {
@@ -239,6 +289,36 @@ export function ImportRecipeScreen({
     );
   };
 
+  const renderTagsSelection = () => {
+    if (
+      importPreview === null ||
+      importPreview.draft === null ||
+      (importPreview.status !== STATUS_SUCCESS && importPreview.status !== STATUS_PARTIAL)
+    ) {
+      return null;
+    }
+
+    if (isLoadingTags) {
+      return <Text>{TAGS_LOADING_MESSAGE}</Text>;
+    }
+
+    if (selectedTagIds === null) {
+      return null;
+    }
+
+    return (
+      <SearchableTagPicker
+        tags={tags}
+        selectedTagIds={selectedTagIds}
+        searchTerm={tagSearchTerm}
+        disabled={isImportActionPending}
+        onSearchChange={handleChangeSearchInput}
+        onSelectTag={handleSelectTag}
+        onRemoveTag={handleRemoveTag}
+      />
+    );
+  };
+
   return (
     <SafeAreaView edges={["bottom"]} style={styles.container}>
       <KeyboardAvoidingView behavior='padding' keyboardVerticalOffset={headerHeight} style={styles.container}>
@@ -246,6 +326,7 @@ export function ImportRecipeScreen({
           <ImportUrlForm disabled={isImportActionPending} onSubmit={handlePreview} />
 
           {renderImportPreview()}
+          {renderTagsSelection()}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
