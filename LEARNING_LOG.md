@@ -1603,3 +1603,26 @@ Next:
 - Keep inline tag creation for imported drafts in a separate milestone.
 
 Verification: all 642 mobile tests across 43 suites, TypeScript, and whitespace checks pass.
+
+## Imported-Draft Inline Tag Creation — 2026-11-22
+
+Built:
+
+- Reused useTagCreation for imported drafts, adding/selecting the returned tag and saving selected names.
+- Added local validation and safe duplicate/request feedback with correction and retry.
+- Blocked competing actions while creating tags, keeping recipe fields editable.
+- Cleared old creation feedback on search changes and replacement previews.
+- Android verified; temporary failure simulation and delay removed.
+
+Learned:
+
+- Available tag state and selected IDs have separate responsibilities; both update after creation.
+- Tags persist independently of recipes, and only selected tags are associated on save.
+- Validation feedback is derived from current text; request feedback is stored state requiring explicit clearing.
+- Blocking replacement previews prevents late creation results from selecting tags in a different draft.
+
+Next:
+
+- Keep this PR focused on inline creation; plan the next milestone separately.
+
+Verification: all 648 mobile tests across 44 suites, TypeScript, and whitespace checks pass.

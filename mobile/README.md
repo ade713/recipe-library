@@ -1140,7 +1140,7 @@ matching. Saving submits selected names; removing every tag explicitly submits [
 Loading/matching failures preserve the original draft tags and allow recipe saving.
 Retry reloads only tags, keeping recipe edits mounted. Saving disables tag search,
 selection/removal, and retry; failures preserve selections and search for another
-attempt. New previews reset tag state. Inline tag creation remains a follow-up.
+attempt. New previews reset tag state. Inline tag creation is described below.
 
 Android verified selection/clearing, saving, pending controls, failure preservation,
 and tag-loading retry without losing recipe edits. Temporary simulations were removed.
@@ -1156,3 +1156,18 @@ covers pending-save blocking and recovery. Android verification passed; temporar
 failure simulation was removed.
 
 Verification: all 642 mobile tests across 43 suites, TypeScript, and whitespace checks pass.
+
+## Inline tag creation for imported drafts
+
+The import screen reuses useTagCreation to validate new names and show creation
+feedback. Successful creation adds the returned tag to the available list, selects
+its ID, and clears search. Saving includes its name alongside other selections.
+Tags persist independently, even if the recipe is never saved.
+
+During creation, tag controls, recipe saving, and competing preview actions are
+disabled; recipe fields remain editable. Failures preserve edits/selections and
+allow correction or retry. Search changes and replacement previews clear old
+creation feedback. Android verified creation/saving, pending controls, failure/retry,
+and preview reset. Temporary delays and simulated failures were removed.
+
+Verification: all 648 mobile tests across 44 suites, TypeScript, and whitespace checks pass.
