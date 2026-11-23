@@ -1146,3 +1146,13 @@ Android verified selection/clearing, saving, pending controls, failure preservat
 and tag-loading retry without losing recipe edits. Temporary simulations were removed.
 
 Verification: all 641 mobile tests across 43 suites, TypeScript, and whitespace checks pass.
+
+## Recipe edit tag retry during saving
+
+Retry tags is disabled while recipe changes are saving, and the handler guards
+against both saving and an existing tag load. After a save failure, users can retry
+tag loading without losing recipe edits or reloading the recipe. A regression test
+covers pending-save blocking and recovery. Android verification passed; temporary
+failure simulation was removed.
+
+Verification: all 642 mobile tests across 43 suites, TypeScript, and whitespace checks pass.

@@ -167,7 +167,9 @@ The form validates and awaits the submission callback. The screen composes the
 update payload and calls `saveRecipeChanges`. Errors propagate back to the form's
 save feedback. Loading errors belong to the screen because they occur before an
 editable recipe exists. Keeping those boundaries separate preserves the draft
-through a failed save or a tag-loading retry.
+through a failed save or a tag-loading retry. Tag retry is disabled during saving,
+and its handler also guards against saving or an existing tag load. After a failed
+save, retry becomes available again without resetting recipe edits.
 
 An omitted update field means leave the saved value unchanged. Null clears an
 allowed scalar, and an explicit empty collection clears that collection. In

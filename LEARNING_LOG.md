@@ -1584,3 +1584,22 @@ Next:
 - Keep inline tag creation for imported drafts separate.
 
 Verification: all 641 mobile tests across 43 suites, TypeScript, and whitespace checks pass.
+
+## Recipe Edit Tag Retry Guard — 2026-11-22
+
+Built:
+
+- Disabled Retry tags during recipe saving and guarded its handler against saving.
+- Added regression coverage for no retry request during saving, recovery after failure, and retained edits without a recipe reload.
+- Android verified the behavior; removed temporary tag-loading failure simulation.
+
+Learned:
+
+- The disabled prop blocks interaction and provides visual feedback; the handler guard protects other invocation paths.
+- Settling the deferred save in the test's finally block ensures cleanup even if an earlier assertion fails.
+
+Next:
+
+- Keep inline tag creation for imported drafts in a separate milestone.
+
+Verification: all 642 mobile tests across 43 suites, TypeScript, and whitespace checks pass.
