@@ -3,20 +3,22 @@ import { Button, KeyboardAvoidingView, Linking, ScrollView, StyleSheet, Text, Vi
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { RecipeEditForm } from "@/recipes/recipe-edit-form";
+import { SearchableTagPicker } from "@/tags/searchable-tag-picker";
+import { useAvailableTags } from "@/tags/use-available-tags";
+import { useTagCreation } from "@/tags/use-tag-creation";
 import type { RecipeEditFormValues } from "@/recipes/recipe-edit-form";
 import type { RecipeImportPreviewResponse } from "@/types/import";
 
 import { formatImportDraft } from "./format-import-draft";
 import { ImportUrlForm } from "./import-url-form";
 import { loadImportPreview, saveImportDraft } from "./import-service";
-import { useAvailableTags } from "@/tags/use-available-tags";
-import { SearchableTagPicker } from "@/tags/searchable-tag-picker";
 
 const ACTION_ENTER_MANUALLY = "enter_manually";
 const ACTION_IMPORT_AS_COPY = "import_as_copy";
 const ACTION_OPEN_EXISTING = "open_existing";
 const ACTION_OPEN_SOURCE_URL = "open_source_url";
 const COPY_ERROR_MESSAGE = "Unable to preview recipe as a copy. Please try again.";
+const CREATING_TAG_MESSAGE = "Creating tag...";
 const ENTER_MANUALLY_LABEL = "Enter manually";
 const IMPORT_AS_COPY_LABEL = "Import as copy";
 const OPEN_EXISTING_RECIPE_LABEL = "Open existing recipe";
@@ -64,11 +66,23 @@ export function ImportRecipeScreen({
   const {
     tags,
     isLoadingTags,
+    addTag,
     tagError: tagLoadingError,
     retryLoadingTags: reloadTags,
   } = useAvailableTags(importPreview?.import_id);
 
-  const isImportActionPending = isImportingAsCopy || isSavingDraft;
+  const { newTagName, canCreateTag, nameError, isCreatingTag, tagCreateError, createTag, clearTagCreateError } =
+    useTagCreation({
+      tags,
+      searchTerm: tagSearchTerm,
+      disabled: isImportingAsCopy || isSavingDraft,
+      onCreated: (tag) => {
+        addTag(tag);
+        handleSelectTag(tag.id);
+      },
+    });
+
+  const isImportActionPending = isImportingAsCopy || isSavingDraft || isCreatingTag;
   const tagError = tagLoadingError ?? tagMatchError;
 
   useEffect(() => {
@@ -96,6 +110,7 @@ export function ImportRecipeScreen({
   const handleSaveDraft = async (values: RecipeEditFormValues): Promise<void> => {
     if (
       isSavingDraft ||
+      isCreatingTag ||
       importPreview === null ||
       importPreview.draft === null ||
       (importPreview.status !== STATUS_SUCCESS && importPreview.status !== STATUS_PARTIAL)
@@ -147,6 +162,7 @@ export function ImportRecipeScreen({
       setTagMatchError(null);
       setSelectedTagIds(null);
       setTagSearchTerm("");
+      clearTagCreateError();
     } catch {
       setCopyErrorMessage(COPY_ERROR_MESSAGE);
     } finally {
@@ -166,6 +182,7 @@ export function ImportRecipeScreen({
     setSelectedTagIds(null);
     setTagSearchTerm("");
     setTagMatchError(null);
+    clearTagCreateError();
 
     const response = await loadImportPreview({ url });
     setImportPreview(response);
@@ -177,6 +194,7 @@ export function ImportRecipeScreen({
     }
 
     setTagMatchError(null);
+    clearTagCreateError();
     reloadTags();
   };
 
@@ -200,6 +218,7 @@ export function ImportRecipeScreen({
   };
 
   const handleChangeSearchInput = (searchText: string): void => {
+    clearTagCreateError();
     setTagSearchTerm(searchText);
   };
 
@@ -300,6 +319,7 @@ export function ImportRecipeScreen({
             initialTips={previewDraft.tips}
             initialIsFavorite={previewDraft.is_favorite}
             saveLabel={SAVE_RECIPE_LABEL}
+            saveDisabled={isCreatingTag}
             saveErrorMessage={SAVE_RECIPE_ERROR_MESSAGE}
             onSubmit={handleSaveDraft}
           />
@@ -317,6 +337,23 @@ export function ImportRecipeScreen({
           </>
         )}
       </View>
+    );
+  };
+
+  const renderCreateTagButton = () => {
+    if (!canCreateTag) {
+      return null;
+    }
+
+    return (
+      <Button
+        accessibilityLabel={`Create tag ${newTagName}`}
+        title={`Create ${newTagName}`}
+        disabled={isImportActionPending}
+        onPress={() => {
+          void createTag();
+        }}
+      />
     );
   };
 
@@ -352,15 +389,22 @@ export function ImportRecipeScreen({
     }
 
     return (
-      <SearchableTagPicker
-        tags={tags}
-        selectedTagIds={selectedTagIds}
-        searchTerm={tagSearchTerm}
-        disabled={isImportActionPending}
-        onSearchChange={handleChangeSearchInput}
-        onSelectTag={handleSelectTag}
-        onRemoveTag={handleRemoveTag}
-      />
+      <>
+        <SearchableTagPicker
+          tags={tags}
+          selectedTagIds={selectedTagIds}
+          searchTerm={tagSearchTerm}
+          disabled={isImportActionPending}
+          onSearchChange={handleChangeSearchInput}
+          onSelectTag={handleSelectTag}
+          onRemoveTag={handleRemoveTag}
+        />
+
+        {nameError !== null && <Text style={styles.errorMessage}>{nameError}</Text>}
+        {renderCreateTagButton()}
+        {isCreatingTag && <Text>{CREATING_TAG_MESSAGE}</Text>}
+        {tagCreateError !== null && <Text style={styles.errorMessage}>{tagCreateError}</Text>}
+      </>
     );
   };
 
