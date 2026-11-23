@@ -256,7 +256,15 @@ save failure. Screen-level saving state disables the URL form and fallback actio
 form submission state disables recipe inputs and row controls. A finally block
 restores screen controls while errors propagate to the form. RecipeEditForm accepts
 optional save-label/error-message props, retaining defaults for existing recipe edits.
-Tags are retained from the preview without tag editing in this flow.
+The screen also uses useAvailableTags and SearchableTagPicker for existing-tag
+selection. Draft names initialize selected IDs only after loading and complete
+matching succeed. A null selection means uninitialized; an empty array means the
+user intentionally cleared all tags. Ready selections replace the adapter's draft
+tags with selected names before saving. Loading or matching failures preserve the
+original draft tags and offer a local retry without remounting the recipe form.
+Tag controls and retry disable while saving; failed saves retain selections and
+search text. New previews reset tag state. Inline tag creation is not yet exposed
+in this flow.
 
 The separate [import-preview route file](../mobile/app/import-preview.tsx) remains
 a placeholder; the working editor lives on the existing import screen.
@@ -338,8 +346,8 @@ within each group. The alias maps `@/*` to `src/*` in
 - There is no automatic token refresh or general request replay after token
   expiry. Session restoration handles 401 explicitly; other request failures
   follow their operation's existing error path.
-- Imported drafts can be edited and saved, but tag editing is not exposed in
-  that flow. Existing draft tags are retained.
+- Imported drafts support existing-tag selection, but inline tag creation is not
+  yet exposed in that flow.
 - Unsaved drafts and fetched lists are not persisted for offline use. Network
   errors can preserve currently mounted inputs, but that is not durable recovery.
 - Response types are compile-time contracts, not runtime JSON validation. The

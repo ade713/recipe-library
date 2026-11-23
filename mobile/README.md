@@ -1121,7 +1121,7 @@ is needed for this payload-only milestone.
 Success/partial previews prefill RecipeEditForm on the import screen. Reviewed
 values pass through formatImportDraft and saveImportDraft with the current import
 ID. The form uses Save recipe wording and import-specific failure feedback while
-existing recipe edits retain their defaults. Tags are preserved without new tag controls.
+existing recipe edits retain their defaults. Existing-tag controls are described below.
 
 Saving disables competing preview/fallback actions and form controls. Failures
 preserve edits and warnings, restore controls, and allow retry. Successful saves
@@ -1131,3 +1131,18 @@ to the library, whose focus reload shows the saved recipe.
 All 626 mobile tests across 42 suites, TypeScript, and whitespace checks pass.
 Android verified prefilled editing, saved content/source attribution, Back/library
 refresh, pending controls, failure/retry preservation, and keyboard access.
+
+## Imported-draft existing tags
+
+Success/partial drafts support searchable selection and removal of existing tags.
+Draft tag names initialize selected IDs after successful loading and complete
+matching. Saving submits selected names; removing every tag explicitly submits [].
+Loading/matching failures preserve the original draft tags and allow recipe saving.
+Retry reloads only tags, keeping recipe edits mounted. Saving disables tag search,
+selection/removal, and retry; failures preserve selections and search for another
+attempt. New previews reset tag state. Inline tag creation remains a follow-up.
+
+Android verified selection/clearing, saving, pending controls, failure preservation,
+and tag-loading retry without losing recipe edits. Temporary simulations were removed.
+
+Verification: all 641 mobile tests across 43 suites, TypeScript, and whitespace checks pass.

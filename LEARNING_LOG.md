@@ -1560,3 +1560,27 @@ Learned:
 Next:
 
 - Submit this focused editor/save integration PR; keep additional import tag controls and draft persistence separate.
+
+## Imported-Draft Existing Tags — 2026-11-21
+
+Built:
+
+- Reused available-tag loading and the searchable picker for imported drafts.
+- Matched draft names to IDs, submitted selected names, and supported intentional clearing.
+- Preserved original draft tags on loading/matching failure with independent retry.
+- Disabled tag controls during saves and retained selection/search after failure.
+- Android verified the flow and retry preservation; temporary failure simulation removed.
+
+Learned:
+
+- Null selection means uninitialized; [] is an intentional empty selection, not a loading fallback.
+- Keeping the recipe form mounted preserves edits while tags reload independently.
+- Changing selections before a failed-save assertion proves edits survive instead of merely checking initial values.
+- Pressing a disabled button verifies UI blocking, not the handler guard independently.
+
+Next:
+
+- Fix the existing recipe edit screen's Retry tags button remaining enabled during saving in a separate PR.
+- Keep inline tag creation for imported drafts separate.
+
+Verification: all 641 mobile tests across 43 suites, TypeScript, and whitespace checks pass.
