@@ -1626,3 +1626,25 @@ Next:
 - Keep this PR focused on inline creation; plan the next milestone separately.
 
 Verification: all 648 mobile tests across 44 suites, TypeScript, and whitespace checks pass.
+
+## Mobile Notes-Loading Foundation — 2026-11-23
+
+Built:
+
+- Added NoteResponse and a recipe-specific authenticated listNotes API helper.
+- Added loadNotes to retrieve stored credentials and forward the recipe ID.
+- Covered populated/empty arrays, missing responses/tokens, storage failures, and API/network error propagation.
+- Kept display and mutation support outside this focused milestone; no Android verification is needed for these unconnected helpers.
+
+Learned:
+
+- The notes endpoint returns a plain array, unlike the tags list's items wrapper.
+- An empty array is a successful empty result; converting failures to [] would conceal errors.
+- The service owns token retrieval, while the API helper performs the request with supplied credentials.
+- The backend enforces recipe ownership using the authenticated user.
+
+Next:
+
+- Display recipe notes in a separate UI milestone; add mutation helpers when their flows are introduced.
+
+Verification: all 662 mobile tests across 46 suites, TypeScript, and whitespace checks pass.

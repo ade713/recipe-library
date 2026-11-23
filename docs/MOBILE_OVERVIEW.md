@@ -348,6 +348,17 @@ packages, `@/` aliases, and relative imports, with full lines sorted ascending
 within each group. The alias maps `@/*` to `src/*` in
 [tsconfig.json](../mobile/tsconfig.json).
 
+## Personal notes foundation
+
+[listNotes](../mobile/src/api/notes.ts) fetches `/recipes/{recipeId}/notes` using a
+supplied bearer token. The response is a plain array of `id`/`note` objects; an
+empty array is valid, while a missing response is rejected.
+[loadNotes](../mobile/src/notes/note-service.ts) retrieves stored credentials and
+forwards the recipe ID. Storage and request failures propagate without becoming
+empty results. The backend enforces recipe ownership. These helpers do not cache
+notes or connect to a screen yet; display and mutation flows remain pending.
+Personal notes are separate from recipe tips.
+
 ## Known limitations and planned boundaries
 
 - There is no shared server-state query cache. Screens reload through their own

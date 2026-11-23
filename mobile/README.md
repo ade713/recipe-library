@@ -1171,3 +1171,18 @@ creation feedback. Android verified creation/saving, pending controls, failure/r
 and preview reset. Temporary delays and simulated failures were removed.
 
 Verification: all 648 mobile tests across 44 suites, TypeScript, and whitespace checks pass.
+
+## Notes-loading API and service
+
+`NoteResponse` matches the backend's `id` and `note` fields. `listNotes(token,
+recipeId)` requests `GET /recipes/{recipeId}/notes` with the supplied bearer token
+and returns a plain array. An empty array means no notes; an undefined response
+raises an error. Request errors propagate unchanged.
+
+`loadNotes(recipeId)` retrieves the stored access token and rejects missing
+credentials before requesting. Storage and API failures propagate to callers.
+Recipe ownership remains enforced by the backend. Notes are personal records,
+separate from recipe tips. This foundation has no UI integration or mutation
+helpers yet; no new Android check is required.
+
+Verification: all 662 mobile tests across 46 suites, TypeScript, and whitespace checks pass.
