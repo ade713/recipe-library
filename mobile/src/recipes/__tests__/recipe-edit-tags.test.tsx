@@ -11,6 +11,7 @@ const QUICK_TAG_NAME = "Quick";
 const RECIPE_ID = "recipe-one";
 const RETRY_TAGS = "Retry tags";
 const SAVE_LABEL = "Save changes";
+const SAVE_ERROR_MESSAGE = "Unable to save changes. Please try again.";
 const TAG_ERROR_MESSAGE = "Unable to load tags.";
 const TAG_NAME = "Dinner";
 const TAGS: TagListResponse = { items: [{ id: "tag-one", name: "Dinner" }] };
@@ -187,6 +188,47 @@ describe("RecipeEditScreen tag selection", () => {
 });
 
 describe("RecipeEditScreen tag saving", () => {
+  it("disables tag retry while saving and allows retry after save failure without losing edits", async () => {
+    const requestErrorMessage = "Tag request failed";
+    const saveErrorMessage = "Save failed";
+
+    const loadMock = jest.spyOn(tagService, "loadTags").mockRejectedValueOnce(new Error(requestErrorMessage));
+    let rejectSave!: (error: Error) => void;
+    jest.spyOn(recipeService, "saveRecipeChanges").mockReturnValueOnce(
+      new Promise((_, reject) => {
+        rejectSave = reject;
+      }),
+    );
+
+    await renderScreen();
+
+    await screen.findByText(TAG_ERROR_MESSAGE);
+    await fireEvent.changeText(screen.getByLabelText(TITLE_LABEL), EDITED_TITLE);
+    await fireEvent.press(screen.getByRole("button", { name: SAVE_LABEL }));
+
+    try {
+      expect(screen.getByRole("button", { name: RETRY_TAGS })).toBeDisabled();
+
+      await fireEvent.press(screen.getByRole("button", { name: RETRY_TAGS }));
+      expect(loadMock).toHaveBeenCalledTimes(1);
+    } finally {
+      await act(async () => {
+        rejectSave(new Error(saveErrorMessage));
+      });
+    }
+
+    expect(await screen.findByText(SAVE_ERROR_MESSAGE)).toBeTruthy();
+    expect(screen.getByRole("button", { name: RETRY_TAGS })).toBeEnabled();
+    expect(screen.getByLabelText(TITLE_LABEL)).toHaveDisplayValue(EDITED_TITLE);
+
+    loadMock.mockResolvedValue(TAGS);
+    await fireEvent.press(screen.getByRole("button", { name: RETRY_TAGS }));
+    expect(await screen.findByRole("button", { name: `Remove tag ${TAG_NAME}` })).toBeTruthy();
+    expect(loadMock).toHaveBeenCalledTimes(2);
+    expect(screen.getByLabelText(TITLE_LABEL)).toHaveDisplayValue(EDITED_TITLE);
+    expect(recipeService.loadRecipe).toHaveBeenCalledTimes(1);
+  });
+
   it.each([
     { action: "untouched", expected: [TAG_NAME] },
     { action: "replace", expected: [QUICK_TAG_NAME] },
@@ -243,7 +285,7 @@ describe("RecipeEditScreen tag saving", () => {
     await act(async () => {
       rejectSave(new Error(networkErrorMessage));
     });
-    expect(screen.getByText("Unable to save changes. Please try again.")).toBeTruthy();
+    expect(screen.getByText(SAVE_ERROR_MESSAGE)).toBeTruthy();
     expect(screen.getByLabelText("Search tags")).toHaveDisplayValue(TAG_NAME);
     expect(screen.getByLabelText("Search tags")).toHaveProp("editable", true);
     expect(screen.getByRole("button", { name: `Remove tag ${QUICK_TAG_NAME}` })).toBeEnabled();

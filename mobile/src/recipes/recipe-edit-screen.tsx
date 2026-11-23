@@ -136,7 +136,7 @@ export function RecipeEditScreen({ recipeId, headerHeight = 0, onSaved }: Recipe
   };
 
   const retryLoadingTags = () => {
-    if (isLoadingTags) {
+    if (isLoadingTags || isSaving) {
       return;
     }
 
@@ -198,6 +198,7 @@ export function RecipeEditScreen({ recipeId, headerHeight = 0, onSaved }: Recipe
           <Button
             accessibilityLabel={RETRY_TAGS_BUTTON_LABEL}
             title={RETRY_TAGS_BUTTON_LABEL}
+            disabled={isSaving}
             onPress={retryLoadingTags}
           />
         </>
