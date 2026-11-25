@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Button, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { RecipeNotesSection } from "@/notes/recipe-notes-section";
 import type { RecipeDetailResponse } from "@/types/recipe";
 
 import { loadRecipe, updateRecipeFavorite } from "./recipe-service";
@@ -87,6 +88,7 @@ export function RecipeDetailScreen({ recipeId, isFocused = true, onEdit }: Recip
 
   useEffect(() => {
     if (!isFocused) {
+      setRecipe(null);
       return;
     }
 
@@ -220,6 +222,8 @@ export function RecipeDetailScreen({ recipeId, isFocused = true, onEdit }: Recip
               ))}
             </>
           )}
+
+          {isFocused && <RecipeNotesSection recipeId={recipe.id} />}
         </ScrollView>
       </SafeAreaView>
     );

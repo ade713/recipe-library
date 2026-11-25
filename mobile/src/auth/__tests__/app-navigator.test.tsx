@@ -8,6 +8,7 @@ import { ApiError } from "@/api/errors";
 import { makeRecipeDetailResponse, makeRecipeSummary } from "@/test/fixtures/recipes";
 import { makeUserResponse } from "@/test/fixtures/users";
 import * as importService from "@/imports/import-service";
+import * as noteService from "@/notes/note-service";
 import * as recipeService from "@/recipes/recipe-service";
 import * as tagService from "@/tags/tag-service";
 import type { TagResponse } from "@/types/tag";
@@ -259,6 +260,7 @@ describe("AppNavigator", () => {
   });
 
   beforeEach(() => {
+    jest.spyOn(noteService, "loadNotes").mockResolvedValue([]);
     jest.spyOn(tagService, "loadTags").mockResolvedValue({ items: [] });
   });
 

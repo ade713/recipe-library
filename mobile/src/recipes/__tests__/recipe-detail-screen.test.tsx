@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { Linking } from "react-native";
 
 import { makeRecipeDetailResponse } from "@/test/fixtures/recipes";
+import * as noteService from "@/notes/note-service";
 
 import { RecipeDetailScreen } from "../recipe-detail-screen";
 import * as recipeService from "../recipe-service";
@@ -37,6 +38,10 @@ const renderRecipeDetailScreen = async () => {
 };
 
 describe("RecipeDetailScreen", () => {
+  beforeEach(() => {
+    jest.spyOn(noteService, "loadNotes").mockResolvedValue([]);
+  });
+
   it("loads the selected recipe and shows loading feedback", async () => {
     const loadMock = jest.spyOn(recipeService, "loadRecipe").mockImplementation(() => new Promise(() => {}));
 

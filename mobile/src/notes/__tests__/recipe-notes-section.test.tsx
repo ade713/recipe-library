@@ -12,11 +12,63 @@ const LOADING_MESSAGE = "Loading notes...";
 const RECIPE_ID = "recipe-one";
 const RETRY_LABEL = "Retry notes";
 
-const renderRecipeNotesSection = async () => {
-  await render(<RecipeNotesSection recipeId={RECIPE_ID} />);
+const renderRecipeNotesSection = async ({ isFocused } = { isFocused: true }) => {
+  await render(<RecipeNotesSection recipeId={RECIPE_ID} isFocused={isFocused} />);
 };
 
 describe("RecipeNotesSection", () => {
+  it("waits for focus before loading notes", async () => {
+    const loadMock = jest.spyOn(noteService, "loadNotes").mockResolvedValue([]);
+
+    await renderRecipeNotesSection({ isFocused: false });
+
+    expect(loadMock).not.toHaveBeenCalled();
+
+    await screen.rerender(<RecipeNotesSection recipeId={RECIPE_ID} isFocused />);
+    expect(await screen.findByText(EMPTY_MESSAGE)).toBeTruthy();
+    expect(loadMock).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["success", "failure"] as const)(
+    "ignores a late %s after losing focus and reloads on return",
+    async (outcome) => {
+      const oldNote = { id: "old-note", note: "Stale note from before leaving." };
+      const newNote = { id: "new-note", note: "Fresh note after returning." };
+
+      let resolveOld!: (notes: NoteResponse[]) => void;
+      let rejectOld!: (error: Error) => void;
+      const loadMock = jest
+        .spyOn(noteService, "loadNotes")
+        .mockReturnValueOnce(
+          new Promise((resolve, reject) => {
+            resolveOld = resolve;
+            rejectOld = reject;
+          }),
+        )
+        .mockResolvedValueOnce([newNote]);
+
+      await renderRecipeNotesSection();
+
+      await screen.rerender(<RecipeNotesSection recipeId={RECIPE_ID} isFocused={false} />);
+
+      await act(async () => {
+        if (outcome === "success") resolveOld([oldNote]);
+        else rejectOld(new Error("Late failure"));
+      });
+
+      expect(screen.queryByText(oldNote.note)).toBeNull();
+      expect(screen.queryByText(ERROR_MESSAGE)).toBeNull();
+      expect(loadMock).toHaveBeenCalledTimes(1);
+
+      await screen.rerender(<RecipeNotesSection recipeId={RECIPE_ID} isFocused />);
+
+      expect(await screen.findByText(newNote.note)).toBeTruthy();
+      expect(screen.queryByText(oldNote.note)).toBeNull();
+      expect(loadMock).toHaveBeenCalledTimes(2);
+      expect(loadMock).toHaveBeenLastCalledWith(RECIPE_ID);
+    },
+  );
+
   it.each(["success", "failure"] as const)(
     "ignores stale %s and keeps the current recipe loading until its own request finishes",
     async (outcome) => {
