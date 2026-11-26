@@ -13,20 +13,15 @@ const RETRY_NOTES_LABEL = "Retry notes";
 
 type RecipeNotesSectionProps = {
   recipeId: string;
-  isFocused?: boolean;
 };
 
-export function RecipeNotesSection({ recipeId, isFocused = true }: RecipeNotesSectionProps) {
+export function RecipeNotesSection({ recipeId }: RecipeNotesSectionProps) {
   const [notes, setNotes] = useState<NoteResponse[] | null>(null);
   const [isLoadingNotes, setIsLoadingNotes] = useState(true);
   const [loadingAttempt, setLoadingAttempt] = useState(0);
   const [notesErrorMessage, setNotesErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isFocused) {
-      return;
-    }
-
     let active = true;
 
     setIsLoadingNotes(true);
@@ -55,7 +50,7 @@ export function RecipeNotesSection({ recipeId, isFocused = true }: RecipeNotesSe
     return () => {
       active = false;
     };
-  }, [recipeId, loadingAttempt, isFocused]);
+  }, [recipeId, loadingAttempt]);
 
   const retryLoadingNotes = () => {
     if (isLoadingNotes) {
