@@ -23,11 +23,11 @@ export function RecipeNotesSection({ recipeId, isFocused = true }: RecipeNotesSe
   const [notesErrorMessage, setNotesErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    let active = true;
-
     if (!isFocused) {
       return;
     }
+
+    let active = true;
 
     setIsLoadingNotes(true);
     setNotesErrorMessage(null);

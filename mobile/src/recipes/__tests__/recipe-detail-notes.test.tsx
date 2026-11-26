@@ -17,7 +17,7 @@ const renderRecipeDetailScreen = async () => {
 };
 
 describe("recipe detail personal notes", () => {
-  it("passes focus changes to notes and loads fresh notes when returning", async () => {
+  it("ignores pending notes after leaving and reloads on return", async () => {
     const recipe = makeRecipeDetailResponse({ id: RECIPE_ID });
 
     jest.spyOn(recipeService, "loadRecipe").mockResolvedValue(recipe);
