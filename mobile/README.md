@@ -1182,7 +1182,25 @@ raises an error. Request errors propagate unchanged.
 `loadNotes(recipeId)` retrieves the stored access token and rejects missing
 credentials before requesting. Storage and API failures propagate to callers.
 Recipe ownership remains enforced by the backend. Notes are personal records,
-separate from recipe tips. This foundation has no UI integration or mutation
-helpers yet; no new Android check is required.
+separate from recipe tips. Display integration is described below; mutation
+helpers remain future work. This API-only milestone required no Android check.
 
 Verification: all 662 mobile tests across 46 suites, TypeScript, and whitespace checks pass.
+
+## Personal notes on recipe detail
+
+Recipe detail displays a read-only Personal notes section after Source tips.
+RecipeNotesSection owns independent loading, empty, and safe error/retry feedback;
+notes failures do not hide the recipe, and retry reloads only notes. Cleanup guards
+prevent stale requests from changing data, errors, or loading state.
+
+The section unmounts when detail loses focus. Detail clears its loaded recipe on
+blur and refreshes it on return before mounting notes again, preventing duplicate
+notes requests. The parent controls mounting based on focus; the notes section
+loads on mount or recipe change and ignores pending results after cleanup. Notes remain
+separate from source tips; creation/editing/deletion controls are outside this PR.
+
+Android verified populated/empty notes, local failure/retry with readable recipe
+content, switching recipes, and returning from edit. Temporary simulation removed.
+
+Verification: all 673 mobile tests across 48 suites, TypeScript, and whitespace checks pass.
