@@ -1648,3 +1648,27 @@ Next:
 - Display recipe notes in a separate UI milestone; add mutation helpers when their flows are introduced.
 
 Verification: all 662 mobile tests across 46 suites, TypeScript, and whitespace checks pass.
+
+## Personal Notes Display — 2026-11-25
+
+Built:
+
+- Added an independent notes section with loading, empty, safe error, and retry states.
+- Integrated it after Source tips without blocking recipe content on notes failure.
+- Covered recipe changes, stale success/failure, pending loading protection, focus transitions, and notes-only retry.
+- Updated existing detail/navigation tests with explicit notes mocks.
+- Android verified; temporary notes-loading simulation removed.
+
+Learned:
+
+- Error rendering must precede the null-data early return, and JSX must be returned to appear.
+- Guarding finally prevents an old request from clearing a newer request's loading state.
+- JSX boolean shorthand passes true; forwarding a variable requires an explicit expression.
+- Focus changes render before effects run. Clearing the recipe on blur prevents a short-lived notes mount against old data on return.
+- Notes retry should preserve readable recipe content and avoid reloading unrelated data.
+
+Next:
+
+- Add personal note creation through a separate focused milestone.
+
+Verification: all 676 mobile tests across 48 suites, TypeScript, and whitespace checks pass.

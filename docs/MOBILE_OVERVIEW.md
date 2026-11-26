@@ -348,16 +348,27 @@ packages, `@/` aliases, and relative imports, with full lines sorted ascending
 within each group. The alias maps `@/*` to `src/*` in
 [tsconfig.json](../mobile/tsconfig.json).
 
-## Personal notes foundation
+## Personal notes
 
 [listNotes](../mobile/src/api/notes.ts) fetches `/recipes/{recipeId}/notes` using a
 supplied bearer token. The response is a plain array of `id`/`note` objects; an
 empty array is valid, while a missing response is rejected.
 [loadNotes](../mobile/src/notes/note-service.ts) retrieves stored credentials and
 forwards the recipe ID. Storage and request failures propagate without becoming
-empty results. The backend enforces recipe ownership. These helpers do not cache
-notes or connect to a screen yet; display and mutation flows remain pending.
-Personal notes are separate from recipe tips.
+empty results. The backend enforces recipe ownership. Personal notes are separate from recipe tips.
+
+[RecipeNotesSection](../mobile/src/notes/recipe-notes-section.tsx) loads notes in
+local component state and renders them after Source tips on recipe detail. Its
+loading, empty, and error/retry states are independent of recipe loading, so a notes
+failure leaves the recipe readable and retry requests only notes. An active flag
+ignores stale success, failure, and completion updates after cleanup.
+
+The detail screen unmounts the section while unfocused and clears its loaded recipe
+on blur. On return it refreshes the recipe before mounting notes, avoiding a notes
+request against the old render followed by another on remount. The standalone
+section also supports an optional focus flag. Notes are fetched again on return;
+there is no persistent notes cache. Adding, editing, and deleting notes in the
+mobile UI remain future work.
 
 ## Known limitations and planned boundaries
 
