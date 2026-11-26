@@ -1678,3 +1678,25 @@ Notes display cleanup:
 - Removed the notes section's redundant focus prop after settling on parent-controlled mounting.
 - Removed three standalone focus tests tied to that unused interface; retained recipe-switching and detail navigation coverage.
 - Unmount cleanup already ignores late results, so the child does not need to know navigation focus.
+
+## Mobile Note-Creation Foundation — 2026-11-25
+
+Built:
+
+- Added createNote to post unchanged note text with supplied credentials and return the saved response.
+- Added saveNote to retrieve the stored token and delegate without swallowing failures.
+- Covered JSON serialization, server response identity, missing responses/tokens, storage failures, and API/network error propagation.
+- Kept form and detail integration separate; no new Android verification is needed.
+
+Learned:
+
+- Returning the saved note provides server-assigned identity and text for display without another request.
+- Form validation/trimming and API serialization have distinct responsibilities.
+- Returning undefined on failure would hide errors needed by the caller.
+- The supplied recipe ID does not establish ownership; the backend checks it against the authenticated user.
+
+Next:
+
+- Add the personal note creation form and its UI integration in a focused follow-up.
+
+Verification: all 687 mobile tests across 48 suites, TypeScript, and whitespace checks pass.

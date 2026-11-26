@@ -1,7 +1,7 @@
 import type { NoteResponse } from "@/types/note";
 
 import { ApiError } from "../errors";
-import { listNotes } from "../notes";
+import { createNote, listNotes } from "../notes";
 import * as client from "../client";
 
 const ACCESS_TOKEN = "test-access-token";
@@ -45,5 +45,40 @@ describe("listNotes", () => {
     jest.spyOn(client, "apiFetch").mockRejectedValue(error);
 
     await expect(listNotes(ACCESS_TOKEN, RECIPE_ID)).rejects.toBe(error);
+  });
+});
+
+describe("createNote", () => {
+  it("posts the supplied text to the recipe and returns the saved note unchanged", async () => {
+    const note = '  Use less salt.\nTry "smoked" paprika.  ';
+    const response: NoteResponse = { id: "saved-note-id", note };
+
+    const requestMock = jest.spyOn(client, "apiFetch").mockResolvedValue(response);
+
+    expect(await createNote(ACCESS_TOKEN, RECIPE_ID, note)).toBe(response);
+    expect(requestMock).toHaveBeenCalledTimes(1);
+    expect(requestMock).toHaveBeenCalledWith(`/recipes/${RECIPE_ID}/notes`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
+      body: JSON.stringify({ note }),
+    });
+  });
+
+  it("rejects a missing saved-note response", async () => {
+    jest.spyOn(client, "apiFetch").mockResolvedValue(undefined);
+
+    await expect(createNote(ACCESS_TOKEN, RECIPE_ID, "Use less salt.")).rejects.toThrow("Expected a note response");
+  });
+
+  it.each([
+    { label: "unauthorized", error: new ApiError(401) },
+    { label: "unavailable recipe", error: new ApiError(404) },
+    { label: "invalid note", error: new ApiError(422) },
+    { label: "server failure", error: new ApiError(500) },
+    { label: "network failure", error: new Error("Network unavailable") },
+  ])("propagates creation failures unchanged: $label", async ({ error }) => {
+    jest.spyOn(client, "apiFetch").mockRejectedValue(error);
+
+    await expect(createNote(ACCESS_TOKEN, RECIPE_ID, "Use less salt.")).rejects.toBe(error);
   });
 });

@@ -1204,3 +1204,19 @@ Android verified populated/empty notes, local failure/retry with readable recipe
 content, switching recipes, and returning from edit. Temporary simulation removed.
 
 Verification: all 673 mobile tests across 48 suites, TypeScript, and whitespace checks pass.
+
+## Note-creation API and service
+
+`createNote(token, recipeId, note)` posts `{ note }` to
+`/recipes/{recipeId}/notes` with bearer authorization and returns the saved
+NoteResponse. It rejects a missing response and propagates request failures.
+`saveNote(recipeId, note)` retrieves stored credentials, rejects a missing token
+before requesting, and forwards the recipe ID and text unchanged. The returned
+server ID and text will let the future UI display the saved note without a refetch.
+
+Trimming and validation belong to the form; the backend enforces recipe ownership
+using the authenticated user and recipe ID. Tests cover serialization, response
+identity, missing responses/credentials, storage failures, and API/network errors.
+This milestone does not connect a form, so no Android check is required.
+
+Verification: all 687 mobile tests across 48 suites, TypeScript, and whitespace checks pass.
