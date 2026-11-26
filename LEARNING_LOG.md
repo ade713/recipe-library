@@ -1671,4 +1671,10 @@ Next:
 
 - Add personal note creation through a separate focused milestone.
 
-Verification: all 676 mobile tests across 48 suites, TypeScript, and whitespace checks pass.
+Verification: all 673 mobile tests across 48 suites, TypeScript, and whitespace checks pass.
+
+Notes display cleanup:
+
+- Removed the notes section's redundant focus prop after settling on parent-controlled mounting.
+- Removed three standalone focus tests tied to that unused interface; retained recipe-switching and detail navigation coverage.
+- Unmount cleanup already ignores late results, so the child does not need to know navigation focus.

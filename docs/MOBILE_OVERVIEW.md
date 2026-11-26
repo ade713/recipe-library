@@ -365,8 +365,9 @@ ignores stale success, failure, and completion updates after cleanup.
 
 The detail screen unmounts the section while unfocused and clears its loaded recipe
 on blur. On return it refreshes the recipe before mounting notes, avoiding a notes
-request against the old render followed by another on remount. The standalone
-section also supports an optional focus flag. Notes are fetched again on return;
+request against the old render followed by another on remount. The parent owns
+focus handling through conditional mounting; the notes section loads on mount or
+recipe change and invalidates pending results on cleanup. Notes are fetched again on return;
 there is no persistent notes cache. Adding, editing, and deleting notes in the
 mobile UI remain future work.
 

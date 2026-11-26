@@ -1196,10 +1196,11 @@ prevent stale requests from changing data, errors, or loading state.
 
 The section unmounts when detail loses focus. Detail clears its loaded recipe on
 blur and refreshes it on return before mounting notes again, preventing duplicate
-notes requests. The standalone section also supports a focus prop. Notes remain
+notes requests. The parent controls mounting based on focus; the notes section
+loads on mount or recipe change and ignores pending results after cleanup. Notes remain
 separate from source tips; creation/editing/deletion controls are outside this PR.
 
 Android verified populated/empty notes, local failure/retry with readable recipe
 content, switching recipes, and returning from edit. Temporary simulation removed.
 
-Verification: all 676 mobile tests across 48 suites, TypeScript, and whitespace checks pass.
+Verification: all 673 mobile tests across 48 suites, TypeScript, and whitespace checks pass.
