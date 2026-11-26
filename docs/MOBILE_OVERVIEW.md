@@ -357,6 +357,12 @@ empty array is valid, while a missing response is rejected.
 forwards the recipe ID. Storage and request failures propagate without becoming
 empty results. The backend enforces recipe ownership. Personal notes are separate from recipe tips.
 
+`createNote(token, recipeId, note)` posts `{ note }` to the same recipe-specific
+endpoint and returns the saved ID/text object, rejecting a missing response.
+`saveNote(recipeId, note)` retrieves stored credentials and delegates creation.
+Both preserve supplied text and propagate errors; trimming and validation belong
+to the future form. Creation helpers are available, but no creation UI is connected.
+
 [RecipeNotesSection](../mobile/src/notes/recipe-notes-section.tsx) loads notes in
 local component state and renders them after Source tips on recipe detail. Its
 loading, empty, and error/retry states are independent of recipe loading, so a notes
