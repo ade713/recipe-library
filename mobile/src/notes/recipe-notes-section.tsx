@@ -3,7 +3,8 @@ import { Button, StyleSheet, Text, View } from "react-native";
 
 import type { NoteResponse } from "@/types/note";
 
-import { loadNotes } from "./note-service";
+import { loadNotes, saveNote } from "./note-service";
+import { RecipeNoteForm } from "./recipe-note-form";
 
 const EMPTY_NOTES_MESSAGE = "No personal notes yet.";
 const HEADING = "Personal notes";
@@ -52,6 +53,17 @@ export function RecipeNotesSection({ recipeId }: RecipeNotesSectionProps) {
     };
   }, [recipeId, loadingAttempt]);
 
+  const handleAddNote = async (note: string): Promise<void> => {
+    const response = await saveNote(recipeId, note);
+    setNotes((currentNotes) => {
+      if (currentNotes === null) {
+        return null;
+      }
+
+      return [...currentNotes, response];
+    });
+  };
+
   const retryLoadingNotes = () => {
     if (isLoadingNotes) {
       return;
@@ -87,6 +99,7 @@ export function RecipeNotesSection({ recipeId }: RecipeNotesSectionProps) {
         {notes.map((note) => (
           <Text key={note.id}>{note.note}</Text>
         ))}
+        <RecipeNoteForm onSubmit={handleAddNote} />
       </>
     );
   };
