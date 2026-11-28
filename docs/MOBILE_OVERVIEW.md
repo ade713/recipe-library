@@ -362,6 +362,14 @@ endpoint and returns the saved ID/text object, rejecting a missing response.
 `saveNote(recipeId, note)` retrieves stored credentials and delegates creation.
 Both preserve supplied text and propagate errors.
 
+`updateNote(token, recipeId, noteId, note)` sends `PATCH` with `{ note }` to
+`/recipes/{recipeId}/notes/{noteId}` and returns the backend's updated object,
+rejecting a missing response. `saveNoteChanges(recipeId, noteId, note)` retrieves
+stored credentials, rejects a missing token before requesting, and delegates to
+the helper. Both preserve supplied text and propagate failures. The backend
+verifies note membership and recipe ownership. This editing foundation is not yet
+connected to the mobile UI.
+
 [RecipeNoteForm](../mobile/src/notes/recipe-note-form.tsx) owns multiline input,
 blank validation, and save feedback. It preserves whitespace while typing, trims
 on submission, disables input/submission while pending, and clears text only after

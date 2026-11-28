@@ -1,4 +1,4 @@
-import { createNote, listNotes } from "@/api/notes";
+import { createNote, listNotes, updateNote } from "@/api/notes";
 import { getAccessToken } from "@/auth/token-storage";
 import type { NoteResponse } from "@/types/note";
 
@@ -24,4 +24,15 @@ export async function saveNote(recipeId: string, note: string): Promise<NoteResp
   }
 
   return createNote(accessToken, recipeId, note);
+}
+
+/** Update a personal note using the stored access token. */
+export async function saveNoteChanges(recipeId: string, noteId: string, note: string): Promise<NoteResponse> {
+  const accessToken = await getAccessToken();
+
+  if (accessToken === null) {
+    throw new Error(TOKEN_ERROR_MESSAGE);
+  }
+
+  return updateNote(accessToken, recipeId, noteId, note);
 }
