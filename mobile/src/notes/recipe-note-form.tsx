@@ -4,6 +4,7 @@ import { Button, StyleSheet, Text, TextInput, View } from "react-native";
 const ADD_NOTE_LABEL = "Add note";
 const ENTER_NOTE_MESSAGE = "Enter a note.";
 const NOTE_INPUT_LABEL = "Personal note";
+const NOTE_PLACEHOLDER = "Enter Your Note Here";
 const SAVE_ERROR_MESSAGE = "Unable to add note. Please try again.";
 
 type RecipeNoteFormProps = {
@@ -58,6 +59,7 @@ export function RecipeNoteForm({ onSubmit }: RecipeNoteFormProps) {
         autoCorrect={false}
         multiline={true}
         editable={!isSaving}
+        placeholder={NOTE_PLACEHOLDER}
         textAlignVertical='top'
         onChangeText={handleChangeNoteText}
         style={styles.formInput}
