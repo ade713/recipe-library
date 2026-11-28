@@ -1724,3 +1724,24 @@ Next:
 - Keep note editing and deletion in later focused milestones.
 
 Verification: all 701 mobile tests across 50 suites, TypeScript, and whitespace checks pass.
+
+## Mobile Note-Editing Foundation — 2026-11-27
+
+Built:
+
+- Added updateNote to PATCH a specific recipe note with supplied credentials and unchanged text.
+- Added saveNoteChanges to retrieve stored credentials and return the backend's updated object.
+- Covered missing responses/tokens, storage failures, request routing, and API/network error propagation.
+
+Learned:
+
+- The backend verifies that the note belongs to the recipe and the recipe belongs to the authenticated user.
+- Returning the server response reflects the persisted note rather than assuming the submitted text is the final value.
+- Token retrieval belongs to the service; the API helper owns the request.
+- Returning a promise without awaiting it still propagates rejection to the caller.
+
+Next:
+
+- Add note editing controls and list integration in a separate focused PR.
+
+Verification: all 715 mobile tests across 50 suites and TypeScript pass.

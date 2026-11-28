@@ -1221,6 +1221,19 @@ This milestone does not connect a form, so no Android check is required.
 
 Verification: all 687 mobile tests across 48 suites, TypeScript, and whitespace checks pass.
 
+## Note-update API and service
+
+`updateNote(token, recipeId, noteId, note)` sends unchanged `{ note }` text through
+`PATCH /recipes/{recipeId}/notes/{noteId}` with bearer authorization. It returns
+the updated NoteResponse and rejects an undefined response.
+`saveNoteChanges(recipeId, noteId, note)` retrieves stored credentials, rejects a
+missing token before the request, and delegates to updateNote. Storage and request
+failures propagate unchanged. The backend checks note membership and ownership.
+
+Tests cover the specific note URL, method, credentials, serialization, response
+identity, missing responses/tokens, storage failures, and API/network failures.
+Editing controls and list updates remain a separate UI milestone.
+
 ## Adding personal notes from recipe detail
 
 RecipeNoteForm appears after notes load successfully. It preserves typed text,
