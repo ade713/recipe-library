@@ -1,5 +1,15 @@
 import { useEffect, useState } from "react";
-import { Button, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Button,
+  Image,
+  KeyboardAvoidingView,
+  Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { RecipeNotesSection } from "@/notes/recipe-notes-section";
@@ -27,11 +37,12 @@ const UPDATE_FAVORITE_ERROR_MESSAGE = "Unable to update favorite. Please try aga
 
 type RecipeDetailScreenProps = {
   recipeId: string;
+  headerHeight?: number;
   isFocused?: boolean;
   onEdit?: () => void;
 };
 
-export function RecipeDetailScreen({ recipeId, isFocused = true, onEdit }: RecipeDetailScreenProps) {
+export function RecipeDetailScreen({ recipeId, headerHeight = 0, isFocused = true, onEdit }: RecipeDetailScreenProps) {
   const [recipe, setRecipe] = useState<RecipeDetailResponse | null>(null);
   const [loadingAttempt, setLoadingAttempt] = useState(0);
   const [loadRecipeError, setLoadRecipeError] = useState<string | null>(null);
@@ -143,88 +154,90 @@ export function RecipeDetailScreen({ recipeId, isFocused = true, onEdit }: Recip
     const shouldDisplayImage = imageUrl !== null && imageUrl.trim().length > 0;
 
     return (
-      <SafeAreaView edges={["bottom"]} style={{ flex: 1 }}>
-        <ScrollView>
-          <Text>{recipe.title}</Text>
-          {shouldDisplayDescription && <Text testID={DESCRIPTION_TEST_ID}>{description}</Text>}
-          {shouldDisplayImage &&
-            (hasImageError ? (
-              <Text>{IMAGE_ERROR_MESSAGE}</Text>
-            ) : (
-              <Image
-                source={{ uri: imageUrl }}
-                accessible={true}
-                accessibilityRole='image'
-                accessibilityLabel={`${recipe.title} photo`}
-                resizeMode='cover'
-                onError={() => setHasImageError(true)}
-                style={styles.recipeImage}
-              />
-            ))}
-
-          {onEdit !== undefined && (
-            <Button accessibilityLabel={EDIT_RECIPE_LABEL} title={EDIT_RECIPE_LABEL} onPress={onEdit} />
-          )}
-
-          <Button title={favoriteButtonTitle} onPress={handleUpdateRecipeFavorite} disabled={isUpdatingFavorite} />
-          {updateFavoriteError !== null && <Text>{updateFavoriteError}</Text>}
-
-          {shouldDisplaySourceDomain && <Text>{recipe.source_domain}</Text>}
-          {sourceUrl !== null && (
-            <Pressable accessibilityRole='link' onPress={handleOpenSourceLink}>
-              <Text>{SOURCE_LINK_TEXT}</Text>
-            </Pressable>
-          )}
-          {openLinkError && <Text>{openLinkError}</Text>}
-
-          {recipe.prep_time_minutes !== null && <Text>{`Prep: ${recipe.prep_time_minutes} mins`}</Text>}
-          {recipe.cook_time_minutes !== null && <Text>{`Cook: ${recipe.cook_time_minutes} mins`}</Text>}
-          {recipe.total_time_minutes !== null && <Text>{`Total: ${recipe.total_time_minutes} mins`}</Text>}
-          {recipe.base_servings !== null &&
-            (recipe.servings_unit !== null ? (
-              <Text>{`Yield: ${recipe.base_servings} ${recipe.servings_unit}`}</Text>
-            ) : (
-              <Text>{`Servings: ${recipe.base_servings}`}</Text>
-            ))}
-
-          {recipe.tags.length > 0 && (
-            <>
-              <Text accessibilityRole='header'>{TAGS_HEADER}</Text>
-              <View style={styles.tagsRow}>
-                {recipe.tags.map((tag) => (
-                  <Text key={tag} style={styles.tagChip}>
-                    {tag}
-                  </Text>
-                ))}
-              </View>
-            </>
-          )}
-
-          <Text>{INGREDIENTS_HEADER_TEXT}</Text>
-          {recipe.ingredients.length === 0 ? (
-            <Text>{NO_INGREDIENTS_TEXT}</Text>
-          ) : (
-            recipe.ingredients.map((ingredient) => <Text key={ingredient.position}>{ingredient.original_text}</Text>)
-          )}
-
-          <Text>{INSTRUCTIONS_HEADER_TEXT}</Text>
-          {recipe.steps.length === 0 ? (
-            <Text>{NO_INSTRUCTIONS_TEXT}</Text>
-          ) : (
-            recipe.steps.map((step) => <Text key={step.position}>{`${step.position}. ${step.instruction}`}</Text>)
-          )}
-
-          {recipe.tips.length > 0 && (
-            <>
-              <Text>{TIPS_HEADER_TEXT}</Text>
-              {recipe.tips.map((tip) => (
-                <Text key={tip.position}>{tip.tip}</Text>
+      <SafeAreaView edges={["bottom"]} style={styles.container}>
+        <KeyboardAvoidingView behavior='padding' keyboardVerticalOffset={headerHeight} style={styles.container}>
+          <ScrollView keyboardShouldPersistTaps='handled'>
+            <Text>{recipe.title}</Text>
+            {shouldDisplayDescription && <Text testID={DESCRIPTION_TEST_ID}>{description}</Text>}
+            {shouldDisplayImage &&
+              (hasImageError ? (
+                <Text>{IMAGE_ERROR_MESSAGE}</Text>
+              ) : (
+                <Image
+                  source={{ uri: imageUrl }}
+                  accessible={true}
+                  accessibilityRole='image'
+                  accessibilityLabel={`${recipe.title} photo`}
+                  resizeMode='cover'
+                  onError={() => setHasImageError(true)}
+                  style={styles.recipeImage}
+                />
               ))}
-            </>
-          )}
 
-          {isFocused && <RecipeNotesSection recipeId={recipe.id} />}
-        </ScrollView>
+            {onEdit !== undefined && (
+              <Button accessibilityLabel={EDIT_RECIPE_LABEL} title={EDIT_RECIPE_LABEL} onPress={onEdit} />
+            )}
+
+            <Button title={favoriteButtonTitle} onPress={handleUpdateRecipeFavorite} disabled={isUpdatingFavorite} />
+            {updateFavoriteError !== null && <Text>{updateFavoriteError}</Text>}
+
+            {shouldDisplaySourceDomain && <Text>{recipe.source_domain}</Text>}
+            {sourceUrl !== null && (
+              <Pressable accessibilityRole='link' onPress={handleOpenSourceLink}>
+                <Text>{SOURCE_LINK_TEXT}</Text>
+              </Pressable>
+            )}
+            {openLinkError && <Text>{openLinkError}</Text>}
+
+            {recipe.prep_time_minutes !== null && <Text>{`Prep: ${recipe.prep_time_minutes} mins`}</Text>}
+            {recipe.cook_time_minutes !== null && <Text>{`Cook: ${recipe.cook_time_minutes} mins`}</Text>}
+            {recipe.total_time_minutes !== null && <Text>{`Total: ${recipe.total_time_minutes} mins`}</Text>}
+            {recipe.base_servings !== null &&
+              (recipe.servings_unit !== null ? (
+                <Text>{`Yield: ${recipe.base_servings} ${recipe.servings_unit}`}</Text>
+              ) : (
+                <Text>{`Servings: ${recipe.base_servings}`}</Text>
+              ))}
+
+            {recipe.tags.length > 0 && (
+              <>
+                <Text accessibilityRole='header'>{TAGS_HEADER}</Text>
+                <View style={styles.tagsRow}>
+                  {recipe.tags.map((tag) => (
+                    <Text key={tag} style={styles.tagChip}>
+                      {tag}
+                    </Text>
+                  ))}
+                </View>
+              </>
+            )}
+
+            <Text>{INGREDIENTS_HEADER_TEXT}</Text>
+            {recipe.ingredients.length === 0 ? (
+              <Text>{NO_INGREDIENTS_TEXT}</Text>
+            ) : (
+              recipe.ingredients.map((ingredient) => <Text key={ingredient.position}>{ingredient.original_text}</Text>)
+            )}
+
+            <Text>{INSTRUCTIONS_HEADER_TEXT}</Text>
+            {recipe.steps.length === 0 ? (
+              <Text>{NO_INSTRUCTIONS_TEXT}</Text>
+            ) : (
+              recipe.steps.map((step) => <Text key={step.position}>{`${step.position}. ${step.instruction}`}</Text>)
+            )}
+
+            {recipe.tips.length > 0 && (
+              <>
+                <Text>{TIPS_HEADER_TEXT}</Text>
+                {recipe.tips.map((tip) => (
+                  <Text key={tip.position}>{tip.tip}</Text>
+                ))}
+              </>
+            )}
+
+            {isFocused && <RecipeNotesSection recipeId={recipe.id} />}
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     );
   }
@@ -233,6 +246,9 @@ export function RecipeDetailScreen({ recipeId, isFocused = true, onEdit }: Recip
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   recipeImage: {
     width: "100%",
     aspectRatio: 16 / 9,
