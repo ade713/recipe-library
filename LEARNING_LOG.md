@@ -1700,3 +1700,27 @@ Next:
 - Add the personal note creation form and its UI integration in a focused follow-up.
 
 Verification: all 687 mobile tests across 48 suites, TypeScript, and whitespace checks pass.
+
+## Personal Note Creation Form — 2026-11-27
+
+Built:
+
+- Added multiline note input with blank validation and submission-time trimming.
+- Disabled pending controls, retained text after failures, and cleared text only after success.
+- Connected the section to saveNote and appended the returned object without refetching.
+- Added integrated empty/populated-list and failure/retry coverage.
+- Added route-provided header height and keyboard avoidance for the detail screen.
+- Android verified; removed temporary save failure and delay.
+
+Learned:
+
+- Validate before entering saving state so early returns cannot leave it stuck.
+- Separate validation/request state can share one derived error-rendering path.
+- Functional state updates use the latest list after an awaited save; returned notes include server identity.
+- Tests should reflect supported app flows. A proposed mounted-section recipe-switch save test was removed because detail navigation unmounts the section; no speculative generation-ref guard was added.
+
+Next:
+
+- Keep note editing and deletion in later focused milestones.
+
+Verification: all 701 mobile tests across 50 suites, TypeScript, and whitespace checks pass.

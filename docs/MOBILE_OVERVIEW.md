@@ -360,8 +360,16 @@ empty results. The backend enforces recipe ownership. Personal notes are separat
 `createNote(token, recipeId, note)` posts `{ note }` to the same recipe-specific
 endpoint and returns the saved ID/text object, rejecting a missing response.
 `saveNote(recipeId, note)` retrieves stored credentials and delegates creation.
-Both preserve supplied text and propagate errors; trimming and validation belong
-to the future form. Creation helpers are available, but no creation UI is connected.
+Both preserve supplied text and propagate errors.
+
+[RecipeNoteForm](../mobile/src/notes/recipe-note-form.tsx) owns multiline input,
+blank validation, and save feedback. It preserves whitespace while typing, trims
+on submission, disables input/submission while pending, and clears text only after
+success. Failures retain text for correction or retry. RecipeNotesSection renders
+the form only after successful notes loading, calls saveNote, and appends the
+returned note with a functional state update instead of refetching. Save errors
+propagate to the form. Detail uses route-provided header height and keyboard
+avoidance to keep the note input and Add note button reachable.
 
 [RecipeNotesSection](../mobile/src/notes/recipe-notes-section.tsx) loads notes in
 local component state and renders them after Source tips on recipe detail. Its
@@ -374,8 +382,8 @@ on blur. On return it refreshes the recipe before mounting notes, avoiding a not
 request against the old render followed by another on remount. The parent owns
 focus handling through conditional mounting; the notes section loads on mount or
 recipe change and invalidates pending results on cleanup. Notes are fetched again on return;
-there is no persistent notes cache. Adding, editing, and deleting notes in the
-mobile UI remain future work.
+there is no persistent notes cache. Editing and deleting notes in the mobile UI
+remain future work.
 
 ## Known limitations and planned boundaries
 
