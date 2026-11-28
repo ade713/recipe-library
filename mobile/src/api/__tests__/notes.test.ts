@@ -1,12 +1,48 @@
 import type { NoteResponse } from "@/types/note";
 
 import { ApiError } from "../errors";
-import { createNote, listNotes } from "../notes";
+import { createNote, listNotes, updateNote } from "../notes";
 import * as client from "../client";
 
 const ACCESS_TOKEN = "test-access-token";
 const NOTE_LIST_ERROR_MESSAGE = "Expected a note list response";
 const RECIPE_ID = "recipe-one";
+
+describe("updateNote", () => {
+  const noteId = "existing-note-id";
+
+  it("patches the specific recipe note and returns the updated object unchanged", async () => {
+    const note = '  Try "smoked" paprika.\nUse less salt.  ';
+    const response: NoteResponse = { id: noteId, note };
+    const requestMock = jest.spyOn(client, "apiFetch").mockResolvedValue(response);
+
+    expect(await updateNote(ACCESS_TOKEN, RECIPE_ID, noteId, note)).toBe(response);
+    expect(requestMock).toHaveBeenCalledTimes(1);
+    expect(requestMock).toHaveBeenCalledWith(`/recipes/${RECIPE_ID}/notes/${noteId}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
+      body: JSON.stringify({ note }),
+    });
+  });
+
+  it("rejects a missing updated-note response", async () => {
+    jest.spyOn(client, "apiFetch").mockResolvedValue(undefined);
+
+    await expect(updateNote(ACCESS_TOKEN, RECIPE_ID, noteId, "Less salt.")).rejects.toThrow("Expected a note response");
+  });
+
+  it.each([
+    { label: "unauthorized", error: new ApiError(401) },
+    { label: "unavailable note", error: new ApiError(404) },
+    { label: "invalid note", error: new ApiError(422) },
+    { label: "server failure", error: new ApiError(500) },
+    { label: "network failure", error: new Error("Network unavailable") },
+  ])("propagates update failures unchanged: $label", async ({ error }) => {
+    jest.spyOn(client, "apiFetch").mockRejectedValue(error);
+
+    await expect(updateNote(ACCESS_TOKEN, RECIPE_ID, noteId, "Less salt.")).rejects.toBe(error);
+  });
+});
 
 describe("listNotes", () => {
   it("requests the recipe's notes with the supplied token and returns the array unchanged", async () => {

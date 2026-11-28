@@ -37,3 +37,20 @@ export async function createNote(token: string, recipeId: string, note: string):
 
   return response;
 }
+
+/** Update a specific personal note using the supplied access token. */
+export async function updateNote(token: string, recipeId: string, noteId: string, note: string): Promise<NoteResponse> {
+  const response = await apiFetch<NoteResponse>(`/recipes/${recipeId}/notes/${noteId}`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ note }),
+  });
+
+  if (response === undefined) {
+    throw new Error(NOTE_ERROR_MESSAGE);
+  }
+
+  return response;
+}
