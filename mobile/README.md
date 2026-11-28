@@ -1220,3 +1220,21 @@ identity, missing responses/credentials, storage failures, and API/network error
 This milestone does not connect a form, so no Android check is required.
 
 Verification: all 687 mobile tests across 48 suites, TypeScript, and whitespace checks pass.
+
+## Adding personal notes from recipe detail
+
+RecipeNoteForm appears after notes load successfully. It preserves typed text,
+rejects blank input, and submits trimmed text while retaining internal line breaks.
+Input and Add note disable while saving. Success clears the input; failure shows
+safe feedback and retains the original text for correction/retry.
+
+RecipeNotesSection calls saveNote and appends the returned note without refetching
+or replacing existing notes. The empty message disappears after the first addition.
+The detail route supplies header height to the keyboard-avoiding scroll layout,
+keeping multiline input and submission reachable while typing.
+
+Android verified validation, adding/persistence, pending controls, failure/retry,
+and keyboard access. Temporary save failure and delay were removed. Editing and
+deleting notes remain separate work.
+
+Verification: all 701 mobile tests across 50 suites, TypeScript, and whitespace checks pass.
